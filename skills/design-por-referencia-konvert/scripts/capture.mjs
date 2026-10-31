@@ -11,6 +11,7 @@ import {
   checkUrl,
   resolveRoutes,
   installRequestGuards,
+  createInspectionContext,
   targetBlockReason,
   ensureDir,
   intList,
@@ -27,7 +28,7 @@ const HELP = `Uso: node capture.mjs --url <url> [opções]
   --allow-file             Permite uma URL file:// local explicitamente.
   --allow-private          Permite alvos/subrecursos em IPs privados (metadata continua bloqueado).
   --allow-tracking         Permite requests de analytics; bloqueados por padrão.
-  --block-writes           Bloqueia métodos além de GET/HEAD (opt-in; pode quebrar GraphQL).
+  --block-writes           Bloqueia métodos além de GET/HEAD e WebSockets (opt-in).
   --profile <nome>         rapido | tela (padrão) | completo.
   --routes </a,/b>         Rotas relativas à URL (padrão: só a URL).
   --out <dir>              Saída (padrão: .audit/screenshots). Mantenha fora do Git.
@@ -114,6 +115,7 @@ const index = {
     'Banners de consentimento não são clicados: se cobrirem a página, aparecem nas capturas.',
     'LCP/CLS são medidas de laboratório (indicativas). Candidatos a overflow incluem elementos fora da tela de propósito.',
     'Campos de texto mascarados, salvo --no-mask.',
+    'Service workers bloqueados; WebSockets seguem a política de alvos e são recusados com --block-writes.',
   ],
   pages: [],
   files: [],
@@ -284,7 +286,7 @@ async function captureRoute(ctx, route, width, scheme, routeIndex) {
 
 for (const scheme of schemes) {
   for (const width of widths) {
-    const ctx = await browser.newContext({
+    const ctx = await createInspectionContext(browser, {
       viewport: { width, height: 900 },
       colorScheme: scheme,
       reducedMotion: 'reduce',

@@ -2,16 +2,26 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
+import { isDeepStrictEqual } from 'node:util';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
 let checked = 0;
+let syntaxChecked = 0;
 async function walk(dir) {
   for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
     if (entry.name.startsWith('.') || ['node_modules', 'coverage'].includes(entry.name)) continue;
     const file = path.join(dir, entry.name);
     if (entry.isDirectory()) { await walk(file); continue; }
-    if (!entry.isFile() || !file.endsWith('.md')) continue;
+    if (!entry.isFile()) continue;
+    if (file.endsWith('.mjs')) {
+      const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
+      syntaxChecked++;
+      if (result.status !== 0) errors.push(`${path.relative(root, file)}: syntax check failed`);
+      continue;
+    }
+    if (!file.endsWith('.md')) continue;
     const text = await fs.readFile(file, 'utf8');
     const relative = path.relative(root, file);
     checked++;
@@ -22,6 +32,14 @@ async function walk(dir) {
       if (name !== path.basename(dir)) errors.push(`${relative}: name must match directory`);
       if (!description || description.length > 1024) errors.push(`${relative}: description must contain 1–1024 characters`);
       if (text.split('\n').length > 500) errors.push(`${relative}: exceeds 500 lines`);
+      if (name === 'frontend-designer') {
+        for (const section of ['Workflow', 'Design principles', 'Reference catalog', 'Report format']) {
+          if (!text.includes(`## ${section}`)) errors.push(`${relative}: missing ${section} section`);
+        }
+        for (const module of await fs.readdir(path.join(dir, 'knowledge-base'))) {
+          if (module.endsWith('.md') && !text.includes(`](knowledge-base/${module})`)) errors.push(`${relative}: knowledge module must be linked: ${module}`);
+        }
+      }
     }
     // Check authored Markdown links, excluding code examples and remote URLs.
     const prose = text.replace(/^```[^\n]*\n[\s\S]*?^```/gm, '').replace(/`[^`\n]+`/g, '');
@@ -34,6 +52,12 @@ async function walk(dir) {
   }
 }
 await walk(root);
+const tooling = path.join(root, 'skills/design-por-referencia-konvert');
+const manifest = JSON.parse(await fs.readFile(path.join(tooling, 'package.json'), 'utf8'));
+const lock = JSON.parse(await fs.readFile(path.join(tooling, 'package-lock.json'), 'utf8'));
+const lockedManifest = lock.packages?.[''];
+if (!lockedManifest || manifest.name !== lock.name || manifest.version !== lock.version || manifest.version !== lockedManifest.version ||
+    !isDeepStrictEqual(manifest.devDependencies, lockedManifest.devDependencies) || !isDeepStrictEqual(manifest.engines, lockedManifest.engines)) errors.push('Tooling package manifest and lockfile are inconsistent.');
 const routingCases = JSON.parse(await fs.readFile(path.join(root, 'evaluations/routing-cases.json'), 'utf8'));
 if (new Set(routingCases.map((c) => c.id)).size !== routingCases.length) errors.push('Routing case IDs must be unique.');
 for (const skill of ['frontend-designer', 'design-por-referencia-konvert']) {
@@ -42,4 +66,4 @@ for (const skill of ['frontend-designer', 'design-por-referencia-konvert']) {
 }
 if (routingCases.some((c) => !c.id || typeof c.prompt !== 'string' || !c.prompt.trim() || typeof c.shouldTrigger !== 'boolean' || !['frontend-designer', 'design-por-referencia-konvert'].includes(c.skill))) errors.push('Invalid routing case.');
 if (errors.length) { console.error(errors.join('\n')); process.exitCode = 1; }
-else console.log(`Validated ${checked} Markdown files, skill metadata, and relative links.`);
+else console.log(`Validated ${checked} Markdown files, ${syntaxChecked} JavaScript modules, skill metadata, relative links, and tooling lockfile.`);

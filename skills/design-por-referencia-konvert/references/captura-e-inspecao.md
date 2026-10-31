@@ -85,6 +85,8 @@ Use a mesma ordem de rotas, versão do navegador, fontes, conteúdo, larguras, e
 
 ## 8. Segurança e privacidade
 
+- WebSockets passam pela mesma política de alvos e trackers; `--block-writes` bloqueia todos eles e registra `WEBSOCKET`. Service workers ficam bloqueados em todos os contextos de inspeção. Registre essa condição se o produto depender de cache/offline ou atualização em tempo real.
+- A classificação de IP usa faixas CIDR e reclassifica o IPv4 de endereços mapped/compatible, NAT64 conhecido e 6to4. NAT64 local com prefixo de tradução desconhecido e Teredo são recusados. Isso não resolve nomes que apontam para IPs internos, DNS rebinding ou toda configuração de tradução da rede: o script não é uma sandbox.
 - A navegação usa GET, não clica, envia formulários nem confirma ações, mas executa JavaScript do alvo; GET não garante ausência de efeitos colaterais. Inspecione somente alvos autorizados.
 - Endpoints de metadata, hosts de tracking conhecidos e endereços privados literais são bloqueados por padrão. `--allow-private` abre acesso a redes privadas (metadata e link-local continuam bloqueados); prefira loopback para desenvolvimento local. A checagem não valida o IP final após resolução DNS e não é uma proteção contra DNS rebinding ou uma sandbox para URLs não confiáveis.
 - `--allow-tracking` desativa o bloqueio dos provedores conhecidos. Use apenas em staging/testes; em produção, a captura padrão pode não mostrar conteúdo variante de A/B, analytics ou widgets.

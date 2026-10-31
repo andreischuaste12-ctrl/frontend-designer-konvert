@@ -33,13 +33,17 @@ npm run check
 npm test
 ```
 
+The scripts prefer the skill's installed Playwright and fall back to the target project's installation. Browser-context WebSocket routing support is required; older project dependencies without that API are rejected rather than silently skipping network guards.
+
 The scripts do not install dependencies, click, or submit forms. Chromium does execute the target site's JavaScript, so use only authorized targets and prefer synthetic data. Credentials, query strings, and URL fragments are removed from reported URLs; error messages are also sanitized. Output is written under `.audit/`, which the repository root `.gitignore` excludes.
 
 Use `capture.mjs --profile rapido|tela|completo` to size the capture to the task. Individual flags such as `--widths` and `--max-controls` override profile defaults. Known metadata endpoints, tracker hosts, and literal private-network targets are blocked by default. `--allow-tracking` permits known trackers; `--allow-private` permits private-network targets; and `--no-mask` reveals form fields in screenshots. Prefer localhost or staging and synthetic data. The network guard does not validate the final IP after DNS resolution and is not a sandbox for untrusted URLs.
 
 Images are not copied by default. Use `--save-images` only when local review copies are needed; do not commit or redistribute them without checking their rights. Screenshots and reports can contain rendered page content, so review them before sharing.
 
-`--block-writes` optionally rejects HTTP methods other than GET/HEAD in all three browser-inspection scripts. It can block first-party POST telemetry, but also GraphQL reads and CORS preflights. The default preserves these requests; prefer staging. Reports record `blockWrites` and `blockedWriteMethods`. IPv4-mapped IPv6 literals use the embedded IPv4 policy, so alternate address spellings do not bypass metadata/private-IP rules; unspecified addresses are always blocked. DNS rebinding remains outside this guard's guarantees.
+`--block-writes` optionally rejects HTTP methods other than GET/HEAD and all WebSocket connections in the three browser-inspection scripts. It can block first-party POST telemetry, but also GraphQL reads, CORS preflights, and real-time UI. The default preserves permitted requests; prefer staging. Reports record `blockWrites` and `blockedWriteMethods` (including `WEBSOCKET`). WebSockets follow the same target/tracker policy. Service workers are disabled, so offline/cached experiences may differ.
+
+CIDR checks cover literal private/reserved IP ranges and embedded IPv4 in mapped/compatible IPv6, well-known NAT64, and 6to4. Local-use NAT64 and Teredo are denied because their translation behavior cannot be inferred safely. DNS rebinding and deployment-specific translations remain outside these guards' guarantees; they are not a network sandbox.
 
 ## Examples
 

@@ -8,7 +8,7 @@ import { parseArgs } from 'node:util';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadPlaywright, launch, checkUrl, installRequestGuards, targetBlockReason, ensureDir, metricsInit, preparePage, redactUrl, redactText, fail } from './_common.mjs';
+import { loadPlaywright, launch, checkUrl, installRequestGuards, createInspectionContext, targetBlockReason, ensureDir, metricsInit, preparePage, redactUrl, redactText, fail } from './_common.mjs';
 
 const HELP = `Uso: node image-manifest.mjs [--root <dir>] [--url <url>] [opções]
 
@@ -17,7 +17,7 @@ const HELP = `Uso: node image-manifest.mjs [--root <dir>] [--url <url>] [opçõe
   --allow-file   Permite uma URL file:// local explicitamente.
   --allow-private Permite alvos/subrecursos em IPs privados (metadata continua bloqueado).
   --allow-tracking Permite requests de analytics; bloqueados por padrão.
-  --block-writes Bloqueia métodos além de GET/HEAD (opt-in; pode quebrar GraphQL).
+  --block-writes Bloqueia métodos além de GET/HEAD e WebSockets (opt-in).
   --width <px>   Largura do viewport no modo --url (padrão: 1440). Rode também com 375.
   --out <dir>    Saída (padrão: .audit/images).
   --skip <lista> Pastas extras a ignorar, separadas por vírgula.
@@ -245,7 +245,7 @@ if (a.url) {
   const timeout = Number(a.timeout) || 30000;
   const pw = loadPlaywright();
   const browser = await launch(pw);
-  const ctx = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
+  const ctx = await createInspectionContext(browser, { viewport: { width, height: 900 }, reducedMotion: 'reduce' });
   const trackingBlocked = new Set();
   const blockedTargets = new Set();
   const blockedWriteMethods = new Set();
@@ -394,7 +394,7 @@ if (a.url) {
   const safeLcp = dom.lcp ? { ...dom.lcp, url: dom.lcp.url ? redactUrl(dom.lcp.url) : null } : null;
   const safeUrl = redactUrl(url.href);
   await fs.writeFile(path.join(outDir, 'images-rendered.json'), JSON.stringify({
-    url: safeUrl, width, lcp: safeLcp, cls: dom.cls, trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(),
+    url: safeUrl, width, lcp: safeLcp, cls: dom.cls, serviceWorkersBlocked: true, trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(),
     trackingBlocked: [...trackingBlocked].sort(), blockedTargets: [...blockedTargets].sort(), items: clean,
   }, null, 2), 'utf8');
   const rows = clean

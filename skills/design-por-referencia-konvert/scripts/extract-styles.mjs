@@ -5,7 +5,7 @@
 import { parseArgs } from 'node:util';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { loadPlaywright, launch, checkUrl, installRequestGuards, targetBlockReason, ensureDir, metricsInit, preparePage, redactUrl, redactText, fail } from './_common.mjs';
+import { loadPlaywright, launch, checkUrl, installRequestGuards, createInspectionContext, targetBlockReason, ensureDir, metricsInit, preparePage, redactUrl, redactText, fail } from './_common.mjs';
 
 const HELP = `Uso: node extract-styles.mjs --url <url> [opções]
 
@@ -13,7 +13,7 @@ const HELP = `Uso: node extract-styles.mjs --url <url> [opções]
   --allow-file       Permite uma URL file:// local explicitamente.
   --allow-private    Permite alvos/subrecursos em IPs privados (metadata continua bloqueado).
   --allow-tracking   Permite requests de analytics; bloqueados por padrão.
-  --block-writes     Bloqueia métodos além de GET/HEAD (opt-in; pode quebrar GraphQL).
+  --block-writes     Bloqueia métodos além de GET/HEAD e WebSockets (opt-in).
   --out <dir>        Saída (padrão: .audit/styles).
   --width <px>       Largura do viewport (padrão: 1440). Rode também com 375.
   --scheme <s>       light | dark (padrão: light).
@@ -53,7 +53,7 @@ const outDir = await ensureDir(path.resolve(a.out));
 
 const pw = loadPlaywright();
 const browser = await launch(pw);
-const ctx = await browser.newContext({
+const ctx = await createInspectionContext(browser, {
   viewport: { width, height: 900 },
   colorScheme: scheme,
   reducedMotion: 'reduce',
@@ -365,7 +365,7 @@ const safeData = redactValues(data);
 Object.assign(data, safeData);
 const meta = {
   tool: 'extract-styles.mjs', url: redactUrl(url.href), status: resp ? resp.status() : null, width, scheme,
-  trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(), trackingBlocked: [...trackingBlocked].sort(), blockedTargets: [...blockedTargets].sort(),
+  serviceWorkersBlocked: true, trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(), trackingBlocked: [...trackingBlocked].sort(), blockedTargets: [...blockedTargets].sort(),
   at: new Date().toISOString(),
 };
 await fs.writeFile(path.join(outDir, 'computed-styles.json'), JSON.stringify({ meta, ...safeData }, null, 2), 'utf8');

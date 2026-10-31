@@ -1,7 +1,7 @@
 // Utilitários compartilhados pelos scripts de captura e inspeção.
 // Os scripts navegam com GET e não clicam nem enviam formulários, mas executam JS da página.
 import { createRequire } from 'node:module';
-import { isIP } from 'node:net';
+import { networkHost, ipBlockReason } from './_network.mjs';
 import { realpathSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -12,10 +12,9 @@ export function fail(msg, code = 1) {
   process.exit(code);
 }
 
-// Procura o Playwright primeiro a partir do diretório atual (projeto auditado),
-// depois a partir da pasta do script (instalação global ou NODE_PATH).
+// Prefere a dependência fixada da skill; usa a do projeto apenas como fallback.
 export function loadPlaywright() {
-  const bases = [path.join(process.cwd(), 'noop.js'), import.meta.url];
+  const bases = [import.meta.url, path.join(process.cwd(), 'noop.js')];
   for (const base of bases) {
     try {
       return createRequire(base)('playwright');
@@ -50,40 +49,10 @@ const TRACKER_HOSTS = [
 ];
 const METADATA_HOSTS = new Set(['metadata', 'metadata.google.internal', 'metadata.goog', '100.100.100.200']);
 
-// URL normalizes mapped IPv6 (including dotted input) to ::ffff:XXXX:YYYY.
-// Classify the embedded IPv4 exactly as its ordinary spelling.
-function networkHost(hostname) {
-  const host = hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '');
-  const mapped = host.match(/^::ffff:([\da-f]{1,4}):([\da-f]{1,4})$/);
-  if (!mapped) return host;
-  const high = Number.parseInt(mapped[1], 16), low = Number.parseInt(mapped[2], 16);
-  return [high >> 8, high & 255, low >> 8, low & 255].join('.');
-}
-
 function isTrackerUrl(u) {
   const host = networkHost(u.hostname);
   if (host === 'facebook.com' || host.endsWith('.facebook.com')) return u.pathname === '/tr' || u.pathname.startsWith('/tr/');
   return TRACKER_HOSTS.some((domain) => host === domain || host.endsWith(`.${domain}`));
-}
-
-function isLoopback(host) {
-  return host === 'localhost' || host.endsWith('.localhost') || host.startsWith('127.') || host === '::1';
-}
-
-function isPrivateIp(host) {
-  if (isIP(host) === 4) {
-    const [a, b] = host.split('.').map(Number);
-    return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) ||
-      (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || a === 0;
-  }
-  if (isIP(host) === 6) {
-    return host.startsWith('fc') || host.startsWith('fd') || isLinkLocalIp(host);
-  }
-  return false;
-}
-
-function isLinkLocalIp(host) {
-  return isIP(host) === 4 ? host.startsWith('169.254.') : isIP(host) === 6 && /^fe[89ab]/.test(host);
 }
 
 export function targetBlockReason(raw, { allowFile = false, allowPrivate = false, root = process.cwd() } = {}) {
@@ -102,16 +71,16 @@ export function targetBlockReason(raw, { allowFile = false, allowPrivate = false
   if (u.protocol === 'data:' || u.protocol === 'blob:' || u.protocol === 'about:') return null;
   if (!['http:', 'https:'].includes(u.protocol)) return 'unsupported URL protocol';
   const host = networkHost(u.hostname);
-  if (host === '::' || host === '0.0.0.0') return 'unspecified network targets are blocked';
   if (METADATA_HOSTS.has(host) || host.endsWith('.metadata.google.internal')) return 'cloud metadata endpoints are blocked';
-  if (isLinkLocalIp(host)) return 'link-local network targets are blocked';
-  if (isPrivateIp(host) && !isLoopback(host) && !allowPrivate) {
-    return 'private network targets require --allow-private';
-  }
-  return null;
+  return ipBlockReason(host, allowPrivate);
+}
+
+export function createInspectionContext(browser, options = {}) {
+  return browser.newContext({ ...options, serviceWorkers: 'block' });
 }
 
 export async function installRequestGuards(context, { allowFile = false, allowPrivate = false, allowTracking = false, blockWrites = false, trackingBlocked = new Set(), blockedTargets = new Set(), blockedWriteMethods = new Set() } = {}) {
+  if (typeof context.routeWebSocket !== 'function') fail('Playwright with browser-context WebSocket routing is required. Install the pinned skill dependencies.', 2);
   await context.route('**/*', async (route) => {
     const raw = route.request().url();
     let u;
@@ -135,6 +104,20 @@ export async function installRequestGuards(context, { allowFile = false, allowPr
       return;
     }
     await route.continue();
+  });
+  await context.routeWebSocket('**/*', async (socket) => {
+    const u = new URL(socket.url());
+    u.protocol = u.protocol === 'wss:' ? 'https:' : 'http:';
+    const tracker = isTrackerUrl(u);
+    const reason = targetBlockReason(u.href, { allowFile, allowPrivate });
+    if (tracker && !allowTracking) trackingBlocked.add(u.hostname.toLowerCase());
+    if (reason) blockedTargets.add(u.hostname || u.protocol);
+    if (blockWrites) blockedWriteMethods.add('WEBSOCKET');
+    if (reason || (tracker && !allowTracking) || blockWrites) {
+      await socket.close({ code: 1008, reason: 'Audit network guard' });
+      return;
+    }
+    socket.connectToServer();
   });
 }
 

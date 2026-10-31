@@ -75,7 +75,7 @@ test('request guards enforce mapped-target and optional method policies before c
   async function inspect(url, method, options = {}) {
     let handler, result;
     const blockedWriteMethods = new Set();
-    await installRequestGuards({ route: async (_pattern, fn) => { handler = fn; } }, { ...options, blockedWriteMethods });
+    await installRequestGuards({ route: async (_pattern, fn) => { handler = fn; }, routeWebSocket: async () => {} }, { ...options, blockedWriteMethods });
     await handler({
       request: () => ({ url: () => url, method: () => method }),
       abort: async () => { result = 'blocked'; }, continue: async () => { result = 'continued'; },
@@ -89,4 +89,50 @@ test('request guards enforce mapped-target and optional method policies before c
     assert.deepEqual(await inspect('http://localhost:3000/track', method, { blockWrites: true }), { result: 'blocked', methods: [method] });
   }
   for (const method of ['GET', 'HEAD']) assert.equal((await inspect('http://localhost:3000/', method, { blockWrites: true })).result, 'continued');
+});
+
+test('transition forms inherit the embedded IPv4 classification', () => {
+  for (const address of ['169.254.169.254', '100.100.100.200', '10.0.0.5', '172.16.0.1', '192.168.1.1', '100.64.0.1', '192.0.0.1', '198.18.0.1', '224.0.0.1', '255.255.255.255', '8.8.8.8']) {
+    const octets = address.split('.').map(Number);
+    const high = ((octets[0] << 8) | octets[1]).toString(16), low = ((octets[2] << 8) | octets[3]).toString(16);
+    const forms = [`::${high}:${low}`, `::ffff:${high}:${low}`, `::ffff:0:${high}:${low}`, `64:ff9b::${high}:${low}`, `2002:${high}:${low}::1`];
+    for (const allowPrivate of [false, true]) {
+      const expected = targetBlockReason(`http://${address}/`, { allowPrivate });
+      for (const host of forms) assert.equal(targetBlockReason(`http://[${host}]/`, { allowPrivate }), expected, `${host}, allowPrivate=${allowPrivate}`);
+    }
+  }
+});
+
+test('non-public ranges and ambiguous translation prefixes are explicitly classified', () => {
+  for (const host of ['[fec0::1]', '[fc00::1]', '[2001:2::1]', '192.0.0.1', '198.18.0.1', '198.19.255.255']) {
+    assert.match(targetBlockReason(`http://${host}/`) ?? '', /allow-private/, host);
+    assert.equal(targetBlockReason(`http://${host}/`, { allowPrivate: true }), null, host);
+  }
+  for (const host of ['[fd00:ec2::254]', '[fe80::1]', '[ff02::1]', '[2001::1]', '[2001:20::1]', '[3fff::1]', '[4000::1]', '[5f00::1]', '[64:ff9b:1::a9fe:a9fe]', '[64:ff9b:1::808:808]', '224.0.0.1', '240.0.0.1', '255.255.255.255', '192.0.2.1']) {
+    for (const allowPrivate of [false, true]) assert.match(targetBlockReason(`http://${host}/`, { allowPrivate }) ?? '', /blocked/, host);
+  }
+  for (const host of ['[2606:4700:4700::1111]', '[64:ff9b::808:808]', '[::ffff:808:808]', '8.8.8.8', '127.0.0.1', '[::1]']) {
+    assert.equal(targetBlockReason(`http://${host}/`), null, host);
+  }
+});
+
+test('WebSocket guards apply target and tracker policy before connecting', async () => {
+  async function inspect(url, options = {}) {
+    let handler, result;
+    const blockedTargets = new Set(), trackingBlocked = new Set(), blockedWriteMethods = new Set();
+    await installRequestGuards({ route: async () => {}, routeWebSocket: async (_pattern, fn) => { handler = fn; } }, { ...options, blockedTargets, trackingBlocked, blockedWriteMethods });
+    await handler({ url: () => url, close: async () => { result = 'blocked'; }, connectToServer: () => { result = 'connected'; } });
+    return { result, blockedTargets, trackingBlocked, blockedWriteMethods };
+  }
+  for (const protocol of ['ws', 'wss']) {
+    const metadata = await inspect(`${protocol}://[64:ff9b::a9fe:a9fe]/`, { allowPrivate: true });
+    assert.equal(metadata.result, 'blocked'); assert.equal(metadata.blockedTargets.size, 1);
+    assert.equal((await inspect(`${protocol}://192.168.1.1/`)).result, 'blocked');
+    assert.equal((await inspect(`${protocol}://192.168.1.1/`, { allowPrivate: true })).result, 'connected');
+    const tracker = await inspect(`${protocol}://www.google-analytics.com./socket`);
+    assert.equal(tracker.result, 'blocked'); assert.equal(tracker.trackingBlocked.size, 1);
+    assert.equal((await inspect(`${protocol}://www.google-analytics.com/socket`, { allowTracking: true })).result, 'connected');
+  }
+  const writes = await inspect('ws://localhost:3000/socket', { blockWrites: true });
+  assert.equal(writes.result, 'blocked'); assert.ok(writes.blockedWriteMethods.has('WEBSOCKET'));
 });
