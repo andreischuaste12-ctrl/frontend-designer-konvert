@@ -165,10 +165,13 @@ export async function installRequestGuards(context, { allowFile = false, allowPr
   // Hosts the page asked for. The proxy also sees Chromium's own background traffic; it is
   // held to the same policy but only page hosts are reported as blocked targets.
   const pageHosts = new Set();
+  // Hosts refused by the proxy at connection time (for example after a DNS rebinding).
+  // Responses for them are never handed to the page, whatever the client made of the refusal.
+  const refusedAtConnection = new Set();
   contextProxies.get(context)?.configure({
     allowPrivate, allowUnresolvedDns, lookup,
     targetCheck: (raw) => targetBlockReason(raw, { allowPrivate }),
-    onBlocked: (host) => { if (pageHosts.has(host)) blockedTargets.add(host); },
+    onBlocked: (host) => { refusedAtConnection.add(host); if (pageHosts.has(host)) blockedTargets.add(host); },
   });
   const resolvedReasons = new Map();
   const resolvedReason = (u) => {
@@ -220,6 +223,11 @@ export async function installRequestGuards(context, { allowFile = false, allowPr
       }
       // Chromium skips route handlers on later redirect hops. Never give it a 3xx.
       response = await route.fetch({ maxRedirects: 0, timeout: 30000 });
+      if (refusedAtConnection.has(networkHost(u.hostname))) {
+        blockedTargets.add(u.hostname);
+        await route.abort('blockedbyclient');
+        return;
+      }
       const location = response.headers().location;
       if (REDIRECT_STATUSES.has(response.status()) && location) {
         let next;

@@ -18,6 +18,7 @@ Every context created by `createInspectionContext()` uses a context-level HTTP p
 - For each `CONNECT` (and for absolute-form plain HTTP), the proxy resolves the name once, applies the IP policy to every answer, and opens the socket to the validated address. TLS stays end to end between the client and the origin, with the original hostname for SNI and certificate validation; the proxy relays bytes only.
 - Playwright 1.64 treats the former Windows-only `per-context` launch placeholder as unnecessary, so no global proxy is configured at launch.
 - Blocked connections are reported in `blockedTargets` only for hosts the page requested; Chromium's background traffic is held to the same policy without polluting reports.
+- A proxy refusal is not trusted to surface as a network error: `route.fetch()` returned the proxy's `CONNECT 403` as an ordinary 403 response, which Chromium 154 happened to reject (empty error body) but Chromium 156 rendered as a page. The guard therefore aborts any response for a host the proxy refused at connection time, and absolute-form refusals drop the connection instead of answering with a status.
 
 ## Evidence
 

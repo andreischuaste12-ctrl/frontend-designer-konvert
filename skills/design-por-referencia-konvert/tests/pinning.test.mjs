@@ -88,5 +88,5 @@ test('absolute-form HTTP is forwarded to the validated address and refused other
   });
   const port = origin.address().port;
   assert.deepEqual(await get(`http://plain.example.invalid:${port}/path?x=1`), { status: 200, body: `origin:plain.example.invalid:${port}:/path?x=1` });
-  assert.equal((await get(`http://private.example.invalid:${port}/`)).status, 403);
+  await assert.rejects(get(`http://private.example.invalid:${port}/`), /socket hang up|ECONNRESET/, 'a refused request gets no HTTP response that could pass for the origin');
 });

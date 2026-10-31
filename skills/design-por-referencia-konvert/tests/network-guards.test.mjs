@@ -181,7 +181,8 @@ test('the connection is pinned: a DNS answer that changes after the guard check 
     return [{ address: calls === 1 ? '127.0.0.1' : '169.254.169.254', family: 4 }];
   } });
   const page = await ctx.newPage();
-  await assert.rejects(page.goto(`http://rebind.test:${port}/`, { timeout: 10000 }));
+  const outcome = await page.goto(`http://rebind.test:${port}/`, { timeout: 10000 }).then((response) => `resolved with status ${response?.status()}`, () => 'rejected');
+  assert.equal(outcome, 'rejected', 'a rebound navigation must fail, not receive any response');
   assert.ok(calls >= 2, 'the proxy resolved the name itself at connection time');
   assert.ok(blockedTargets.has('rebind.test'));
   assert.equal(f.requests.length, before, 'a rebound name must not reach any server');

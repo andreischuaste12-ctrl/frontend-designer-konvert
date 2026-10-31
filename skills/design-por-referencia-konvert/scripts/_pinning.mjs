@@ -66,7 +66,9 @@ export async function startPinningProxy(initial = {}) {
     if (target.protocol !== 'http:') { res.writeHead(400).end(); return; }
     let address;
     try { address = await pin(target.hostname); }
-    catch (error) { refuse(target.hostname, error.message); res.writeHead(403, { 'content-type': 'text/plain' }).end('Blocked by audit network guard'); return; }
+    // Drop the connection instead of answering: a proxy-generated HTTP status could be
+    // mistaken for the origin's response by the client.
+    catch (error) { refuse(target.hostname, error.message); req.socket.destroy(); return; }
     const headers = { ...req.headers };
     delete headers['proxy-connection']; delete headers['proxy-authorization'];
     const upstream = http.request({ host: address, port: Number(target.port || 80), method: req.method, path: `${target.pathname}${target.search}`, headers, setHost: false }, (response) => {
