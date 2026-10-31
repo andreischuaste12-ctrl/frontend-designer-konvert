@@ -36,7 +36,7 @@ The example is intentionally incomplete and will be rejected. Avoid account IDs,
 node scripts/evaluate-routing.mjs --results .audit/routing-run.json
 ```
 
-The scorer writes `routing-score.json`, counts false positives and false negatives per skill, and exits 1 if either skill is below 90%. It exits 2 for invalid or incomplete runs.
+The scorer writes `routing-score.json`, counts false positives and false negatives per skill, and exits 1 if any skill in the run is below 90%. It exits 2 for invalid or incomplete runs.
 
 ## Audit quality
 
