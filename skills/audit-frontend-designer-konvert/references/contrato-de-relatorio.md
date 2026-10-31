@@ -11,6 +11,7 @@ O nível superior contém:
 - `project`: rótulo curto do projeto; não inclua URLs privadas, caminhos pessoais, IDs de conta nem dados de clientes.
 - `scope`: rotas, tarefas, viewports, estados e dimensões da auditoria cobertos.
 - `evidence_limits`: ferramentas, dados ou verificações indisponíveis e seu efeito na confiança.
+- `coverage` (opcional, recomendado): matriz do que foi realmente examinado; ver [matriz de cobertura](#matriz-de-cobertura).
 - `preserve`: pontos fortes e contratos do projeto inteiro que devem ficar intactos.
 - `findings`: lista de achados com os campos abaixo.
 - `handoff`: objeto com `proposed_skill` (`design-por-referencia-konvert`), `summary` conciso e `implementation_performed: false`; isso não autoriza mudanças não aprovadas.
@@ -55,9 +56,27 @@ node .agents/skills/audit-frontend-designer-konvert/scripts/validate-report.mjs 
 
 Execute na raiz do projeto auditado, trocando `.agents/skills` pela pasta onde a skill foi instalada (por exemplo `.claude/skills`). O script só lê arquivos e não precisa de dependências além do Node.js 20+. O validador confere campos, estados de dependência, IDs únicos, o espelhamento dos IDs no Markdown e sinais de dados privados (emails, tokens e parâmetros sensíveis bloqueiam; caminhos pessoais geram aviso). `--implementable --approved-ids UX-001,UX-002` lista a interseção entre achados elegíveis e IDs autorizados diretamente pelo usuário; sem IDs independentes, nenhum achado é liberado. A ferramenta não autentica a autorização, que deve ser confirmada na conversa. Ele não julga a qualidade do conteúdo; isso continua exigindo revisão.
 
+## Matriz de cobertura
+
+`scope` diz o que a auditoria pretendia cobrir; `coverage` registra o que foi **realmente examinado**, para que lacunas e omissões fiquem demonstráveis. É proporcional ao escopo combinado: inclua só as combinações de página ou fluxo, tarefa, estado e viewport que estavam no escopo, nunca o catálogo inteiro. Ausente, o relatório continua válido em `schema_version: 2`.
+
+| Campo | Valor |
+| --- | --- |
+| `area` | Página ou fluxo, como "Página de produto" ou "Checkout". |
+| `task` | Tarefa ou jornada, como "Comparar opções" ou "Recuperar de erro". |
+| `state` | `normal`, `carregando`, `erro`, `sucesso`, `vazio` ou `recuperação`. |
+| `viewport` | Largura ou classe de dispositivo, como "375 px", "1440 px" ou "todos". |
+| `stack` | Opcional; só quando identificada e relevante. |
+| `result` | `observed`, `not_observed`, `not_applicable` ou `blocked`. |
+| `evidence` | Obrigatório quando `observed`: captura, interação testada ou arquivo lido. |
+| `reason` | Obrigatório nos demais resultados: por que não foi observado, não se aplica ou ficou bloqueado. |
+| `findings` | Opcional; IDs de achados ligados à linha, somente com `observed`. |
+
+Use `not_observed` quando o estado existe mas não foi examinado (tempo, ferramenta, dado sintético), e `blocked` quando foi impedido (acesso, autorização, ambiente). Uma linha `observed` sem achado registra que nada relevante foi encontrado ali, e isso também é informação. Cada combinação de página, tarefa, estado e viewport aparece uma vez.
+
 ## Renderização em Markdown
 
-Cada achado usa um cabeçalho `### UX-001` seguido de itens `- **Rótulo:** valor`. Os rótulos verificados são `Prioridade`, `Local`, `Evidência observada`, `Impacto provável`, `Próximo passo`, `Critério de aceite`, `Dependência externa` e `Aprovado para implementação`. O validador normaliza espaços e quebras de linha nos campos textuais e aceita escapes Markdown comuns; os valores devem corresponder ao JSON. O estado da dependência usa `pendente`, `resolvida` ou `não aplicável`; aprovação usa `true` ou `false`.
+Cada achado usa um cabeçalho `### UX-001` seguido de itens `- **Rótulo:** valor`. Os rótulos verificados são `Prioridade`, `Local`, `Evidência observada`, `Impacto provável`, `Próximo passo`, `Critério de aceite`, `Dependência externa` e `Aprovado para implementação`. O validador normaliza espaços e quebras de linha nos campos textuais e aceita escapes Markdown comuns; os valores devem corresponder ao JSON. O estado da dependência usa `pendente`, `resolvida` ou `não aplicável`; aprovação usa `true` ou `false`. `Confiança` começa com `alta`, `média` ou `baixa`, seguida de ` — ` e do motivo do JSON; `Preservar` lista, em uma linha, todos os itens do `preserve` do achado. A seção `## O que preservar` contém todos os itens do `preserve` geral. Com `coverage`, a seção `## Cobertura` traz uma tabela com as colunas Página ou fluxo, Tarefa, Estado, Viewport, Stack, Resultado (`observado`, `não observado`, `não se aplica`, `bloqueado`), Evidência ou motivo e Achados, uma linha por item do JSON.
 
 Inclua o contexto do relatório e os limites de evidência, depois uma seção por achado com todos os campos obrigatórios, seguida dos itens a preservar do projeto inteiro e do handoff proposto. Mantenha IDs e valores do Markdown alinhados ao JSON. Mantenha os achados estritamente sobre UX/UI e psicologia do design. Não inclua edições de código-fonte nem descreva recomendações como trabalho concluído.
 
@@ -65,7 +84,7 @@ Inclua o contexto do relatório e os limites de evidência, depois uma seção p
 
 Veja o [relatório em Markdown](../examples/audit-report.example.md) sintético e o [relatório em JSON](../examples/audit-report.example.json) correspondente. Ambos usam detalhes de produto fictícios e não contêm pesquisa real nem resultados de usuário medidos.
 
-O Markdown e o JSON são verificados por ID, prioridade, aprovação, dependência e campos textuais principais; listas de preservação e equivalência semântica ainda exigem revisão humana. A checagem de privacidade é melhor esforço, não garantia.
+O Markdown e o JSON são verificados por ID, prioridade, aprovação, dependência, campos textuais principais, confiança, listas de preservação (de cada achado e geral) e linhas de cobertura. A pessoa aprova lendo o Markdown e a executora lê o JSON, então divergências bloqueiam a validação. Equivalência semântica ainda exige revisão humana. A checagem de privacidade é melhor esforço, não garantia.
 
 As [unidades de conhecimento](unidades-de-conhecimento.md) orientam a inspeção e a correspondência com os campos; apenas evidência efetivamente coletada pode integrar um achado.
 

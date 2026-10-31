@@ -175,19 +175,19 @@ Unidades para problemas recorrentes que não cabem em um único estado. Aplique 
 
 ## Erros e conexão
 
-### UXK-ERR-051 — Página não encontrada com status correto
+### UXK-ERR-051 — Página não encontrada que orienta a pessoa
 - **Contexto:** sites e aplicações web · rotas inexistentes · todas as stacks · mobile e desktop
 - **Estados:** erro
-- **Quando se aplica:** uma URL inexistente é acessada.
+- **Quando se aplica:** uma URL inexistente ou antiga é acessada.
 - **Exceções:** APIs sem interface para pessoas.
-- **Evidência a coletar:** status HTTP registrado pela captura (`capture-index.json`) para uma rota sintética inexistente e captura do conteúdo exibido.
-- **Método:** automático
+- **Evidência a coletar:** capturas em 375 e 1440 px do conteúdo exibido para uma rota sintética inexistente.
+- **Método:** inspeção
 - **Prioridade padrão:** P2
-- **Recomendação:** Responder com status 404, dizer em texto que a página não existe e oferecer busca e links para as seções principais.
-- **Critério de aceite:** Uma rota inexistente retorna HTTP 404, não 200, e mostra busca ou links para as seções principais.
-- **Preservar:** redirecionamentos 301 existentes.
+- **Recomendação:** Dizer em linguagem simples que o endereço não foi encontrado, manter o cabeçalho e a navegação do site e oferecer busca e links para as seções principais.
+- **Critério de aceite:** Numa rota sintética inexistente, a página explica em texto que o endereço não existe e mostra, sem rolagem em 375 px, busca ou links para as seções principais.
+- **Preservar:** redirecionamentos existentes e a configuração de respostas do servidor, que ficam fora desta auditoria de UX.
 - **Dependência externa:** não aplicável
-- **Métrica a monitorar:** saídas a partir da página 404.
+- **Métrica a monitorar:** saídas a partir da página de endereço não encontrado.
 - **Fonte:** não verificada — heurística editorial do projeto; sem pesquisa consultada
 
 ### UXK-ERR-052 — Queda de conexão sem perda do que foi digitado

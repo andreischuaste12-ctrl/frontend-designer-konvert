@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { isDeepStrictEqual } from 'node:util';
-import { validateSkillDirectories } from './skill-directory-contract.mjs';
+import { validateSkillDirectories, validateWorkflowTriggers } from './skill-directory-contract.mjs';
 import { validateAuditReport, compareMarkdownIds } from '../skills/audit-frontend-designer-konvert/scripts/validate-report.mjs';
 import { validateAuditCases } from './evaluate-audit.mjs';
 import { validateHandoffCase } from './check-handoff-scope.mjs';
@@ -28,6 +28,7 @@ const skillMetadata = await Promise.all(skillEntries.map(async (entry) => {
   return { directory: entry.name, name };
 }));
 errors.push(...validateSkillDirectories(skillMetadata));
+errors.push(...validateWorkflowTriggers(await fs.readFile(path.join(root, '.github/workflows/skill-tools.yml'), 'utf8'), skillNames, '.github/workflows/skill-tools.yml'));
 async function walk(dir) {
   for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
     if (entry.name.startsWith('.') || ['node_modules', 'coverage'].includes(entry.name)) continue;

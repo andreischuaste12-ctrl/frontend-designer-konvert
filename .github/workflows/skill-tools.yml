@@ -11,6 +11,7 @@ on:
       - '.gitattributes'
       - '.editorconfig'
       - 'skills/design-por-referencia-konvert/**'
+      - 'skills/create-frontend-from-zero-konvert/**'
       - '.github/**'
   pull_request:
     paths:
@@ -22,6 +23,7 @@ on:
       - '.gitattributes'
       - '.editorconfig'
       - 'skills/design-por-referencia-konvert/**'
+      - 'skills/create-frontend-from-zero-konvert/**'
       - '.github/**'
   workflow_dispatch:
 

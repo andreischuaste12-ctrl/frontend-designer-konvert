@@ -61,3 +61,17 @@ test('inconsistent grading is rejected instead of scored', () => {
   ];
   for (const runs of variants) assert.throws(() => scoreAudit(data, runs));
 });
+
+test('misses are split into declared coverage gaps and silent omissions', () => {
+  const runs = perfectRuns();
+  const first = runs[0];
+  const item = data.cases.find((c) => c.id === first.caseId);
+  const [kept, ...dropped] = first.matches;
+  runs[0] = { ...first, matches: [kept], findingsTotal: 1, declaredGaps: [dropped[0].expected] };
+  const score = scoreAudit(data, runs);
+  assert.equal(score.overall.declaredGaps, 1);
+  assert.equal(score.overall.silentOmissions, item.expected.length - 2, 'every other miss in that run is silent');
+  assert.equal(scoreAudit(data, perfectRuns()).overall.silentOmissions, 0);
+  assert.throws(() => scoreAudit(data, [{ ...runs[0], declaredGaps: [kept.expected] }, ...runs.slice(1)]), /declaredGaps/, 'a matched issue cannot also be a gap');
+  assert.throws(() => scoreAudit(data, [{ ...runs[0], declaredGaps: ['NOPE'] }, ...runs.slice(1)]), /declaredGaps/);
+});

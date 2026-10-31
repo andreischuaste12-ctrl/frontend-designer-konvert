@@ -2,7 +2,11 @@
   "schema_version": 2,
   "report_id": "SYNTH-001",
   "project": "página de produto fictícia",
-  "stack": { "name": "HTML sintético", "level": "confirmed", "reason": "Arquivos de exemplo inspecionados para esta demonstração." },
+  "stack": {
+    "name": "HTML sintético",
+    "level": "confirmed",
+    "reason": "Arquivos de exemplo inspecionados para esta demonstração."
+  },
   "scope": {
     "tasks": [
       "comparar opções de produto",
@@ -21,6 +25,78 @@
   "evidence_limits": [
     "Apenas briefing sintético e exemplo renderizado.",
     "Nenhuma pesquisa com usuários representativos foi usada."
+  ],
+  "coverage": [
+    {
+      "area": "Página de produto",
+      "task": "Comparar opções",
+      "state": "normal",
+      "viewport": "375 px",
+      "stack": "HTML sintético",
+      "result": "observed",
+      "evidence": "Captura sintética route-01__375__light.png e leitura dos rótulos do seletor.",
+      "findings": [
+        "UX-002"
+      ]
+    },
+    {
+      "area": "Página de produto",
+      "task": "Comparar opções",
+      "state": "normal",
+      "viewport": "1440 px",
+      "stack": "HTML sintético",
+      "result": "observed",
+      "evidence": "Captura sintética route-01__1440__light.png.",
+      "findings": [
+        "UX-002"
+      ]
+    },
+    {
+      "area": "Página de produto",
+      "task": "Comparar opções",
+      "state": "vazio",
+      "viewport": "todos",
+      "result": "not_applicable",
+      "reason": "O produto sintético sempre tem opções; não existe estado sem opções."
+    },
+    {
+      "area": "Página de produto",
+      "task": "Adicionar ao carrinho",
+      "state": "normal",
+      "viewport": "375 px",
+      "stack": "HTML sintético",
+      "result": "observed",
+      "evidence": "Captura sintética e percurso por teclado até o botão de compra.",
+      "findings": [
+        "UX-001",
+        "UX-003"
+      ]
+    },
+    {
+      "area": "Página de produto",
+      "task": "Adicionar ao carrinho",
+      "state": "sucesso",
+      "viewport": "375 px",
+      "stack": "HTML sintético",
+      "result": "observed",
+      "evidence": "Captura do carrinho com o item sintético adicionado."
+    },
+    {
+      "area": "Página de produto",
+      "task": "Adicionar ao carrinho",
+      "state": "carregando",
+      "viewport": "375 px",
+      "result": "not_observed",
+      "reason": "A resposta sintética é instantânea; o estado de carregamento não aparece sem simular rede lenta, o que ficou fora deste exemplo."
+    },
+    {
+      "area": "Página de produto",
+      "task": "Adicionar ao carrinho",
+      "state": "erro",
+      "viewport": "375 px",
+      "result": "blocked",
+      "reason": "O exemplo não oferece forma autorizada de provocar falha ao adicionar ao carrinho."
+    }
   ],
   "preserve": [
     "Dados atuais do produto e comportamento de seleção.",
