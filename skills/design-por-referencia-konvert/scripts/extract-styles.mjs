@@ -5,7 +5,7 @@
 import { parseArgs } from 'node:util';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { loadPlaywright, launch, checkUrl, installRequestGuards, createInspectionContext, targetBlockReason, ensureDir, metricsInit, preparePage, redactUrl, redactText, fail } from './_common.mjs';
+import { loadPlaywright, launch, checkUrl, installRequestGuards, createInspectionContext, targetBlockReason, ensureDir, metricsInit, preparePage, redactUrl, redactText, fail, writePrivateArtifact } from './_common.mjs';
 
 const HELP = `Uso: node extract-styles.mjs --url <url> [opções]
 
@@ -21,9 +21,11 @@ const HELP = `Uso: node extract-styles.mjs --url <url> [opções]
   --max-per <n>      Exemplos por categoria (padrão: 12).
   --selectors <css>  Seletores extras, separados por vírgula (categoria "custom").
   --axe              Executa verificação automática opcional; saída resumida sem HTML ou seletores.
+  --axe-details <arquivo> Com --axe, grava seletores dos elementos com falha em arquivo privado novo,
+                     ignorado pelo Git e fora da saída de relatórios; não compartilhe.
   --timeout <ms>     Timeout de navegação (padrão: 30000).
 
-Aviso: falhas e timeouts de DNS são bloqueados por padrão; --allow-unresolved-dns permite prosseguir sem validação de IP. Endereços não são fixados; não é uma sandbox de rede.
+Aviso: falhas e timeouts de DNS são bloqueados por padrão; --allow-unresolved-dns permite prosseguir sem validação de IP. Cada conexão é fixada no endereço validado por um proxy local; não é uma sandbox de rede.
 Saída: computed-styles.json, styles-summary.md, aria-snapshot.yml (quando suportado).`;
 
 const { values: a } = parseArgs({
@@ -40,6 +42,7 @@ const { values: a } = parseArgs({
     'max-per': { type: 'string', default: '12' },
     selectors: { type: 'string', default: '' },
     axe: { type: 'boolean', default: false },
+    'axe-details': { type: 'string' },
     timeout: { type: 'string', default: '30000' },
     help: { type: 'boolean', default: false },
   },
@@ -49,6 +52,7 @@ if (a.help || !a.url) {
   process.exit(a.help ? 0 : 1);
 }
 
+if (a['axe-details'] && !a.axe) fail('--axe-details exige --axe.');
 const url = checkUrl(a.url, { allowFile: a['allow-file'], allowPrivate: a['allow-private'] });
 const width = Number(a.width) || 1440;
 const scheme = a.scheme === 'dark' ? 'dark' : 'light';
@@ -359,7 +363,7 @@ try {
 } catch {
   /* versão do Playwright sem ariaSnapshot */
 }
-let axeReport = null;
+let axeReport = null, axeDetails = null;
 if (a.axe) {
   try {
     const { AxeBuilder } = await import('@axe-core/playwright');
@@ -370,6 +374,16 @@ if (a.axe) {
       nodeCount: Array.isArray(rule.nodes) ? rule.nodes.length : 0,
     }));
     axeReport = { tool: 'axe-core', generatedAt: new Date().toISOString(), violations: summarize(result.violations), incomplete: summarize(result.incomplete), limitations: 'Automated checks are partial and do not certify accessibility compliance; node content and selectors are omitted for privacy.' };
+    if (a['axe-details']) {
+      // Selectors locate the failing elements so the finding is actionable; HTML snippets stay out.
+      const selector = (part) => String(Array.isArray(part) ? part.join(' >>> ') : part).slice(0, 300);
+      const locate = (rows) => rows.map((rule) => ({
+        id: /^[a-z0-9-]+$/.test(rule.id) ? rule.id : 'unknown',
+        impact: ['minor', 'moderate', 'serious', 'critical'].includes(rule.impact) ? rule.impact : null,
+        targets: (Array.isArray(rule.nodes) ? rule.nodes : []).slice(0, 50).map((node) => (Array.isArray(node.target) ? node.target : []).map(selector)),
+      }));
+      axeDetails = { tool: 'axe-core', private: true, note: 'Seletores podem revelar a estrutura interna da página; mantenha este arquivo local e não o compartilhe.', violations: locate(result.violations), incomplete: locate(result.incomplete) };
+    }
   } catch {
     await browser.close();
     fail('Verificação axe indisponível. Instale as dependências fixadas e confira a página; detalhes e conteúdo foram omitidos.', 3);
@@ -387,11 +401,16 @@ const safeData = redactValues(data);
 Object.assign(data, safeData);
 const meta = {
   tool: 'extract-styles.mjs', url: redactUrl(url.href), status: resp ? resp.status() : null, width, scheme,
-  serviceWorkersBlocked: true, axeRequested: a.axe, trackingAllowed: a['allow-tracking'], allowUnresolvedDns: a['allow-unresolved-dns'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(), blockedRedirects: [...blockedRedirects].sort(), trackingBlocked: [...trackingBlocked].sort(), blockedTargets: [...blockedTargets].sort(),
+  serviceWorkersBlocked: true, axeRequested: a.axe, axeDetailsRequested: Boolean(a['axe-details']), trackingAllowed: a['allow-tracking'], allowUnresolvedDns: a['allow-unresolved-dns'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(), blockedRedirects: [...blockedRedirects].sort(), trackingBlocked: [...trackingBlocked].sort(), blockedTargets: [...blockedTargets].sort(),
   at: new Date().toISOString(),
 };
 await fs.writeFile(path.join(outDir, 'computed-styles.json'), JSON.stringify({ meta, ...safeData }, null, 2), 'utf8');
 if (axeReport) await fs.writeFile(path.join(outDir, 'a11y-findings.json'), JSON.stringify(axeReport, null, 2), 'utf8');
+if (axeDetails) {
+  try { await writePrivateArtifact({ repoHint: path.dirname(path.resolve(a['axe-details'])), outputDir: outDir, requested: a['axe-details'], data: axeDetails }); }
+  catch { fail('Arquivo privado do axe recusado: use arquivo novo em diretório existente de um repositório Git, ignorado pelo Git e fora da saída de relatórios. Caminho omitido.'); }
+  console.log('Seletores do axe gravados em arquivo privado; revise localmente e não compartilhe.');
+}
 
 const fails = safeData.elements.filter((e) => e.contrastStatus === 'falha');
 const indet = safeData.elements.filter((e) => e.contrastStatus === 'indeterminado');

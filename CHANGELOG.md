@@ -11,9 +11,12 @@ Notable changes to the repository are recorded here. The automation package vers
 
 - Add product-specific UX guidance, synthetic stack-marker evaluation fixtures, safe local stack detection and an opt-in accessibility summary without DOM snippets.
 - Add a reference availability workflow, a DNS pinning investigation, release-readiness checks and contributor automation; accessibility, platform integration and agent quality still require real-world validation.
+- Add 20 stack-specific knowledge units (Shopify, VTEX IO, WordPress/WooCommerce, React/Next.js, static HTML) written from reference themes and official documentation read at recorded commits.
+- Add `extract-styles --axe-details <file>`, which writes failing-element selectors only to a new Git-ignored private file outside the report output.
 
 ### Security
 
+- Pin every inspection connection to the validated address: contexts route `route.fetch()` and browser sockets through a local proxy that resolves once, validates every answer and connects to that address, closing the DNS rebinding gap documented in ADR 0001. WebRTC/UDP remains outside the proxy.
 - Require the latest completed successful CI run and its full matrix for the exact main commit before creating a release; GitHub branch protection and live workflow behavior require separate verification.
 
 ### Breaking
@@ -26,7 +29,12 @@ Notable changes to the repository are recorded here. The automation package vers
 
 - Allow an explicitly requested private source map only in a new Git-ignored file outside report output; anonymized reports remain the default.
 - Clarify comparison mapping, normalize Markdown fields and label report eligibility without implying user authorization.
-- Report coverage in CI without a percentage gate until its scope and an achievable baseline are established.
+- Rewrite all knowledge units with problem-specific applicability, exceptions, evidence, observable acceptance criteria and justified method and priority; 55 of 82 units cite WCAG 2.2 or official sources read at a recorded commit, and the rest are marked as unverified editorial heuristics. Four duplicate units were removed (UXK-CHK-055, UXK-FRM-051, UXK-FRM-052, UXK-DSH-052).
+- The knowledge validator now rejects text copied between units, acceptance criteria that restate the recommendation, verified sources without a commit or URL, stack cells citing units that do not name the stack, state cells citing units without that state, and `verificação` cells citing unverified units.
+- The coverage map now distinguishes `orientação`, `verificação` and `não se aplica`, and fills stack cells only with stack-specific units.
+- Stack adapters name verified token, template and command locations for each stack.
+- Coverage is gated in CI (lines 80%, branches 85%, functions 87%) and includes the skill unit tests; the release gate also requires the `fixture-react` job; Dependabot covers the React fixture.
+- The reference checker retries with a one-byte GET when a server refuses HEAD and fails the weekly job on 404 or 410.
 
 ## 0.1.0 — 2026-10-31
 

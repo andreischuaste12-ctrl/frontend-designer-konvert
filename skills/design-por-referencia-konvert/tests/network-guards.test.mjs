@@ -156,3 +156,34 @@ test('names resolving to forbidden addresses are blocked before the browser requ
   assert.deepEqual(f.requests, [], 'a guarded name must not reach any server');
   await ctx.close();
 });
+
+test('the connection is pinned: a DNS answer that changes after the guard check never reaches a server', { timeout: 30000 }, async (t) => {
+  const f = await fixture(t);
+  const port = new URL(f.url).port;
+  // Control: the name exists only in the injected resolver, so the page loads only if
+  // route.fetch() goes through the pinning proxy and connects to the validated address.
+  const stableTargets = new Set();
+  const stable = await createInspectionContext(f.browser);
+  await installRequestGuards(stable, { blockedTargets: stableTargets, lookup: async (host) => { if (host !== 'stable.test') throw new Error('ENOTFOUND'); return [{ address: '127.0.0.1', family: 4 }]; } });
+  const stablePage = await stable.newPage();
+  assert.equal((await stablePage.goto(`http://stable.test:${port}/`)).status(), 200);
+  assert.ok(f.requests.includes('/'), 'the pinned connection reached the validated loopback server');
+  await stable.close();
+
+  // Rebinding: the guard's check sees loopback, the connection-time answer is metadata.
+  const before = f.requests.length;
+  let calls = 0;
+  const blockedTargets = new Set();
+  const ctx = await createInspectionContext(f.browser);
+  await installRequestGuards(ctx, { blockedTargets, lookup: async (host) => {
+    if (host !== 'rebind.test') throw new Error('ENOTFOUND');
+    calls++;
+    return [{ address: calls === 1 ? '127.0.0.1' : '169.254.169.254', family: 4 }];
+  } });
+  const page = await ctx.newPage();
+  await assert.rejects(page.goto(`http://rebind.test:${port}/`, { timeout: 10000 }));
+  assert.ok(calls >= 2, 'the proxy resolved the name itself at connection time');
+  assert.ok(blockedTargets.has('rebind.test'));
+  assert.equal(f.requests.length, before, 'a rebound name must not reach any server');
+  await ctx.close();
+});
