@@ -6,7 +6,7 @@ This repository contains two complementary skills for coding agents. It is a ski
 
 ### `audit-frontend-designer-konvert`
 
-Use it as a read-only reviewer to understand the product and its audience, inspect user journeys, UX/UI, accessibility, performance, SEO, and tracking when applicable, then produce a structured Markdown and JSON report. It never edits the audited project.
+Use it as a read-only UX/UI design reviewer. It studies audience needs, user journeys, visual and interaction design, accessibility as experienced in the interface, and evidence-informed design psychology, then produces a structured Markdown and JSON report. It never edits the audited project.
 
 Start with this skill when the request is to audit, evaluate, or improve an existing interface. It does not require a visual reference.
 

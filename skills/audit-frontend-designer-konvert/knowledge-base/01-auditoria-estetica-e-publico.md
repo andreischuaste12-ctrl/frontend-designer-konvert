@@ -2,27 +2,27 @@
 
 ## Objetivo desta etapa
 
-Antes de sugerir uma nova direção visual ou alterar código, entender quem precisa usar o site, em que contexto, para fazer o quê, e como a interface atual ajuda ou atrapalha essa tarefa. A auditoria estética avalia a aparência junto com o efeito dela sobre compreensão, leitura, confiança, orientação e ação.
+Antes de sugerir uma direção de design, entender quem precisa usar o site, em que contexto, para fazer o quê, e como a interface atual ajuda ou atrapalha essa tarefa. A auditoria avalia UX, UI e efeitos perceptivos e cognitivos observáveis: compreensão, leitura, orientação, confiança e ação.
 
-O resultado desta etapa é um diagnóstico verificável: contexto e público provável, jornada prioritária, qualidades que merecem ser preservadas, problemas observados, hipóteses ainda incertas e oportunidades ordenadas por impacto. Não é uma nota de beleza, uma pesquisa de mercado completa nem uma promessa de conversão.
+O resultado desta etapa é um diagnóstico verificável de design: contexto e necessidades do público provável, jornada prioritária, qualidades que merecem ser preservadas, problemas observados e hipóteses de experiência a validar. Não é uma nota de beleza, diagnóstico psicológico individual ou promessa de comportamento universal.
 
 ## Regra de trabalho
 
-**Observar antes de interpretar; interpretar antes de recomendar; recomendar antes de implementar.**
+**Observar antes de interpretar; interpretar antes de recomendar; recomendar antes de propor o handoff.**
 
 Mantenha distintas estas categorias:
 
-- **Observação:** algo que pode ser apontado diretamente na página ou no código. Ex.: o botão principal tem o mesmo peso visual que três links secundários.
+- **Observação:** algo que pode ser apontado diretamente na interface ou numa interação renderizada. Ex.: o botão principal tem o mesmo peso visual que três links secundários.
 - **Interpretação:** efeito plausível sobre a tarefa. Ex.: a pessoa pode ter dificuldade para reconhecer o próximo passo.
 - **Hipótese:** explicação que precisa de validação. Ex.: novos visitantes não entendem a diferença entre dois planos.
 - **Evidência externa:** dado, estudo ou padrão documentado por uma fonte identificável.
-- **Resultado medido:** comportamento observado em teste, analytics ou pesquisa real, com método e contexto.
+- **Resultado validado:** comportamento ou compreensão observados em pesquisa ou teste de usabilidade, com método e contexto.
 
 Uma inspeção de interface pode levantar hipóteses; sozinha, não demonstra o que usuários pensam ou fazem.
 
 ## 1. Reconhecer o site antes de avaliar
 
-Leia o projeto e percorra o site para estabelecer contexto. Não use apenas o nome da empresa, a primeira dobra ou o aspecto visual como substitutos do entendimento do produto.
+Leia a apresentação do produto, o conteúdo e o design system disponível; depois percorra a interface para estabelecer contexto. Não use apenas o nome da empresa, a primeira dobra ou o aspecto visual como substitutos do entendimento do produto.
 
 Registre, se possível:
 
@@ -30,7 +30,7 @@ Registre, se possível:
 2. **Modelo de uso:** aquisição, descoberta, comparação, compra, cadastro, tarefa recorrente, suporte, leitura, entretenimento ou aprendizagem.
 3. **Páginas e entradas:** página inicial, página de campanha, busca, deep link, anúncio, indicação, acesso autenticado.
 4. **Ação de maior valor para a pessoa:** encontrar informação, avaliar uma opção, concluir uma transação, entrar em contato, criar algo etc.
-5. **Ação de maior valor para o negócio:** registrar como objetivo do produto, sem deixar que apague as necessidades do usuário.
+5. **Necessidade principal da pessoa:** o que ela quer entender ou realizar, e qual resultado da interface mostraria que a tarefa ficou clara.
 6. **Restrições conhecidas:** conteúdo disponível, identidade visual, stack, integrações, região, idioma, dispositivos e limitações técnicas.
 7. **Estado do produto:** protótipo, produto lançado, redesign, landing page nova ou manutenção de sistema existente.
 
@@ -71,12 +71,23 @@ Esses grupos são lentes para inspecionar a experiência, não personas confirma
 
 Registre o nível de confiança junto às conclusões:
 
-1. **Evidência direta:** pesquisa com participantes, suporte observado, entrevistas, testes de tarefa ou analytics interpretados com contexto.
+1. **Evidência direta:** pesquisa com participantes, entrevistas, testes de compreensão e tarefas de usabilidade, com método e contexto registrados.
 2. **Evidência do produto:** brief, documentação, conteúdo, requisitos e objetivos fornecidos pela equipe.
 3. **Indício da interface:** rótulos, fluxos, estrutura e funcionalidades sugerem um público ou necessidade.
 4. **Hipótese do auditor:** interpretação razoável, ainda sem confirmação.
 
-Não descreva nível 3 ou 4 como fato sobre clientes. Recomende a forma mais simples de validar hipóteses relevantes: teste de compreensão, teste de tarefa, conversa com suporte/vendas, análise de busca, revisão de dados existentes ou experimento apropriado.
+Não descreva nível 3 ou 4 como fato sobre clientes. Recomende a forma mais simples de validar hipóteses relevantes: teste de compreensão, teste de tarefa ou conversa com pessoas representativas do público. Não use princípios cognitivos como prova de que uma pessoa reagirá de determinada forma.
+
+## 2A. Psicologia aplicada ao design
+
+Use conceitos psicológicos para formular perguntas de design verificáveis, nunca para rotular pessoas ou justificar uma solução automaticamente.
+
+- **Percepção e atenção:** contraste, agrupamento, proximidade, figura/fundo, alinhamento e hierarquia podem ajudar a pessoa a encontrar relações e próximos passos. Verifique o que realmente se destaca na tela e em diferentes estados.
+- **Carga cognitiva e memória de trabalho:** instruções simultâneas, escolhas sem contexto e informação fragmentada podem aumentar esforço. Observe se a interface organiza a tarefa, revela detalhes no momento adequado e permite retomar o progresso.
+- **Reconhecimento e modelos mentais:** rótulos, ícones e padrões familiares podem reduzir a necessidade de lembrar comandos. Confirme se são compreendidos pelo público em questão; familiaridade presumida não é evidência.
+- **Escolha e incerteza:** opções, padrões preselecionados, custos e consequências devem ser legíveis e comparáveis. Evite urgência falsa, escolhas escondidas, confirmação enviesada ou outras formas de pressão manipulativa.
+- **Confiança e emoção percebida:** consistência, transparência e feedback podem influenciar segurança percebida. Descreva pistas visuais observadas e trate sentimentos atribuídos ao público como hipóteses até testá-los.
+- **Diferenças individuais e contexto:** experiência, cultura, idioma, acessibilidade e situação de uso mudam a interpretação. Não trate leis de UX, vieses ou heurísticas como regras determinísticas para todos.
 
 ## 3. Entender consumo e situação de uso
 
@@ -183,7 +194,7 @@ Observe descoberta, navegação entre tópicos, leitura longa, legibilidade, aut
 
 ## 6. Priorização e notas diagnósticas
 
-Não transforme impressões subjetivas em métricas de preferência ou de resultado do negócio. Quando uma nota de 0 a 10 ajudar a comparar dimensões visuais, use-a como resumo diagnóstico, sempre acompanhada de evidência observável, escopo e itens não verificados. Não calcule média geral: ela pode esconder uma barreira séria atrás de dimensões fortes.
+Não transforme impressões subjetivas em fatos sobre preferência ou psicologia dos usuários. Quando uma nota de 0 a 10 ajudar a comparar dimensões de design, use-a como resumo diagnóstico, sempre acompanhada de evidência observável, escopo e itens não verificados. Não calcule média geral: ela pode esconder uma barreira séria atrás de dimensões fortes.
 
 Use esta âncora comum: **0** = ausente ou impede a tarefa; **2** = barreiras graves e recorrentes; **4** = funciona em parte, com fricção importante; **6** = utilizável, com falhas visíveis; **8** = forte, com problemas menores; **10** = consistente em todos os critérios cobertos no escopo. Marque **N/V** quando faltam evidências suficientes; não converta desconhecimento em nota baixa nem alta.
 
@@ -203,7 +214,7 @@ Para cada achado, atribua rótulos simples:
 - **Impacto:** alto, médio, baixo — qual parte da tarefa, compreensão, confiança ou acesso é afetada?
 - **Alcance:** central, frequente, ocasional — quantas rotas ou momentos parecem envolvidos?
 - **Confiança:** evidência direta, indício, hipótese — quão sustentada é a explicação?
-- **Esforço/dependência:** pequeno, moderado, grande; há conteúdo, produto ou backend necessário?
+- **Esforço/dependência:** pequeno, moderado, grande; depende de copy, decisão de design ou validação com usuários?
 - **Urgência:** bloqueia tarefa/acesso, cria risco, degrada qualidade, oportunidade visual.
 
 Ordem sugerida: barreiras de acesso e falhas que bloqueiam a tarefa; clareza e confiança para decisões; problemas frequentes de navegação e conteúdo; consistência e refinamento estético; experimentações de baixo impacto. Revise a ordem conforme o contexto do produto e o risco real. Uma nota alta nunca deve rebaixar um bloqueio crítico.
@@ -228,7 +239,7 @@ Use uma linha por achado:
 > **Público/contexto:** visitantes novos que ainda não conhecem os limites do produto.  
 > **Evidência/confiança:** observação da interface; hipótese sobre hesitação, ainda não confirmada.  
 > **Recomendação:** explicar o caso de uso e o limite principal de cada plano perto do nome e do preço; manter comparação detalhada acessível.  
-> **Validação:** teste de compreensão da diferença entre planos; depois, observar avanço para a etapa seguinte sem aumentar seleção inadequada.
+> **Validação:** teste de compreensão para verificar se as pessoas conseguem explicar a diferença entre planos e escolher com base nas próprias necessidades.
 
 ## 8. Padrões de erro na auditoria
 
@@ -240,7 +251,7 @@ Use uma linha por achado:
 - Confundir novidade, minimalismo ou animação com qualidade.
 - Reduzir conteúdo sem verificar o que a pessoa precisa para decidir.
 - Usar uma nota geral de UX/estética que esconde problemas críticos e diferenças entre páginas.
-- Prometer aumento de conversão sem hipótese mensurável e validação.
+- Tratar uma lei de UX ou efeito cognitivo como explicação universal sem observação ou validação.
 - Fazer apenas uma auditoria desktop, visual e com mouse.
 
 ## 9. Modelo de síntese para entregar antes do redesign

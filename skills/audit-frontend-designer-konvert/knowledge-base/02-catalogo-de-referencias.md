@@ -12,7 +12,7 @@ Para cada busca:
 4. Registre URL, página/tela examinada, data de consulta, padrão observado e ideia que será adaptada.
 5. Confirme qualquer requisito de acessibilidade, plataforma, licença ou comportamento em fontes apropriadas.
 
-Separe sempre **inspiração visual**, **padrão observado**, **orientação especializada**, **norma técnica** e **evidência de resultado**. Uma galeria mostra exemplos publicados, mas não prova que o padrão aumentou conversão, é acessível ou funciona para o público do projeto.
+Separe sempre **inspiração visual**, **padrão observado**, **orientação especializada** e **evidência de experiência**. Uma galeria mostra exemplos publicados, mas não prova que um padrão é compreensível, acessível ou adequado ao público do projeto.
 
 ## Mapa rápido por pergunta
 
@@ -26,7 +26,7 @@ Separe sempre **inspiração visual**, **padrão observado**, **orientação esp
 | Como explorar estilos visuais diferentes? | Awwwards, Godly, Curated, Best Website Gallery, Admire The Web, The FWA | Direção visual, craft e interação; não evidência de usabilidade |
 | Como encontrar ideias e trabalhos de design? | Cosmos, Designspiration, Muzli, Abduzeedo, Savee, Dribbble, Behance | Exploração e repertório visual |
 | Como testar uma ideia de interface em código? | CodePen, Codrops, Aceternity UI, Magic UI, Uiverse | Demos, experimentos e componentes implementáveis; conferir qualidade e licença |
-| Como avaliar usabilidade e persuasão? | Baymard, NN/g, GoodUI, Growth.Design | Pesquisa, heurísticas, exemplos e explicações de comportamento |
+| Como estudar compreensão, carga cognitiva e persuasão ética? | Baymard, NN/g, GoodUI, Growth.Design, Laws of UX | Heurísticas, pesquisa e exemplos de comportamento para formular hipóteses de design |
 
 ## A. Comércio eletrônico e temas de loja
 
@@ -85,7 +85,7 @@ Separe sempre **inspiração visual**, **padrão observado**, **orientação esp
 
 ## F. Componentes, experimentos e código de referência
 
-- [CodePen](https://codepen.io/) — demonstrações de HTML, CSS e JavaScript. Verifique acessibilidade, desempenho, dependências, licença e compatibilidade antes de incorporar.
+- [CodePen](https://codepen.io/) — demonstrações de interfaces, componentes e interações. Verifique acessibilidade, dependências, licença e compatibilidade antes de usar como referência.
 - [Codrops](https://tympanus.net/codrops/) — tutoriais e experimentos de front-end, interação e animação. Demos experimentais podem exigir adaptação para produção e acessibilidade.
 - [Aceternity UI](https://ui.aceternity.com/) — componentes e efeitos para interfaces React/Tailwind. Avalie dependências, suporte, estados, movimento e licença para o contexto do projeto.
 - [Magic UI](https://magicui.design/) — componentes e efeitos de interface, com foco em projetos React/Tailwind. Revise implementação e acessibilidade antes de usar.
@@ -93,22 +93,20 @@ Separe sempre **inspiração visual**, **padrão observado**, **orientação esp
 - [Carbon Design System](https://www.carbondesignsystem.com/) — sistema de design documentado, com componentes, tokens e orientações. Útil para estudar consistência e documentação; a adoção direta depende do produto e da stack.
 - [Component Gallery](https://component.gallery/) — comparação entre componentes de sistemas de design existentes.
 
-## G. Usabilidade, comportamento e crescimento
+## G. UX, psicologia e comportamento
 
 - [Nielsen Norman Group — Articles](https://www.nngroup.com/articles/) — artigos e orientação sobre usabilidade, pesquisa, navegação, leitura e avaliação. Procure o tema específico e consulte o método e contexto da recomendação.
 - [GoodUI](https://goodui.org/) — exemplos e ideias de interface associadas a experimentos. Verifique contexto, amostra e resultado original antes de aplicar uma “boa prática” como regra.
-- [Growth.Design](https://growth.design/) — estudos de caso e narrativas visuais sobre produto, comportamento e crescimento. Use como material didático; confirme a evidência original e não infira causalidade além do caso descrito.
+- [Growth.Design](https://growth.design/) — estudos de caso e narrativas visuais sobre produto e comportamento. Use para formular perguntas sobre compreensão, escolha e fricção; confirme a evidência original e não infira causalidade além do caso descrito.
 - [Baymard Institute — Blog](https://baymard.com/blog) — especialmente relevante para ecommerce, formulários e checkout.
 - [Laws of UX](https://lawsofux.com/) — conceitos cognitivos resumidos. Use como pergunta para investigar, não como lei determinística sobre cada usuário.
 
-## H. Normas, acessibilidade e documentação técnica complementar
+## H. Acessibilidade e padrões de interação
 
-Estas fontes não substituem as galerias; elas ajudam a verificar implementação e requisitos:
+Estas fontes complementam a análise de UX e dos aspectos de acessibilidade percebidos na interface:
 
 - [WCAG 2.2 — W3C](https://www.w3.org/TR/WCAG22/) — critérios normativos de acessibilidade web.
 - [WAI-ARIA Authoring Practices Guide](https://www.w3.org/WAI/ARIA/apg/) — padrões de interação acessíveis para widgets comuns.
-- [MDN Web Docs](https://developer.mozilla.org/) — documentação da plataforma web, HTML, CSS, JavaScript e acessibilidade.
-- [web.dev](https://web.dev/) — guias de desempenho, acessibilidade e desenvolvimento web.
 - [The A11Y Project](https://www.a11yproject.com/) — listas de verificação e explicações práticas.
 - [WebAIM](https://webaim.org/resources/) — ferramentas e materiais de acessibilidade, inclusive contraste.
 - [GOV.UK Design System](https://design-system.service.gov.uk/) — componentes e orientações detalhadas para serviços digitais.
@@ -132,4 +130,4 @@ Como validar a decisão no produto real:
 
 ## Critério de seleção
 
-Uma referência é útil quando esclarece uma decisão concreta e é suficientemente comparável ao contexto. Não escolha apenas pelo apelo visual. Considere conteúdo, intenção, marca, dispositivo, acessibilidade, manutenção, restrições técnicas e evidência disponível. Pesquise a página no momento do trabalho; o catálogo indica onde procurar, mas não afirma que os sites ou exemplos permanecem iguais.
+Uma referência é útil quando esclarece uma decisão concreta e é suficientemente comparável ao contexto. Não escolha apenas pelo apelo visual. Considere conteúdo, intenção, marca, dispositivo, acessibilidade, contexto cognitivo e evidência disponível. Pesquise a página no momento do trabalho; o catálogo indica onde procurar, mas não afirma que os sites ou exemplos permanecem iguais.

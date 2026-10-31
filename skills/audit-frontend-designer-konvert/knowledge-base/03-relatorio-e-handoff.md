@@ -21,9 +21,9 @@ Registre componentes, conteúdo, comportamento, tokens, contratos de dados, inte
 
 ## Aprovação e dependências
 
-Cada achado deve informar `approved_for_implementation`. Use `false` por padrão. Só marque `true` quando o usuário tiver aprovado aquele achado ou pedido explicitamente a mudança correspondente. Se uma decisão depende de dados, acesso, regra de negócio, consentimento ou aprovação de terceiro, descreva em `requires_external_data_or_approval` e mantenha a aprovação bloqueada até a dependência ser resolvida.
+Cada achado deve informar `approved_for_implementation`. Use `false` por padrão. Só marque `true` quando o usuário tiver aprovado aquele achado ou pedido explicitamente a mudança correspondente. Se uma decisão depende de conteúdo, diretrizes da marca, pesquisa com usuários ou aprovação de outra pessoa, descreva em `requires_external_data_or_approval` e mantenha a aprovação bloqueada até a dependência ser resolvida.
 
-O próximo passo descreve uma ação possível; sua presença não significa autorização. Critérios de aceite devem ser observáveis e proporcionais ao achado. Métricas de negócio ficam como hipótese até serem medidas com fonte e método adequados.
+O próximo passo descreve uma ação possível; sua presença não significa autorização. Critérios de aceite devem ser observáveis e ligados à compreensão, percepção, esforço ou conclusão da tarefa. Efeitos psicológicos não testados permanecem hipóteses, nunca fatos sobre todas as pessoas.
 
 ## Arquivos e handoff
 

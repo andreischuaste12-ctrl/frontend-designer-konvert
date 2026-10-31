@@ -9,7 +9,7 @@
   },
   "evidence_limits": [
     "Synthetic product brief and rendered example only.",
-    "No analytics or representative user research was used."
+    "No representative user research was used."
   ],
   "preserve": [
     "Current product data and selection behavior.",
@@ -22,7 +22,7 @@
       "priority": "P1",
       "location": "fictional product detail page, price and purchase panel",
       "evidence_observed": "In the synthetic flow, delivery cost appears only after adding the item to the cart.",
-      "probable_impact": "Shoppers may postpone a decision or encounter an unexpected cost. Conversion impact is unmeasured.",
+      "probable_impact": "Shoppers may postpone a decision or encounter an unexpected cost; this effect is a hypothesis, not a measured outcome.",
       "confidence": { "level": "medium", "reason": "The sequence is visible in the supplied synthetic flow; user impact is a hypothesis." },
       "preserve": ["Shipping rules", "Total-price calculation", "Checkout contract", "Purchase action"],
       "next_step": "Ask the product owner for approved shipping-estimate rules, then show an estimate near the price if authorized.",

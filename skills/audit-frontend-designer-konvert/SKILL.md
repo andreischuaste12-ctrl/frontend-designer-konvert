@@ -1,6 +1,6 @@
 ---
 name: audit-frontend-designer-konvert
-description: Audit an existing frontend as a read-only reviewer. Assess product context, audience evidence, user journeys, UX/UI, accessibility, performance, SEO, and tracking when applicable; preserve strengths and produce a structured Markdown and JSON report. Do not use to implement changes or when a visual reference must be reproduced — use design-por-referencia-konvert.
+description: Audit an existing frontend as a read-only UX/UI design reviewer. Assess audience needs, user journeys, visual hierarchy, interaction patterns, accessibility as experienced in the interface, and evidence-informed design psychology; preserve strengths and produce a structured Markdown and JSON report. This skill is limited to experience and interface design; use design-por-referencia-konvert to reproduce or implement a visual reference.
 ---
 
 # Audit frontend designer
@@ -12,8 +12,8 @@ When a visual reference must be reproduced, use [`design-por-referencia-konvert`
 ## Workflow
 
 1. **Establish boundaries.** Read repository instructions and project documentation. Identify the requested pages, routes, user tasks, and permitted environment. Do not read secrets, submit forms, make purchases, or trigger production actions.
-2. **Understand product and audience.** Use product copy, navigation, available research, analytics descriptions, and interface behavior as evidence. Separate direct observations, supplied facts, and hypotheses. Do not invent personas, demographics, or user research.
-3. **Inspect the experience.** Follow the most important available journeys. Evaluate content and visual hierarchy, readability, composition, trust, action clarity, feedback, mobile use, accessibility, motion, and interface states. Consider performance, SEO, and tracking only where the project and scope make them relevant. Record strengths and what must be preserved.
+2. **Understand product and audience.** Use product copy, navigation, existing user research, usability studies, and interface behavior as evidence. Separate direct observations, supplied facts, and hypotheses. Do not invent personas, demographics, or user research.
+3. **Inspect the experience as design.** Follow the most important available journeys. Evaluate UX, UI, visual hierarchy, readability, composition, interaction patterns, perceived trust, clarity, feedback, mobile use, motion, and design-level accessibility. Consider cognitive load, attention, recognition, mental models, and decision clarity as lenses for forming testable hypotheses, never as universal laws or diagnoses. Record strengths and what must be preserved. Keep findings about the experience and interface rather than implementation work.
 4. **Collect rendered evidence.** The audit depends on the capture and inspection scripts in [`design-por-referencia-konvert`](../design-por-referencia-konvert/SKILL.md) when rendered evidence is relevant. Use `capture.mjs`, `extract-styles.mjs`, and, where useful, `image-manifest.mjs`. Read [capture and inspection](../design-por-referencia-konvert/references/captura-e-inspecao.md) and observe its network and privacy limits. If the skill or its scripts are not installed or cannot run, do not install them automatically; use available read-only inspection, mark the missing evidence and its effect on confidence, and never claim a capture or measurement was made.
 5. **Research references when useful.** Use the [reference catalog](knowledge-base/02-catalogo-de-referencias.md) for comparable patterns. State which pages you actually viewed and what pattern is relevant. Galleries are inspiration, not proof of usability or permission to copy.
 6. **Prioritize findings.** Apply the [audit and audience method](knowledge-base/01-auditoria-estetica-e-publico.md). Give each finding a stable ID, P0–P3 priority, location, observed evidence, probable impact, confidence, what to preserve, next step, acceptance criterion, whether external data or approval is required, and whether implementation is approved. Do not promise business outcomes without measurement.
@@ -22,10 +22,11 @@ When a visual reference must be reproduced, use [`design-por-referencia-konvert`
 ## Design principles
 
 - Tie every finding to a real user task, route, or observable interface behavior.
-- Preserve working content, interaction, brand, accessibility, and technical contracts; state them explicitly.
+- Preserve working content, interaction, visual identity, and established design patterns; state them explicitly.
 - Distinguish observation from inference and hypothesis, and calibrate confidence to available evidence.
 - Prefer specific, testable next steps over aesthetic preference or generic advice.
-- Consider keyboard, screen readers, touch, zoom, contrast, reduced motion, and responsive behavior where relevant.
+- Consider the interface's perceptibility and ease of use across keyboard, touch, zoom, contrast, reduced motion, and responsive states. Report design observations without claiming technical compliance certification.
+- Ground psychology-informed observations in visible interface cues and established research. Phrase likely effects as hypotheses unless validated with users; never assume one cognitive rule applies to everyone.
 - Treat reference galleries as inspiration. Do not copy third-party text, identity, illustrations, or distinctive compositions.
 - Protect privacy: use synthetic data, keep artifacts out of Git, redact report content, and review captures before sharing.
 

@@ -1,6 +1,6 @@
 # Audit report contract
 
-Every completed audit produces a Markdown report and a JSON report with matching finding IDs and equivalent content. The Markdown is for review; JSON is the structured handoff input for `design-por-referencia-konvert`.
+Every completed UX/UI design audit produces a Markdown report and a JSON report with matching finding IDs and equivalent content. Cover audience needs, journeys, visual design, interaction, and design psychology. The Markdown is for review; JSON is the structured handoff input for `design-por-referencia-konvert`.
 
 ## Required report fields
 
@@ -25,7 +25,7 @@ Each finding must contain:
 | `priority` | One of `P0`, `P1`, `P2`, `P3`. |
 | `location` | Route/component/element/viewport or relative source path; say `unknown` if unavailable. |
 | `evidence_observed` | Direct evidence and its source. Label inference or hypothesis clearly. |
-| `probable_impact` | Likely effect on a user task; do not state an unmeasured business outcome as fact. |
+| `probable_impact` | Likely effect on a user's understanding, perception, confidence, effort, or ability to complete a task. Mark untested psychological effects as hypotheses. |
 | `confidence` | `high`, `medium`, or `low`, with a short reason. |
 | `preserve` | Behavior, content, component, brand, integration, or contract not to change for this finding. |
 | `next_step` | Concrete proposed action. A recommendation alone is not approval. |
@@ -37,7 +37,7 @@ The P0–P3 meanings and evidence rules are defined in [report and handoff guida
 
 ## Markdown rendering
 
-Include report context and evidence limits, then a section per finding with all required fields, followed by project-wide preserve items and the proposed handoff. Keep Markdown IDs and values aligned with JSON. Do not include source code edits or describe recommendations as completed work.
+Include report context and evidence limits, then a section per finding with all required fields, followed by project-wide preserve items and the proposed handoff. Keep Markdown IDs and values aligned with JSON. Keep findings strictly about UX/UI and design psychology. Do not include source code edits or describe recommendations as completed work.
 
 ## Example
 

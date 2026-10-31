@@ -1,13 +1,13 @@
 # Synthetic frontend audit
 
-> Fictional example. No real website, customer, analytics, account, or user study was used. This report does not authorize implementation.
+> Fictional example. No real website, customer, account, or user study was used. This report does not authorize implementation.
 
 ## Report context
 
 - Report ID: `SYNTH-001`
 - Project: fictional product detail page
 - Scope: compare product options and add one item to cart; mobile and desktop visual review
-- Evidence limits: synthetic product brief and rendered example only; no analytics or representative user research
+- Evidence limits: synthetic product brief and rendered example only; no representative user research
 
 ## Findings
 
@@ -16,7 +16,7 @@
 - **Priority:** P1
 - **Location:** fictional product detail page, price and purchase panel
 - **Observed evidence:** In the synthetic flow, delivery cost appears only after adding the item to the cart.
-- **Probable impact:** Shoppers may postpone a decision or encounter an unexpected cost. Conversion impact is unmeasured.
+- **Probable impact:** Shoppers may postpone a decision or encounter an unexpected cost; this effect is a hypothesis, not a measured outcome.
 - **Confidence:** medium — the sequence is visible in the supplied synthetic flow; user impact is a hypothesis.
 - **Preserve:** Existing shipping rules, total-price calculation, checkout contract, and purchase action.
 - **Next step:** Ask the product owner for approved shipping-estimate rules, then show an estimate near the price if authorized.

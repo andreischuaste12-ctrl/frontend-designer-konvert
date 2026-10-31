@@ -4,6 +4,7 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+- Narrow the audit skill to UX/UI and evidence-informed design psychology, with findings limited to experience and interface design.
 - Rename the read-only audit skill to `audit-frontend-designer-konvert` and define an approval-gated report handoff to the reference implementation executor.
 - Add a Markdown and JSON audit report contract with synthetic examples, clarify before/after capture and style comparison, and validate that every skill directory ends in `-konvert` with matching metadata.
 - Update installation, architecture, and routing guidance for auditor-first “audit and fix” requests and direct visual-reference implementation; routing accuracy remains unmeasured.
