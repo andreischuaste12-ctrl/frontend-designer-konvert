@@ -39,6 +39,8 @@ Use `capture.mjs --profile rapido|tela|completo` to size the capture to the task
 
 Images are not copied by default. Use `--save-images` only when local review copies are needed; do not commit or redistribute them without checking their rights. Screenshots and reports can contain rendered page content, so review them before sharing.
 
+`--block-writes` optionally rejects HTTP methods other than GET/HEAD in all three browser-inspection scripts. It can block first-party POST telemetry, but also GraphQL reads and CORS preflights. The default preserves these requests; prefer staging. Reports record `blockWrites` and `blockedWriteMethods`. IPv4-mapped IPv6 literals use the embedded IPv4 policy, so alternate address spellings do not bypass metadata/private-IP rules; unspecified addresses are always blocked. DNS rebinding remains outside this guard's guarantees.
+
 ## Examples
 
 Run commands from the target project's root; `<skill>` is the path to this skill folder:

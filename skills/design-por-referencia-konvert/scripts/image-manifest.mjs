@@ -17,6 +17,7 @@ const HELP = `Uso: node image-manifest.mjs [--root <dir>] [--url <url>] [opçõe
   --allow-file   Permite uma URL file:// local explicitamente.
   --allow-private Permite alvos/subrecursos em IPs privados (metadata continua bloqueado).
   --allow-tracking Permite requests de analytics; bloqueados por padrão.
+  --block-writes Bloqueia métodos além de GET/HEAD (opt-in; pode quebrar GraphQL).
   --width <px>   Largura do viewport no modo --url (padrão: 1440). Rode também com 375.
   --out <dir>    Saída (padrão: .audit/images).
   --skip <lista> Pastas extras a ignorar, separadas por vírgula.
@@ -33,6 +34,7 @@ const { values: a } = parseArgs({
     'allow-file': { type: 'boolean', default: false },
     'allow-private': { type: 'boolean', default: false },
     'allow-tracking': { type: 'boolean', default: false },
+    'block-writes': { type: 'boolean', default: false },
     width: { type: 'string', default: '1440' },
     out: { type: 'string', default: '.audit/images' },
     skip: { type: 'string', default: '' },
@@ -246,9 +248,10 @@ if (a.url) {
   const ctx = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
   const trackingBlocked = new Set();
   const blockedTargets = new Set();
+  const blockedWriteMethods = new Set();
   await installRequestGuards(ctx, {
     allowFile: a['allow-file'], allowPrivate: a['allow-private'], allowTracking: a['allow-tracking'],
-    trackingBlocked, blockedTargets,
+    trackingBlocked, blockedTargets, blockWrites: a['block-writes'], blockedWriteMethods,
   });
   await ctx.addInitScript(metricsInit);
   const page = await ctx.newPage();
@@ -391,7 +394,7 @@ if (a.url) {
   const safeLcp = dom.lcp ? { ...dom.lcp, url: dom.lcp.url ? redactUrl(dom.lcp.url) : null } : null;
   const safeUrl = redactUrl(url.href);
   await fs.writeFile(path.join(outDir, 'images-rendered.json'), JSON.stringify({
-    url: safeUrl, width, lcp: safeLcp, cls: dom.cls, trackingAllowed: a['allow-tracking'],
+    url: safeUrl, width, lcp: safeLcp, cls: dom.cls, trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(),
     trackingBlocked: [...trackingBlocked].sort(), blockedTargets: [...blockedTargets].sort(), items: clean,
   }, null, 2), 'utf8');
   const rows = clean
@@ -399,7 +402,7 @@ if (a.url) {
     .join('\n');
   await fs.writeFile(
     path.join(outDir, 'images-rendered.md'),
-    `# Imagens no render\n\nMedido em ${safeUrl}, viewport ${width}px (DPR 1), ${new Date().toISOString()}. LCP: ${safeLcp ? `${safeLcp.time}ms ${safeLcp.tag} ${safeLcp.url ?? ''}` : 'n/d'} · CLS: ${dom.cls} (laboratório, indicativo).\nAnalytics bloqueados: ${[...trackingBlocked].sort().join(', ') || (a['allow-tracking'] ? 'bloqueio desativado pelo usuário' : 'nenhum observado')}. Alvos privados bloqueados: ${[...blockedTargets].sort().join(', ') || 'nenhum observado'}.\n\n| Tipo | Origem | Formato | Natural | Renderizado | Peso | alt | loading | Alertas |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${rows}\n`,
+    `# Imagens no render\n\nMedido em ${safeUrl}, viewport ${width}px (DPR 1), ${new Date().toISOString()}. LCP: ${safeLcp ? `${safeLcp.time}ms ${safeLcp.tag} ${safeLcp.url ?? ''}` : 'n/d'} · CLS: ${dom.cls} (laboratório, indicativo).\nAnalytics bloqueados: ${[...trackingBlocked].sort().join(', ') || (a['allow-tracking'] ? 'bloqueio desativado pelo usuário' : 'nenhum observado')}. Alvos privados bloqueados: ${[...blockedTargets].sort().join(', ') || 'nenhum observado'}.\nblock-writes: ${a['block-writes']}; métodos bloqueados: ${[...blockedWriteMethods].sort().join(', ') || 'nenhum'}.\n\n| Tipo | Origem | Formato | Natural | Renderizado | Peso | alt | loading | Alertas |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${rows}\n`,
     'utf8',
   );
   clean.forEach((i, n) =>

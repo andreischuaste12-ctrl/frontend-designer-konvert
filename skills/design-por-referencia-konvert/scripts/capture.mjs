@@ -27,6 +27,7 @@ const HELP = `Uso: node capture.mjs --url <url> [opções]
   --allow-file             Permite uma URL file:// local explicitamente.
   --allow-private          Permite alvos/subrecursos em IPs privados (metadata continua bloqueado).
   --allow-tracking         Permite requests de analytics; bloqueados por padrão.
+  --block-writes           Bloqueia métodos além de GET/HEAD (opt-in; pode quebrar GraphQL).
   --profile <nome>         rapido | tela (padrão) | completo.
   --routes </a,/b>         Rotas relativas à URL (padrão: só a URL).
   --out <dir>              Saída (padrão: .audit/screenshots). Mantenha fora do Git.
@@ -47,6 +48,7 @@ const { values: a } = parseArgs({
     'allow-file': { type: 'boolean', default: false },
     'allow-private': { type: 'boolean', default: false },
     'allow-tracking': { type: 'boolean', default: false },
+    'block-writes': { type: 'boolean', default: false },
     routes: { type: 'string', default: '' },
     out: { type: 'string', default: '.audit/screenshots' },
     widths: { type: 'string' },
@@ -95,6 +97,7 @@ const pw = loadPlaywright();
 const browser = await launch(pw);
 const trackingBlocked = new Set();
 const blockedTargets = new Set();
+const blockedWriteMethods = new Set();
 
 const index = {
   tool: 'capture.mjs',
@@ -103,7 +106,7 @@ const index = {
   widths,
   schemes,
   profile: a.profile,
-  trackingAllowed: a['allow-tracking'],
+  trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(),
   trackingBlocked: [],
   blockedTargets: [],
   notes: [
@@ -288,7 +291,7 @@ for (const scheme of schemes) {
     });
     await installRequestGuards(ctx, {
       allowFile: a['allow-file'], allowPrivate: a['allow-private'], allowTracking: a['allow-tracking'],
-      trackingBlocked, blockedTargets,
+      trackingBlocked, blockedTargets, blockWrites: a['block-writes'], blockedWriteMethods,
     });
     await ctx.addInitScript(metricsInit);
     for (const [routeIndex, route] of routes.entries()) {
@@ -308,6 +311,7 @@ await browser.close();
 index.finishedAt = new Date().toISOString();
 index.trackingBlocked = [...trackingBlocked].sort();
 index.blockedTargets = [...blockedTargets].sort();
+index.blockedWriteMethods = [...blockedWriteMethods].sort();
 await fs.writeFile(path.join(outDir, 'capture-index.json'), JSON.stringify(index, null, 2), 'utf8');
 console.log(`\n${index.files.length} arquivos de captura + capture-index.json em ${outDir}`);
 console.log('Lembrete: mantenha esta pasta fora do Git (ex.: .audit/ no .gitignore) e não publique as capturas.');

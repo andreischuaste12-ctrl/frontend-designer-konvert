@@ -50,41 +50,40 @@ const TRACKER_HOSTS = [
 ];
 const METADATA_HOSTS = new Set(['metadata', 'metadata.google.internal', 'metadata.goog', '100.100.100.200']);
 
+// URL normalizes mapped IPv6 (including dotted input) to ::ffff:XXXX:YYYY.
+// Classify the embedded IPv4 exactly as its ordinary spelling.
+function networkHost(hostname) {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '');
+  const mapped = host.match(/^::ffff:([\da-f]{1,4}):([\da-f]{1,4})$/);
+  if (!mapped) return host;
+  const high = Number.parseInt(mapped[1], 16), low = Number.parseInt(mapped[2], 16);
+  return [high >> 8, high & 255, low >> 8, low & 255].join('.');
+}
+
 function isTrackerUrl(u) {
-  const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  const host = networkHost(u.hostname);
   if (host === 'facebook.com' || host.endsWith('.facebook.com')) return u.pathname === '/tr' || u.pathname.startsWith('/tr/');
   return TRACKER_HOSTS.some((domain) => host === domain || host.endsWith(`.${domain}`));
 }
 
 function isLoopback(host) {
-  const value = host.replace(/^\[|\]$/g, '').toLowerCase();
-  return value === 'localhost' || value.endsWith('.localhost') || value.startsWith('127.') ||
-    value === '::1' || value.startsWith('::ffff:127.');
+  return host === 'localhost' || host.endsWith('.localhost') || host.startsWith('127.') || host === '::1';
 }
 
 function isPrivateIp(host) {
-  const unwrapped = host.replace(/^\[|\]$/g, '').toLowerCase();
-  const mapped = unwrapped.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-  if (mapped) return isPrivateIp(mapped[1]);
-  if (isIP(unwrapped) === 4) {
-    const [a, b] = unwrapped.split('.').map(Number);
+  if (isIP(host) === 4) {
+    const [a, b] = host.split('.').map(Number);
     return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) ||
       (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || a === 0;
   }
-  if (isIP(unwrapped) === 6) {
-    if (unwrapped === '::1') return false;
-    return unwrapped.startsWith('fc') || unwrapped.startsWith('fd') || unwrapped.startsWith('fe8') ||
-      unwrapped.startsWith('fe9') || unwrapped.startsWith('fea') || unwrapped.startsWith('feb') ||
-      unwrapped.startsWith('::ffff:10.') || unwrapped.startsWith('::ffff:192.168.') ||
-      /^::ffff:172\.(1[6-9]|2\d|3[01])\./.test(unwrapped);
+  if (isIP(host) === 6) {
+    return host.startsWith('fc') || host.startsWith('fd') || isLinkLocalIp(host);
   }
   return false;
 }
 
 function isLinkLocalIp(host) {
-  const value = host.replace(/^\[|\]$/g, '').toLowerCase();
-  return value.startsWith('169.254.') || value.startsWith('fe8') || value.startsWith('fe9') ||
-    value.startsWith('fea') || value.startsWith('feb') || value.startsWith('::ffff:169.254.');
+  return isIP(host) === 4 ? host.startsWith('169.254.') : isIP(host) === 6 && /^fe[89ab]/.test(host);
 }
 
 export function targetBlockReason(raw, { allowFile = false, allowPrivate = false, root = process.cwd() } = {}) {
@@ -102,16 +101,17 @@ export function targetBlockReason(raw, { allowFile = false, allowPrivate = false
   }
   if (u.protocol === 'data:' || u.protocol === 'blob:' || u.protocol === 'about:') return null;
   if (!['http:', 'https:'].includes(u.protocol)) return 'unsupported URL protocol';
-  const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  const host = networkHost(u.hostname);
+  if (host === '::' || host === '0.0.0.0') return 'unspecified network targets are blocked';
   if (METADATA_HOSTS.has(host) || host.endsWith('.metadata.google.internal')) return 'cloud metadata endpoints are blocked';
   if (isLinkLocalIp(host)) return 'link-local network targets are blocked';
-  if ((host === '169.254.169.254' || host === '100.100.100.200') || (isPrivateIp(host) && !isLoopback(host) && !allowPrivate)) {
+  if (isPrivateIp(host) && !isLoopback(host) && !allowPrivate) {
     return 'private network targets require --allow-private';
   }
   return null;
 }
 
-export async function installRequestGuards(context, { allowFile = false, allowPrivate = false, allowTracking = false, trackingBlocked = new Set(), blockedTargets = new Set() } = {}) {
+export async function installRequestGuards(context, { allowFile = false, allowPrivate = false, allowTracking = false, blockWrites = false, trackingBlocked = new Set(), blockedTargets = new Set(), blockedWriteMethods = new Set() } = {}) {
   await context.route('**/*', async (route) => {
     const raw = route.request().url();
     let u;
@@ -125,6 +125,12 @@ export async function installRequestGuards(context, { allowFile = false, allowPr
     const reason = targetBlockReason(raw, { allowFile, allowPrivate });
     if (reason) {
       blockedTargets.add(u.hostname || u.protocol);
+      await route.abort('blockedbyclient');
+      return;
+    }
+    const method = route.request().method();
+    if (blockWrites && !['GET', 'HEAD'].includes(method)) {
+      blockedWriteMethods.add(method);
       await route.abort('blockedbyclient');
       return;
     }

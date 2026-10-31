@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { redactText, redactUrl, resolveRoutes, routeSlug, intList, targetBlockReason } from '../scripts/_common.mjs';
+import { redactText, redactUrl, resolveRoutes, routeSlug, intList, targetBlockReason, installRequestGuards } from '../scripts/_common.mjs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -46,4 +46,47 @@ test('file URLs require opt-in and must resolve inside the working project', () 
   assert.equal(targetBlockReason(projectFile), 'file URLs require --allow-file');
   assert.equal(targetBlockReason(projectFile, { allowFile: true }), null);
   assert.match(targetBlockReason(pathToFileURL(process.execPath).href, { allowFile: true }), /outside the project root/);
+});
+
+test('mapped IPv6 cannot bypass private, metadata, or unspecified-address rules', () => {
+  for (const address of ['::ffff:a9fe:a9fe', '::ffff:169.254.169.254', '0:0:0:0:0:ffff:a9fe:a9fe', '::ffff:6464:64c8']) {
+    for (const allowPrivate of [false, true]) {
+      assert.match(targetBlockReason(`http://[${address}]/`, { allowPrivate }) ?? '', /blocked/, address);
+    }
+  }
+  for (const address of ['::ffff:a00:5', '::ffff:10.0.0.5', '::ffff:c0a8:101', '::ffff:ac10:1', '::ffff:6440:1']) {
+    assert.match(targetBlockReason(`http://[${address}]/`) ?? '', /allow-private/, address);
+    assert.equal(targetBlockReason(`http://[${address}]/`, { allowPrivate: true }), null, address);
+  }
+  for (const address of ['::', '0:0:0:0:0:0:0:0', '::ffff:0:0']) {
+    for (const allowPrivate of [false, true]) assert.match(targetBlockReason(`http://[${address}]/`, { allowPrivate }) ?? '', /blocked/, address);
+  }
+});
+
+test('normalization preserves loopback and public targets and blocks metadata DNS aliases', () => {
+  for (const address of ['::1', '::ffff:7f00:1', '::ffff:127.0.0.2', '::ffff:808:808', '2606:4700:4700::1111']) {
+    assert.equal(targetBlockReason(`http://[${address}]/`), null, address);
+  }
+  assert.match(targetBlockReason('http://metadata.google.internal./') ?? '', /metadata/);
+  assert.match(targetBlockReason('http://0.0.0.0/', { allowPrivate: true }) ?? '', /blocked/);
+});
+
+test('request guards enforce mapped-target and optional method policies before continuing', async () => {
+  async function inspect(url, method, options = {}) {
+    let handler, result;
+    const blockedWriteMethods = new Set();
+    await installRequestGuards({ route: async (_pattern, fn) => { handler = fn; } }, { ...options, blockedWriteMethods });
+    await handler({
+      request: () => ({ url: () => url, method: () => method }),
+      abort: async () => { result = 'blocked'; }, continue: async () => { result = 'continued'; },
+    });
+    return { result, methods: [...blockedWriteMethods] };
+  }
+  assert.equal((await inspect('http://[::ffff:a9fe:a9fe]/', 'GET', { allowPrivate: true })).result, 'blocked');
+  assert.equal((await inspect('https://www.google-analytics.com./g/collect', 'GET')).result, 'blocked');
+  assert.equal((await inspect('http://localhost:3000/graphql', 'POST')).result, 'continued');
+  for (const method of ['POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']) {
+    assert.deepEqual(await inspect('http://localhost:3000/track', method, { blockWrites: true }), { result: 'blocked', methods: [method] });
+  }
+  for (const method of ['GET', 'HEAD']) assert.equal((await inspect('http://localhost:3000/', method, { blockWrites: true })).result, 'continued');
 });

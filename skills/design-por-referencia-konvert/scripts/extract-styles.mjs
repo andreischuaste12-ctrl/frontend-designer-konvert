@@ -13,6 +13,7 @@ const HELP = `Uso: node extract-styles.mjs --url <url> [opções]
   --allow-file       Permite uma URL file:// local explicitamente.
   --allow-private    Permite alvos/subrecursos em IPs privados (metadata continua bloqueado).
   --allow-tracking   Permite requests de analytics; bloqueados por padrão.
+  --block-writes     Bloqueia métodos além de GET/HEAD (opt-in; pode quebrar GraphQL).
   --out <dir>        Saída (padrão: .audit/styles).
   --width <px>       Largura do viewport (padrão: 1440). Rode também com 375.
   --scheme <s>       light | dark (padrão: light).
@@ -28,6 +29,7 @@ const { values: a } = parseArgs({
     'allow-file': { type: 'boolean', default: false },
     'allow-private': { type: 'boolean', default: false },
     'allow-tracking': { type: 'boolean', default: false },
+    'block-writes': { type: 'boolean', default: false },
     out: { type: 'string', default: '.audit/styles' },
     width: { type: 'string', default: '1440' },
     scheme: { type: 'string', default: 'light' },
@@ -58,9 +60,10 @@ const ctx = await browser.newContext({
 });
 const trackingBlocked = new Set();
 const blockedTargets = new Set();
+const blockedWriteMethods = new Set();
 await installRequestGuards(ctx, {
   allowFile: a['allow-file'], allowPrivate: a['allow-private'], allowTracking: a['allow-tracking'],
-  trackingBlocked, blockedTargets,
+  trackingBlocked, blockedTargets, blockWrites: a['block-writes'], blockedWriteMethods,
 });
 await ctx.addInitScript(metricsInit);
 const page = await ctx.newPage();
@@ -362,7 +365,7 @@ const safeData = redactValues(data);
 Object.assign(data, safeData);
 const meta = {
   tool: 'extract-styles.mjs', url: redactUrl(url.href), status: resp ? resp.status() : null, width, scheme,
-  trackingAllowed: a['allow-tracking'], trackingBlocked: [...trackingBlocked].sort(), blockedTargets: [...blockedTargets].sort(),
+  trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(), trackingBlocked: [...trackingBlocked].sort(), blockedTargets: [...blockedTargets].sort(),
   at: new Date().toISOString(),
 };
 await fs.writeFile(path.join(outDir, 'computed-styles.json'), JSON.stringify({ meta, ...safeData }, null, 2), 'utf8');
@@ -375,6 +378,7 @@ const md = `# Estilos medidos
 
 Origem: **medido** no render (Chromium, ${width}px, ${scheme}) em ${meta.at}. URL: ${meta.url} (status ${meta.status}).
 Analytics bloqueados: ${meta.trackingBlocked.join(', ') || (meta.trackingAllowed ? 'bloqueio desativado pelo usuário' : 'nenhum observado')} · alvos privados bloqueados: ${meta.blockedTargets.join(', ') || 'nenhum observado'}.
+Métodos bloqueados: ${meta.blockedWriteMethods.join(', ') || 'nenhum'} · block-writes: ${meta.blockWrites}.
 Contraste é estimativa (fundo composto; imagem/gradiente = indeterminado) e não substitui avaliação de acessibilidade.
 
 ## Página

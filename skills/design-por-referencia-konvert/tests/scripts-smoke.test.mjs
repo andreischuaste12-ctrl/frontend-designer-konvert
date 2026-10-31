@@ -14,7 +14,9 @@ const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQ
 
 test('capture, styles, images, and comparison run locally and redact sensitive URL data in their reports', async (t) => {
   let revised = false;
+  let posts = 0;
   const server = createServer((req, res) => {
+    if (req.method === 'POST') { posts++; req.resume(); res.writeHead(204); res.end(); return; }
     if (req.url.startsWith('/missing.png')) { res.writeHead(404); res.end(); return; }
     if (req.url.startsWith('/pixel.png')) {
       res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'no-store', 'content-length': pixel.length });
@@ -22,7 +24,7 @@ test('capture, styles, images, and comparison run locally and redact sensitive U
       return;
     }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-    res.end(`<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><title>owner@example.invalid</title><style>:root{--surface:#fff}.dark{--surface:#111}[data-theme="dark"]{--surface:#000}body{font:16px Arial;color:#111;background:${revised ? '#ddd' : '#fff'}}#overflow{width:700px;height:8px}.low-contrast{color:#999;background:#eee}#tiny{width:20px;height:20px;min-height:0;padding:0}#faded{opacity:.5}button{min-height:44px}input{height:24px}</style><h1>Local fixture</h1><div id="overflow"></div><p class="low-contrast">Low contrast fixture</p><button id="tiny">X</button><img src="/missing.png"><p id="faded">contact owner@example.invalid</p><label for="private-field">Private field</label><input id="private-field" type="text" value="synthetic-field-value"><textarea>synthetic-textarea-value</textarea><button>Continue owner@example.invalid</button><img alt="Sample pixel" src="/pixel.png?signature=fixture-value"><img alt="" src="https://www.google-analytics.com/g/collect?value=synthetic"></html>`);
+    res.end(`<!doctype html><html lang="en"><meta name="viewport" content="width=device-width,initial-scale=1"><title>owner@example.invalid</title><style>:root{--surface:#fff}.dark{--surface:#111}[data-theme="dark"]{--surface:#000}body{font:16px Arial;color:#111;background:${revised ? '#ddd' : '#fff'}}#overflow{width:700px;height:8px}.low-contrast{color:#999;background:#eee}#tiny{width:20px;height:20px;min-height:0;padding:0}#faded{opacity:.5}button{min-height:44px}input{height:24px}</style><h1>Local fixture</h1><div id="overflow"></div><p class="low-contrast">Low contrast fixture</p><button id="tiny">X</button><img src="/missing.png"><p id="faded">contact owner@example.invalid</p><label for="private-field">Private field</label><input id="private-field" type="text" value="synthetic-field-value"><textarea>synthetic-textarea-value</textarea><button>Continue owner@example.invalid</button><img alt="Sample pixel" src="/pixel.png?signature=fixture-value"><img alt="" src="https://www.google-analytics.com/g/collect?value=synthetic"><script>fetch('/track', {method:'POST', body:'synthetic-event'}).catch(() => {});</script></html>`);
   });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   t.after(() => server.close());
@@ -43,6 +45,13 @@ test('capture, styles, images, and comparison run locally and redact sensitive U
   await execFileAsync(process.execPath, [path.join(root, 'scripts/image-manifest.mjs'), '--url', url, '--width', '375', '--out', path.join(out, 'images')], { cwd: root });
   await execFileAsync(process.execPath, [path.join(root, 'scripts/image-manifest.mjs'), '--url', url, '--width', '375', '--save-images', '--out', path.join(out, 'images-saved')], { cwd: root });
 
+  assert.ok(posts > 0, 'default mode must preserve POST-based reads');
+  const beforeBlockedRun = posts;
+  await execFileAsync(process.execPath, [path.join(root, 'scripts/extract-styles.mjs'), '--url', url, '--block-writes', '--out', path.join(out, 'blocked-writes')], { cwd: root });
+  assert.equal(posts, beforeBlockedRun, 'opt-in method guard must prevent the same-origin POST');
+  const blockedReport = JSON.parse(await readFile(path.join(out, 'blocked-writes/computed-styles.json'), 'utf8'));
+  assert.equal(blockedReport.meta.blockWrites, true);
+  assert.deepEqual(blockedReport.meta.blockedWriteMethods, ['POST']);
   const captureIndex = await readFile(path.join(out, 'capture/capture-index.json'), 'utf8');
   const stylesJson = await readFile(path.join(out, 'styles/computed-styles.json'), 'utf8');
   const artifacts = [
