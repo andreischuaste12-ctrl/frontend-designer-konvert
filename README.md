@@ -1,28 +1,28 @@
 # Frontend Designer
 
-Skill para avaliar e aprimorar interfaces front-end com foco em estética, clareza, usabilidade e contexto real de uso. Antes de propor um redesign ou editar código, ela orienta o agente a entender o projeto, identificar o público e a tarefa principal, auditar o que já funciona e registrar oportunidades com evidências e hipóteses separadas.
+A skill for evaluating and improving frontend interfaces with a focus on visual design, clarity, usability, and real-world context. Before proposing a redesign or changing code, it guides the agent to understand the project, identify its audience and primary task, audit what already works, and document opportunities while separating evidence from assumptions.
 
-## O que vem na skill
+## What the skill includes
 
-- Auditoria estética ligada à compreensão, leitura, confiança e conclusão de tarefas.
-- Investigação do público provável e do contexto de consumo, sem inventar personas.
-- Catálogo organizado de referências para ecommerce, landing pages, fluxos, direção visual, componentes, tipografia, usabilidade e acessibilidade.
-- Orientações para propor, implementar e verificar melhorias na stack existente.
+- Aesthetic audits tied to comprehension, readability, trust, and task completion.
+- Audience and usage-context analysis without inventing personas.
+- An organized reference catalog for ecommerce, landing pages, product flows, visual direction, components, typography, usability, and accessibility.
+- Guidance for proposing, implementing, and verifying improvements within the existing stack.
 
-## Gatilho de uso
+## Activation trigger
 
-Use a skill `frontend-designer` quando a tarefa pedir para analisar ou auditar um site ou aplicação front-end, avaliar sua estética e usabilidade, entender seu público, pesquisar referências, melhorar uma landing page, revisar uma jornada ou implementar melhorias visuais e responsivas.
+Use the `frontend-designer` skill when a task asks you to analyze or audit a website or frontend application, assess its visual design or usability, understand its audience, research references, improve a landing page, review a user journey, or implement visual and responsive improvements.
 
-Exemplos de pedido que devem ativá-la:
+Requests that should activate the skill include:
 
-- “Audite a experiência e o visual desta página antes de mexer no código.”
-- “Analise quem usa este site e proponha melhorias de usabilidade.”
-- “Compare esta landing page com referências do segmento e implemente os ajustes prioritários.”
-- “Revise esta interface em desktop e mobile, preservando o que já funciona.”
+- “Audit this page's experience and visual design before changing the code.”
+- “Analyze who uses this site and suggest usability improvements.”
+- “Compare this landing page with relevant references and implement the highest-priority improvements.”
+- “Review this interface on desktop and mobile while preserving what already works.”
 
-## Baixar e instalar
+## Download and install
 
-Clone somente a pasta da skill para a pasta de skills do projeto. Com Git e Bash:
+Use Git and Bash to clone only the skill folder into this project's skills directory:
 
 ```bash
 git clone --depth 1 --filter=blob:none --sparse \
@@ -33,9 +33,9 @@ mkdir -p .agents/skills
 cp -R /tmp/frontend-designer-konvert/skills/frontend-designer .agents/skills/
 ```
 
-O resultado esperado é `.agents/skills/frontend-designer/SKILL.md` junto da pasta `knowledge-base`. Se seu agente usa outro diretório de skills, copie `skills/frontend-designer` para o local reconhecido por ele. Após instalar, reinicie ou atualize o agente se ele não detectar a skill automaticamente.
+The expected result is `.agents/skills/frontend-designer/SKILL.md` alongside its `knowledge-base` folder. If your agent uses a different skills directory, copy `skills/frontend-designer` to the location it recognizes. Restart or refresh the agent if it does not detect the skill automatically.
 
-## Estrutura
+## Structure
 
 ```text
 skills/frontend-designer/
@@ -45,6 +45,6 @@ skills/frontend-designer/
     └── 02-catalogo-de-referencias.md
 ```
 
-## Autor e licença
+## Author and license
 
-Criado por **Andrei Schuaste**. Este projeto é distribuído sob a licença MIT. Consulte o arquivo [LICENSE](LICENSE) para os termos completos.
+Created by **Andrei Schuaste**. This project is distributed under the MIT License. See [LICENSE](LICENSE) for the full terms.
