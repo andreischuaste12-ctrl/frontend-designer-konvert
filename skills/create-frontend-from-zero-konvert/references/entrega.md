@@ -19,6 +19,7 @@ Marque cada item como cumprido, não aplicável (com motivo) ou não verificado 
 | Conteúdo | Nada de dado comercial, depoimento ou integração inventados; conteúdo fictício identificado. |
 | SEO e performance | Itens básicos de [conteúdo, SEO e performance](conteudo-seo-performance.md) aplicados às páginas públicas; métricas locais registradas como locais. |
 | Privacidade | Nenhum analytics, credencial ou dado pessoal sem pedido; capturas revisadas antes de compartilhar. |
+| Segurança do frontend e localização | Aplicar os controles pertinentes de [segurança e localização](seguranca-e-localizacao-frontend.md); quando houver múltiplos locales, verificar apenas os idiomas, formatos e estados incluídos no escopo. Registrar como não verificados os controles de backend e hospedagem fora do alcance. |
 | Escopo | Nenhum arquivo fora da área autorizada foi alterado. Em projetos existentes, código e integrações anteriores foram preservados. |
 
 ## Relatório de entrega

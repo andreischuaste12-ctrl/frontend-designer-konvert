@@ -6,6 +6,8 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ### Added
 
+- Add frontend security and localization guidance to the creation skill, with conditional checks in its delivery criteria.
+
 - Add an optional `coverage` matrix to the audit report (page or flow, task, state, viewport, optional stack, result `observed`/`not_observed`/`not_applicable`/`blocked`, evidence or reason, linked findings), validated and mirrored in a Markdown `## Cobertura` table. It stays proportional to the scope, keeps `schema_version: 2` reports without it valid, and lets the audit scorer split misses into `silentOmissions` and `declaredGaps`.
 - Add `create-frontend-from-zero-konvert` for planning, building and verifying a new frontend, with collaboration guidance and 24 unmeasured routing cases.
 - Expand `create-frontend-from-zero-konvert` with discovery and brief, stack choice, visual foundations with verified WCAG 2.2 limits, a component and state inventory that uses the auditor's knowledge units as acceptance criteria, content/SEO/performance and measurement rules (Core Web Vitals thresholds read from `web-vitals` source), a definition of done with a delivery-report template, and synthetic e-commerce brief and delivery-report examples. Repository validation now requires its sections and reference links, and every `UXK-…` ID cited in skills or docs must exist.
