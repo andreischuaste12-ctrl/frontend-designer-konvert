@@ -56,7 +56,17 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
-      - run: node --experimental-test-coverage --test "scripts/*.test.mjs" "skills/audit-frontend-designer-konvert/tests/*.test.mjs"
+          cache: npm
+          cache-dependency-path: skills/design-por-referencia-konvert/package-lock.json
+      - run: npm ci
+        working-directory: skills/design-por-referencia-konvert
+      # Gate set just below the measured baseline (lines 82.1%, branches 87.3%, functions 89.2%); raise it as tests grow.
+      - run: >-
+          node --experimental-test-coverage
+          --test-coverage-lines=80 --test-coverage-branches=85 --test-coverage-functions=87
+          --test "scripts/*.test.mjs" "skills/audit-frontend-designer-konvert/tests/*.test.mjs"
+          skills/design-por-referencia-konvert/tests/common.test.mjs skills/design-por-referencia-konvert/tests/compare.test.mjs
+          skills/design-por-referencia-konvert/tests/pinning.test.mjs
 
   validate:
     runs-on: ${{ matrix.os }}

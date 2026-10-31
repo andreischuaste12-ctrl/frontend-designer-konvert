@@ -35,7 +35,7 @@ Confira os que o fluxo possui: padrão, hover, foco, ativo, desabilitado, carreg
 - Escolha breakpoints a partir de onde o conteúdo real quebra e reaproveite os do projeto.
 - Se o produto tem modo escuro, repita as capturas com `--schemes light,dark`.
 - Tracking conhecido é bloqueado por padrão durante captura. Os números de laboratório podem diferir da experiência de produção com analytics, testes A/B e widgets ativos; registre o estado e não use as capturas como dado de conversão.
-- GET não significa ausência de efeitos colaterais: JavaScript da página executa. Endpoints de metadata, tracking conhecido e destinos privados (literais ou resolvidos por DNS) são bloqueados por padrão, mas o navegador resolve o nome de novo e um DNS rebinding com TTL curto ainda pode escapar. Use somente alvos autorizados.
+- GET não significa ausência de efeitos colaterais: JavaScript da página executa. Endpoints de metadata, tracking conhecido e destinos privados (literais ou resolvidos por DNS) são bloqueados por padrão, e cada conexão é fixada no endereço validado; tráfego WebRTC/UDP fica fora dessa proteção. Use somente alvos autorizados.
 
 ## 5. Imagens e desempenho percebido
 

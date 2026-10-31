@@ -8,8 +8,7 @@ import { parseArgs } from 'node:util';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
-import { loadPlaywright, launch, checkUrl, installRequestGuards, createInspectionContext, targetBlockReason, ensureDir, metricsInit, preparePage, redactUrl, redactText, fail } from './_common.mjs';
+import { loadPlaywright, launch, checkUrl, installRequestGuards, createInspectionContext, targetBlockReason, ensureDir, metricsInit, preparePage, redactUrl, redactText, fail, writePrivateArtifact } from './_common.mjs';
 
 const HELP = `Uso: node image-manifest.mjs [--root <dir>] [--url <url>] [opções]
 
@@ -28,7 +27,7 @@ const HELP = `Uso: node image-manifest.mjs [--root <dir>] [--url <url>] [opçõe
   --no-save      Mantido por compatibilidade; imagens não são copiadas por padrão.
   --timeout <ms> Timeout de navegação (padrão: 30000).
 
-Aviso: falhas e timeouts de DNS são bloqueados por padrão; --allow-unresolved-dns permite prosseguir sem validação de IP. Endereços não são fixados; não é uma sandbox de rede.
+Aviso: falhas e timeouts de DNS são bloqueados por padrão; --allow-unresolved-dns permite prosseguir sem validação de IP. Cada conexão é fixada no endereço validado por um proxy local; não é uma sandbox de rede.
 Saída: images-static.json/.md e/ou images-rendered.json/.md, e imagens-revisao.md (roteiro de revisão visual).`;
 
 const { values: a } = parseArgs({
@@ -63,18 +62,8 @@ const RASTER = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'bmp']);
 const review = []; // itens para revisão visual: { id, where, facts }
 
 async function writePrivateSourceMap(root, output, requested, mapping) {
-  try {
-    const repo = await fs.realpath(execFileSync('git', ['-C', path.resolve(root), 'rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim());
-    const resolved = path.resolve(requested);
-    const parent = await fs.realpath(path.dirname(resolved));
-    const destination = path.join(parent, path.basename(resolved));
-    const relative = path.relative(repo, destination);
-    const outputRelative = path.relative(await fs.realpath(output), destination);
-    if (!relative || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative) || relative.split(path.sep)[0] === '.git') throw new Error('outside project');
-    if (!outputRelative || (!outputRelative.startsWith(`..${path.sep}`) && outputRelative !== '..' && !path.isAbsolute(outputRelative))) throw new Error('inside report output');
-    execFileSync('git', ['-C', repo, 'check-ignore', '-q', '--', destination], { stdio: 'ignore' });
-    await fs.writeFile(destination, JSON.stringify(mapping, null, 2), { encoding: 'utf8', flag: 'wx', mode: 0o600 });
-  } catch { fail('Mapa privado recusado: use arquivo novo em diretório existente, dentro do repositório e ignorado pelo Git, fora da saída de relatórios. Caminho omitido.'); }
+  try { await writePrivateArtifact({ repoHint: root, outputDir: output, requested, data: mapping }); }
+  catch { fail('Mapa privado recusado: use arquivo novo em diretório existente, dentro do repositório e ignorado pelo Git, fora da saída de relatórios. Caminho omitido.'); }
 }
 
 // ---------------------------------------------------------------- estático

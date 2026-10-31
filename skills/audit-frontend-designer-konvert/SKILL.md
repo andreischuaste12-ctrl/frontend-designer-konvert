@@ -39,7 +39,7 @@ Para reproduzir uma referência visual, use [`design-por-referencia-konvert`](..
 
 ## Roteiros por produto
 
-Adapte a inspeção à tarefa com os roteiros de [e-commerce](knowledge-base/06-padroes-ecommerce.md), [SaaS](knowledge-base/07-padroes-saas.md) e [sites institucionais](knowledge-base/08-padroes-institucional.md). São heurísticas; confirme as hipóteses com evidências adequadas. Para estados da jornada consulte [jornadas e estados](knowledge-base/09-jornadas-e-estados.md), consulte os [padrões específicos](knowledge-base/10-padroes-detalhados.md), selecione as unidades aplicáveis e siga [unidades de conhecimento](references/unidades-de-conhecimento.md) ao formular achados, ajustando prioridade com justificativa.
+Adapte a inspeção à tarefa com os roteiros de [e-commerce](knowledge-base/06-padroes-ecommerce.md), [SaaS](knowledge-base/07-padroes-saas.md) e [sites institucionais](knowledge-base/08-padroes-institucional.md). São heurísticas; confirme as hipóteses com evidências adequadas. Para estados da jornada consulte [jornadas e estados](knowledge-base/09-jornadas-e-estados.md), consulte os [padrões específicos](knowledge-base/10-padroes-detalhados.md), selecione as unidades aplicáveis e siga [unidades de conhecimento](references/unidades-de-conhecimento.md) ao formular achados, ajustando prioridade com justificativa. Depois de confirmar a stack pela inspeção do projeto, use as [jornadas por stack](knowledge-base/11-jornadas-por-stack.md) para indicar onde cada correção acontece e quem decide; o resultado do detector sozinho não confirma a stack.
 
 ## Estudos de UX e psicologia
 

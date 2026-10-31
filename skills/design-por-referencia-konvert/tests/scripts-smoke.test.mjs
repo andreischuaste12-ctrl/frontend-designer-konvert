@@ -62,6 +62,24 @@ describe('browser CLI regression scenarios', { concurrency: false, timeout: 1200
     assert.equal((await json(path.join(out, 'axe/computed-styles.json'))).meta.axeRequested, true);
   });
 
+  test('optional axe selectors go only to a private ignored file', async () => {
+    const repo = path.join(out, 'axe-repo'), privateDir = path.join(repo, '.audit', 'private'), report = path.join(repo, '.audit', 'axe');
+    await mkdir(privateDir, { recursive: true });
+    await execFileAsync('git', ['init', '-q', repo]);
+    await writeFile(path.join(repo, '.gitignore'), '.audit/\n');
+    const details = path.join(privateDir, 'axe-details.json');
+    await run('extract-styles', ['--url', url, '--width', '375', '--axe', '--axe-details', details, '--out', report]);
+    const privateReport = await json(details);
+    const imageAlt = privateReport.violations.find((v) => v.id === 'image-alt');
+    assert.ok(imageAlt && imageAlt.targets.length > 0 && imageAlt.targets.every((t) => Array.isArray(t) && t.every((s) => typeof s === 'string')));
+    assert.doesNotMatch(JSON.stringify(privateReport), /<img|synthetic-field-value|owner@example/);
+    const shared = await json(path.join(report, 'a11y-findings.json'));
+    assert.ok(shared.violations.every((v) => Object.keys(v).sort().join(',') === 'id,impact,nodeCount'));
+    assert.equal((await json(path.join(report, 'computed-styles.json'))).meta.axeDetailsRequested, true);
+    await assert.rejects(run('extract-styles', ['--url', url, '--axe', '--axe-details', path.join(repo, 'tracked.json'), '--out', path.join(report, 'again')]), (error) => error.code === 1 && !error.stderr.includes('tracked.json'));
+    await assert.rejects(run('extract-styles', ['--url', url, '--axe-details', path.join(privateDir, 'no-axe.json'), '--out', path.join(report, 'no-axe')]), (error) => error.code === 1 && /exige --axe/.test(error.stderr));
+  });
+
   test('write blocking prevents a same-origin POST while preserving default POST-based reads', async () => {
     const beforeDefault = posts;
     await run('extract-styles', ['--url', url, '--out', path.join(out, 'post-default')]);

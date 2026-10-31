@@ -14,7 +14,7 @@ export function selectSuccessfulRun(data, sha) {
 }
 export function verifyMatrixJobs(data) {
   if (!Array.isArray(data?.jobs)) throw new Error('Invalid jobs input.');
-  const expected = [['coverage']];
+  const expected = [['coverage'], ['fixture-react']];
   for (const os of ['ubuntu-latest', 'windows-latest']) {
     expected.push([`repository (${os})`], [`smoke (${os})`]);
     for (const node of ['20', '22', '24']) expected.push([`validate (${node}, ${os})`, `validate (${os}, ${node})`]);

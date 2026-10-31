@@ -1,0 +1,111 @@
+// Local forward proxy that binds each connection to the address it validated.
+// Chromium and Playwright's route.fetch() send CONNECT host:port to the context proxy
+// instead of resolving the name themselves, so the address checked here is the
+// address connected to: a later DNS answer (rebinding) cannot redirect the socket.
+// TLS stays end to end between the client and the origin (SNI and certificate checks
+// use the original hostname); the proxy only relays bytes.
+import http from 'node:http';
+import net from 'node:net';
+import { lookup as dnsLookup } from 'node:dns/promises';
+import { networkHost, ipBlockReason } from './_network.mjs';
+
+export class PinningBlocked extends Error {}
+
+/**
+ * Resolves `hostname` once and returns the address to connect to, or throws PinningBlocked.
+ * Every returned address must pass the IP policy; one forbidden answer blocks the name.
+ * With `allowUnresolvedDns`, a failed lookup returns the hostname (no validation, no pinning).
+ */
+export async function resolvePinnedAddress(hostname, { allowPrivate = false, allowUnresolvedDns = false, lookup = dnsLookup, timeout = 2000, targetCheck = () => null } = {}) {
+  const host = networkHost(hostname);
+  const literal = net.isIP(host) ? host : '';
+  const reason = targetCheck(`https://${literal.includes(':') ? `[${literal}]` : host}/`);
+  if (reason) throw new PinningBlocked(reason);
+  if (literal) return literal;
+  let addresses, timer;
+  try {
+    addresses = await Promise.race([
+      lookup(host, { all: true, verbatim: true }),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('DNS timeout')), timeout); }),
+    ]);
+  } catch { addresses = null; }
+  finally { clearTimeout(timer); }
+  if (!Array.isArray(addresses) || !addresses.length) {
+    if (allowUnresolvedDns) return host;
+    throw new PinningBlocked('DNS resolution failed; blocked by policy');
+  }
+  const accepted = [];
+  for (const entry of addresses) {
+    const raw = String(entry?.address ?? '').split('%')[0];
+    const family = net.isIP(raw);
+    if (!family) throw new PinningBlocked('unexpected resolver output is blocked');
+    const normalized = family === 6 ? networkHost(new URL(`http://[${raw}]/`).hostname) : raw;
+    const blocked = ipBlockReason(normalized, allowPrivate);
+    if (blocked) throw new PinningBlocked(`${blocked} (resolved address)`);
+    accepted.push(raw);
+  }
+  return accepted[0];
+}
+
+/**
+ * Starts the proxy on loopback. `configure()` sets the same policy and lookup used by
+ * the request guards, so both layers agree. The server and its sockets never keep the
+ * process alive and are closed with `close()`.
+ */
+export async function startPinningProxy(initial = {}) {
+  let policy = { allowPrivate: false, allowUnresolvedDns: false, lookup: dnsLookup, timeout: 2000, targetCheck: () => null, onBlocked: () => {}, ...initial };
+  const sockets = new Set();
+  const track = (socket) => { sockets.add(socket); socket.unref?.(); socket.on('close', () => sockets.delete(socket)); };
+  const pin = (host) => resolvePinnedAddress(host, policy);
+  const refuse = (host, reason) => { try { policy.onBlocked(networkHost(host) || 'invalid-host', reason); } catch { /* reporting must not break the proxy */ } };
+
+  const server = http.createServer(async (req, res) => {
+    // Absolute-form plain HTTP, for clients that do not tunnel http:// through CONNECT.
+    let target;
+    try { target = new URL(req.url); } catch { res.writeHead(400).end(); return; }
+    if (target.protocol !== 'http:') { res.writeHead(400).end(); return; }
+    let address;
+    try { address = await pin(target.hostname); }
+    // Drop the connection instead of answering: a proxy-generated HTTP status could be
+    // mistaken for the origin's response by the client.
+    catch (error) { refuse(target.hostname, error.message); req.socket.destroy(); return; }
+    const headers = { ...req.headers };
+    delete headers['proxy-connection']; delete headers['proxy-authorization'];
+    const upstream = http.request({ host: address, port: Number(target.port || 80), method: req.method, path: `${target.pathname}${target.search}`, headers, setHost: false }, (response) => {
+      res.writeHead(response.statusCode ?? 502, response.headers);
+      response.pipe(res);
+    });
+    upstream.on('socket', track);
+    upstream.on('error', () => { if (!res.headersSent) res.writeHead(502); res.end(); });
+    req.pipe(upstream);
+  });
+  server.on('connection', track);
+  server.on('connect', async (req, client, head) => {
+    const match = /^\[?([^\]]+?)\]?:(\d{1,5})$/.exec(String(req.url));
+    const port = Number(match?.[2]);
+    if (!match || port < 1 || port > 65535) { client.end('HTTP/1.1 400 Bad Request\r\n\r\n'); return; }
+    let address;
+    try { address = await pin(match[1]); }
+    catch (error) { refuse(match[1], error.message); client.end('HTTP/1.1 403 Forbidden\r\n\r\n'); return; }
+    const upstream = net.connect({ host: address, port }, () => {
+      client.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+      if (head?.length) upstream.write(head);
+      upstream.pipe(client); client.pipe(upstream);
+    });
+    track(upstream);
+    upstream.on('error', () => client.destroy());
+    client.on('error', () => upstream.destroy());
+  });
+  // Absolute-form upgrades are not used by Chromium through an HTTP proxy; refuse them.
+  server.on('upgrade', (_req, socket) => socket.end('HTTP/1.1 403 Forbidden\r\n\r\n'));
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
+  server.unref();
+  return {
+    server: `http://127.0.0.1:${server.address().port}`,
+    configure(next) { policy = { ...policy, ...next }; },
+    async close() {
+      for (const socket of sockets) socket.destroy();
+      await new Promise((resolve) => server.close(() => resolve()));
+    },
+  };
+}

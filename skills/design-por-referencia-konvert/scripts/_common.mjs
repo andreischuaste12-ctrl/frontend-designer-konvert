@@ -1,9 +1,11 @@
 // Utilitários compartilhados pelos scripts de captura e inspeção.
 // Os scripts navegam com GET e não clicam nem enviam formulários, mas executam JS da página.
 import { createRequire } from 'node:module';
+import { execFileSync } from 'node:child_process';
 import { lookup as dnsLookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
 import { networkHost, ipBlockReason } from './_network.mjs';
+import { startPinningProxy } from './_pinning.mjs';
 import { realpathSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -12,6 +14,29 @@ import { fileURLToPath } from 'node:url';
 export function fail(msg, code = 1) {
   console.error(msg);
   process.exit(code);
+}
+
+export class PrivateArtifactError extends Error {}
+/**
+ * Writes data that may identify files or page structure only to a new file that is
+ * ignored by the Git repository containing `repoHint`, inside that repository and outside
+ * `outputDir` (the shareable report folder). Paths are never echoed in the error.
+ */
+export async function writePrivateArtifact({ repoHint, outputDir, requested, data }) {
+  try {
+    const repo = await fs.realpath(execFileSync('git', ['-C', path.resolve(repoHint), 'rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim());
+    const resolved = path.resolve(requested);
+    const parent = await fs.realpath(path.dirname(resolved));
+    const destination = path.join(parent, path.basename(resolved));
+    const relative = path.relative(repo, destination);
+    const outputRelative = path.relative(await fs.realpath(outputDir), destination);
+    if (!relative || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative) || relative.split(path.sep)[0] === '.git') throw new Error('outside project');
+    if (!outputRelative || (!outputRelative.startsWith(`..${path.sep}`) && outputRelative !== '..' && !path.isAbsolute(outputRelative))) throw new Error('inside report output');
+    execFileSync('git', ['-C', repo, 'check-ignore', '-q', '--', destination], { stdio: 'ignore' });
+    await fs.writeFile(destination, JSON.stringify(data, null, 2), { encoding: 'utf8', flag: 'wx', mode: 0o600 });
+  } catch {
+    throw new PrivateArtifactError('Private artifact refused.');
+  }
 }
 
 // Prefere a dependência fixada da skill; usa a do projeto apenas como fallback.
@@ -87,9 +112,10 @@ export function targetBlockReason(raw, { allowFile = false, allowPrivate = false
   return ipBlockReason(host, allowPrivate);
 }
 
-// Applies the literal-IP policy to every address a hostname resolves to. This closes
-// static names that point at internal ranges (for example wildcard DNS services), but
-// the browser resolves the name again, so a TTL-0 rebinding race remains possible.
+// Applies the literal-IP policy to every address a hostname resolves to, so static names
+// that point at internal ranges (for example wildcard DNS services) are refused before a
+// request is mediated. The connection itself is pinned separately by the context proxy
+// (_pinning.mjs), which validates its own single lookup and connects to that address.
 // Resolution failures are blocked unless the operator explicitly allows unresolved DNS.
 export async function resolvedBlockReason(hostname, { allowPrivate = false, allowUnresolvedDns = false, lookup = dnsLookup, timeout = 2000, onFailure = () => {} } = {}) {
   const host = networkHost(hostname);
@@ -116,8 +142,19 @@ export async function resolvedBlockReason(hostname, { allowPrivate = false, allo
   return null;
 }
 
-export function createInspectionContext(browser, options = {}) {
-  return browser.newContext({ ...options, serviceWorkers: 'block' });
+const contextProxies = new WeakMap();
+/**
+ * Every inspection context sends its traffic (route.fetch and browser sockets) through a
+ * local pinning proxy. installRequestGuards() applies the same policy and lookup to it.
+ */
+export async function createInspectionContext(browser, options = {}) {
+  const proxy = await startPinningProxy();
+  let context;
+  try { context = await browser.newContext({ ...options, serviceWorkers: 'block', proxy: { server: proxy.server } }); }
+  catch (error) { await proxy.close(); throw error; }
+  contextProxies.set(context, proxy);
+  context.on('close', () => { proxy.close().catch(() => {}); });
+  return context;
 }
 
 const pendingNavigations = new WeakMap();
@@ -125,6 +162,17 @@ const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
 export async function installRequestGuards(context, { allowFile = false, allowPrivate = false, allowTracking = false, allowUnresolvedDns = false, blockWrites = false, trackingBlocked = new Set(), blockedTargets = new Set(), blockedWriteMethods = new Set(), blockedRedirects = new Set(), lookup = dnsLookup } = {}) {
   if (typeof context.routeWebSocket !== 'function') fail('Playwright with browser-context WebSocket routing is required. Install the pinned skill dependencies.', 2);
+  // Hosts the page asked for. The proxy also sees Chromium's own background traffic; it is
+  // held to the same policy but only page hosts are reported as blocked targets.
+  const pageHosts = new Set();
+  // Hosts refused by the proxy at connection time (for example after a DNS rebinding).
+  // Responses for them are never handed to the page, whatever the client made of the refusal.
+  const refusedAtConnection = new Set();
+  contextProxies.get(context)?.configure({
+    allowPrivate, allowUnresolvedDns, lookup,
+    targetCheck: (raw) => targetBlockReason(raw, { allowPrivate }),
+    onBlocked: (host) => { refusedAtConnection.add(host); if (pageHosts.has(host)) blockedTargets.add(host); },
+  });
   const resolvedReasons = new Map();
   const resolvedReason = (u) => {
     if (!['http:', 'https:'].includes(u.protocol)) return Promise.resolve(null);
@@ -149,6 +197,7 @@ export async function installRequestGuards(context, { allowFile = false, allowPr
       await route.abort('blockedbyclient');
       return;
     }
+    if (['http:', 'https:'].includes(u.protocol)) pageHosts.add(networkHost(u.hostname));
     const reason = targetBlockReason(raw, { allowFile, allowPrivate }) || await resolvedReason(u);
     if (reason) {
       blockedTargets.add(u.hostname || u.protocol);
@@ -174,6 +223,11 @@ export async function installRequestGuards(context, { allowFile = false, allowPr
       }
       // Chromium skips route handlers on later redirect hops. Never give it a 3xx.
       response = await route.fetch({ maxRedirects: 0, timeout: 30000 });
+      if (refusedAtConnection.has(networkHost(u.hostname))) {
+        blockedTargets.add(u.hostname);
+        await route.abort('blockedbyclient');
+        return;
+      }
       const location = response.headers().location;
       if (REDIRECT_STATUSES.has(response.status()) && location) {
         let next;
@@ -212,6 +266,7 @@ export async function installRequestGuards(context, { allowFile = false, allowPr
       await socket.close({ code: 1008, reason: 'Audit network guard' });
       return;
     }
+    pageHosts.add(networkHost(u.hostname));
     const reason = targetBlockReason(u.href, { allowFile, allowPrivate }) || await resolvedReason(u);
     if (reason) blockedTargets.add(u.hostname || u.protocol);
     if (reason) {

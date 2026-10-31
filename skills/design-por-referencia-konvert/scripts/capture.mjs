@@ -42,7 +42,7 @@ const HELP = `Uso: node capture.mjs --url <url> [opções]
   --no-mask                Não mascarar campos de texto (use só com dados fictícios).
   --timeout <ms>           Timeout de navegação (padrão: 30000).
 
-Aviso: falhas e timeouts de DNS são bloqueados por padrão; --allow-unresolved-dns permite prosseguir sem validação de IP. Endereços não são fixados; não é uma sandbox de rede.
+Aviso: falhas e timeouts de DNS são bloqueados por padrão; --allow-unresolved-dns permite prosseguir sem validação de IP. Cada conexão é fixada no endereço validado por um proxy local; não é uma sandbox de rede.
 Saída: route-NN__largura__estado.png + capture-index.json (metadados sanitizados e evidências).`;
 
 const { values: a } = parseArgs({

@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { redactText, redactUrl, resolveRoutes, routeSlug, intList, targetBlockReason, installRequestGuards, resolvedBlockReason } from '../scripts/_common.mjs';
+import { redactText, redactUrl, resolveRoutes, routeSlug, intList, targetBlockReason, installRequestGuards, resolvedBlockReason, writePrivateArtifact, PrivateArtifactError } from '../scripts/_common.mjs';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 
@@ -278,4 +281,20 @@ test('request and WebSocket guards block names that resolve to forbidden address
   assert.equal((await inspect('http://public.example.test/')).result, 'continued');
   assert.equal((await inspect('ws://internal.example.test/socket')).result, 'blocked');
   assert.equal((await inspect('wss://public.example.test/socket')).result, 'connected');
+});
+
+test('private artifacts are written only to new ignored files outside the report output', async (t) => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'private-artifact-'));
+  t.after(() => fs.rm(dir, { recursive: true, force: true }));
+  const repo = path.join(dir, 'repo'), output = path.join(repo, '.audit', 'report'), privateDir = path.join(repo, '.audit', 'private');
+  await fs.mkdir(output, { recursive: true }); await fs.mkdir(privateDir, { recursive: true });
+  execFileSync('git', ['init', '-q', repo]);
+  await fs.writeFile(path.join(repo, '.gitignore'), '.audit/\n');
+  const target = path.join(privateDir, 'details.json');
+  await writePrivateArtifact({ repoHint: privateDir, outputDir: output, requested: target, data: { selector: '#synthetic' } });
+  assert.deepEqual(JSON.parse(await fs.readFile(target, 'utf8')), { selector: '#synthetic' });
+  if (process.platform !== 'win32') assert.equal((await fs.stat(target)).mode & 0o077, 0);
+  for (const requested of [target, path.join(repo, 'tracked.json'), path.join(output, 'inside.json'), path.join(dir, 'outside.json')]) {
+    await assert.rejects(writePrivateArtifact({ repoHint: privateDir, outputDir: output, requested, data: {} }), PrivateArtifactError);
+  }
 });

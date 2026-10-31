@@ -9,6 +9,7 @@ const TOOLING_FILES = [
   'package-lock.json',
   'scripts/_common.mjs',
   'scripts/_network.mjs',
+  'scripts/_pinning.mjs',
   'scripts/capture.mjs',
   'scripts/extract-styles.mjs',
   'scripts/image-manifest.mjs',
