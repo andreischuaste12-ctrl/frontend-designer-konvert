@@ -100,3 +100,19 @@ jobs:
       - run: npm ci
       - run: npm run setup:browser -- --with-deps
       - run: npm run test:smoke
+
+  fixture-react:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: evaluations/fixtures/react-tailwind
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: evaluations/fixtures/react-tailwind/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run build

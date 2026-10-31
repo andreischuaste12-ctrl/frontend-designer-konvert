@@ -14,7 +14,7 @@ A coding-agent skill for adapting a visual reference (a `DESIGN.md`, URL, screen
 | `references/inventario-de-imagens.md` | Image manifest, findings, and visual-review guide. |
 | `references/validacao.md` | Fidelity, accessibility, responsive, state, image, and integration checklist. |
 | `references/modelo-design-md.md` | Optional `DESIGN.md` template. |
-| `scripts/detect-stack.mjs` | Read-only, bounded stack marker detection; results are hypotheses. |
+| `scripts/detect-stack.mjs` | Read-only, bounded stack marker detection; `signal` means one marker and `likely` means two or more, never confirmation or calibrated probability. |
 | `scripts/capture.mjs` | Route, viewport, and color-scheme screenshots, including tiles and focus/hover crops. |
 | `scripts/extract-styles.mjs` | Computed styles, CSS variables, fonts, type scale, estimated contrast, and target sizes. |
 | `scripts/image-manifest.mjs` | Static and rendered image inventory plus a visual-review guide. |

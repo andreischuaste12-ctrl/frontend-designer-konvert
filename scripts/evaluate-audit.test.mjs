@@ -29,13 +29,13 @@ test('a perfect graded run passes every target', () => {
 });
 
 test('missed critical issues, flagged decoys, and unsupported claims fail with explicit reasons', () => {
-  const runs = perfectRuns().map((run) => run.caseId !== 'loja' ? run : {
+  const runs = perfectRuns().map((run) => ({
     ...run,
-    matches: run.matches.filter((m) => !['E1', 'E2', 'E3'].includes(m.expected)),
+    matches: run.matches.filter((m) => !['P0', 'P1'].includes(m.priority)),
     findingsTotal: run.findingsTotal + 2,
-    decoysFlagged: ['D1', 'D2', 'D3'],
+    decoysFlagged: data.cases.find((item) => item.id === run.caseId).decoys.map((item) => item.id),
     unsupportedClaims: 1,
-  });
+  }));
   const score = scoreAudit(data, runs);
   assert.equal(score.passed, false);
   for (const pattern of [/criticalRecall/, /decoyFlagRate/, /unsupportedClaims/]) assert.ok(score.failures.some((f) => pattern.test(f)), String(pattern));

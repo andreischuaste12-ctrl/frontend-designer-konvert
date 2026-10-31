@@ -6,6 +6,7 @@
 
 - ID do relatório: `SYNTH-001`
 - Projeto: página de produto fictícia
+- Stack: HTML sintético — confirmada pela inspeção dos arquivos do exemplo.
 - Escopo: comparar opções de produto e adicionar um item ao carrinho; revisão visual em mobile e desktop
 - Limites de evidência: apenas briefing sintético e exemplo renderizado; sem pesquisa com usuários representativos
 

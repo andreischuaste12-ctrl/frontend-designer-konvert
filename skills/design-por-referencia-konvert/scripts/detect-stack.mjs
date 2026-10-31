@@ -29,7 +29,7 @@ export async function detectStacks(directory) {
   const deps = { ...pkg?.dependencies, ...pkg?.devDependencies, ...pkg?.peerDependencies };
   const manifest = await json('manifest.json');
   const results = [];
-  const add = (stack, signals) => { if (signals.length) results.push({ stack, confidence: 'possible', signals }); };
+  const add = (stack, signals) => { if (signals.length) results.push({ stack, confidence: signals.length >= 2 ? 'likely' : 'signal', signals }); };
   const signals = async (checks) => (await Promise.all(checks.map(async ([label, test]) => await test() ? label : null))).filter(Boolean);
   add('Shopify theme', await signals([
     ['layout/theme.liquid', () => marker('layout/theme.liquid', 'file')],
@@ -55,7 +55,7 @@ export async function detectStacks(directory) {
     ['tailwind config', async () => (await Promise.all(['tailwind.config.js','tailwind.config.cjs','tailwind.config.mjs','tailwind.config.ts'].map((p) => marker(p, 'file')))).some(Boolean)],
   ]));
   add('HTML entry', await signals([['index.html', () => marker('index.html', 'file')]]));
-  return { schemaVersion: 1, results, limitations: ['Markers are hints, not proof; inspect the project and its own documentation before deciding.', 'Only known marker paths and bounded public manifests are read; no commands or network requests are executed.'] };
+  return { schemaVersion: 1, results, limitations: ['Markers are hints, not proof; likely means two or more signals, not a calibrated probability. Inspect the project before deciding.', 'Only known marker paths and bounded public manifests are read; no commands or network requests are executed.'] };
 }
 export async function main(argv = process.argv.slice(2)) {
   try {

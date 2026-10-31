@@ -91,6 +91,10 @@ export function validateAuditReport(input) {
   const report = normalizeReport(input);
   if (!isText(report.report_id)) errors.push('report_id must be a non-empty string');
   if (!isText(report.project)) errors.push('project must be a non-empty string');
+  if (report.stack !== undefined) {
+    const stack = report.stack;
+    if (!stack || typeof stack !== 'object' || Array.isArray(stack) || !isText(stack.name) || !['signal', 'likely', 'confirmed'].includes(stack.level) || !isText(stack.reason)) errors.push('stack needs name, level (signal, likely, confirmed) and reason');
+  }
   if (!report.scope || typeof report.scope !== 'object' || Array.isArray(report.scope) || !Object.keys(report.scope).length) errors.push('scope must be a non-empty object');
   if (!isTextList(report.evidence_limits)) errors.push('evidence_limits must be a list of strings (use an empty list only when nothing was unavailable)');
   if (!isTextList(report.preserve)) errors.push('preserve must be a list of strings');

@@ -66,3 +66,7 @@ Inclua o contexto do relatório e os limites de evidência, depois uma seção p
 Veja o [relatório em Markdown](../examples/audit-report.example.md) sintético e o [relatório em JSON](../examples/audit-report.example.json) correspondente. Ambos usam detalhes de produto fictícios e não contêm pesquisa real nem resultados de usuário medidos.
 
 O Markdown e o JSON são verificados por ID, prioridade, aprovação, dependência e campos textuais principais; listas de preservação e equivalência semântica ainda exigem revisão humana. A checagem de privacidade é melhor esforço, não garantia.
+
+As [unidades de conhecimento](unidades-de-conhecimento.md) orientam a inspeção e a correspondência com os campos; apenas evidência efetivamente coletada pode integrar um achado.
+
+O campo opcional de nível superior `stack` tem `name` e `reason` não vazios e `level` igual a `signal`, `likely` ou `confirmed`. Confirme apenas por inspeção real do projeto; o detector nunca confirma e a justificativa deve indicar evidência, sem dados privados. Relatórios v2 sem esse campo continuam válidos.

@@ -8,6 +8,7 @@ import { validateSkillDirectories } from './skill-directory-contract.mjs';
 import { validateAuditReport, compareMarkdownIds } from '../skills/audit-frontend-designer-konvert/scripts/validate-report.mjs';
 import { validateAuditCases } from './evaluate-audit.mjs';
 import { validateHandoffCase } from './check-handoff-scope.mjs';
+import { checkKnowledge } from './check-knowledge-units.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
@@ -112,5 +113,6 @@ for (const name of await fs.readdir(path.join(root, 'evaluations/handoff'))) {
   errors.push(...handoffErrors.map((e) => `evaluations/handoff/${name}: ${e}`));
   try { await fs.access(path.join(root, handoff.fixture)); } catch { errors.push(`evaluations/handoff/${name}: fixture is missing`); }
 }
+errors.push(...await checkKnowledge(root));
 if (errors.length) { console.error(errors.join('\n')); process.exitCode = 1; }
 else console.log(`Validated ${checked} Markdown files, ${syntaxChecked} JavaScript modules, ${jsonFiles.size} JSON files, example shapes, audit report contract, evaluation cases, skill metadata, relative links, and tooling lockfile.`);

@@ -44,7 +44,7 @@ Associe cada papel ao token, à variável ou ao componente que já existe. Crie 
 
 ### 5. Implementar
 
-- Inspecione antes de editar: framework, estilos, componentes, assets e convenções. Quando útil, use a [orientação de stack](references/adaptadores-de-stack.md) e o detector somente leitura; sinais são hipóteses a confirmar.
+- Inspecione antes de editar: framework, estilos, componentes, assets e convenções. Use a [orientação de stack](references/adaptadores-de-stack.md) e, quando útil, o detector somente leitura. Antes de editar arquivos específicos de plataforma, confirme a stack pela inspeção, registre o motivo no relatório de execução e, se houver relatório de auditoria, no campo opcional `stack`; `signal` e `likely` não são confirmação.
 - Faça a menor mudança que atinja o nível de fidelidade combinado.
 - Preserve a semântica HTML, a ordem de foco, os estados (hover, foco, ativo, desabilitado, erro, vazio, carregando) e a copy existente.
 - Parta do conteúdo real para o layout: breakpoints nascem de onde o conteúdo quebra, não de uma lista fixa.

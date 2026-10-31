@@ -26,3 +26,18 @@ test('recognizes WordPress, WooCommerce and static HTML without exposing content
   for (const name of ['WordPress block theme', 'WooCommerce', 'HTML entry']) assert.ok(names.includes(name), name);
   assert.ok(!names.includes('VTEX IO'));
 });
+
+
+test('reports signal for one marker and likely for two without confirming a platform', async (t) => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'stack-level-'));
+  t.after(() => fs.rm(dir, { recursive: true, force: true }));
+  await fs.mkdir(path.join(dir, 'layout'));
+  await fs.writeFile(path.join(dir, 'layout/theme.liquid'), 'synthetic');
+  let shopify = (await detectStacks(dir)).results.find(x => x.stack === 'Shopify theme');
+  assert.equal(shopify.confidence, 'signal');
+  await fs.mkdir(path.join(dir, 'config'));
+  await fs.writeFile(path.join(dir, 'config/settings_schema.json'), '[]');
+  shopify = (await detectStacks(dir)).results.find(x => x.stack === 'Shopify theme');
+  assert.equal(shopify.confidence, 'likely');
+  assert.notEqual(shopify.confidence, 'confirmed');
+});

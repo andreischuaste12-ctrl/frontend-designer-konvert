@@ -135,3 +135,17 @@ test('the CLI exits 0 for valid input, 1 for contract violations, and 2 for unre
   await fs.writeFile(bad, '{not json');
   await assert.rejects(run(process.execPath, [script, bad]), (err) => err.code === 2 && !err.stderr.includes(dir));
 });
+
+test('optional stack metadata validates levels and retains compatibility with existing reports', async () => {
+  const report = await load();
+  delete report.stack;
+  assert.deepEqual(validateAuditReport(report).errors, []);
+  for (const level of ['signal', 'likely', 'confirmed']) {
+    report.stack = { name: 'Synthetic stack', level, reason: 'Synthetic local evidence.' };
+    assert.deepEqual(validateAuditReport(report).errors, []);
+  }
+  for (const stack of [null, [], {}, { name: 'x', level: 'certain', reason: 'x' }, { name: 'x', level: 'signal', reason: '' }]) {
+    report.stack = stack;
+    assert.ok(validateAuditReport(report).errors.some(error => error.includes('stack')));
+  }
+});

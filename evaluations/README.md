@@ -40,7 +40,7 @@ The scorer writes `routing-score.json`, counts false positives and false negativ
 
 ## Audit quality
 
-`audit-quality/cases.json` describes six synthetic projects in `fixtures/`: a product page (`loja`), a SaaS pricing page (`saas`), an accounting firm homepage (`institucional`), and three static previews with Shopify, WordPress, and React/Tailwind marker files. The marker fixtures are not functioning platform installations and do not prove platform integration. Each case lists:
+`audit-quality/cases.json` describes seven synthetic projects in `fixtures/`: a product page (`loja`), a SaaS pricing page (`saas`), an accounting firm homepage (`institucional`), and three static previews with Shopify, WordPress, and React/Tailwind marker files. The marker fixtures are not functioning platform installations and do not prove platform integration. `react-tailwind` is a separately runnable React/Vite/Tailwind synthetic fixture, not a production application or a Next.js integration test. To run it, review its package scripts, then use `npm ci --ignore-scripts` and `npm run dev` inside its directory; it binds to loopback. Each case lists:
 
 - `expected`: issues planted in the fixture, with the priority and the evidence a good audit should cite;
 - `decoys`: legitimate design choices that a weak audit tends to flag as problems;

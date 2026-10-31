@@ -192,6 +192,47 @@
           "summary": "Nome da interface e ação de criação de evento."
         }
       ]
+    },
+    {
+      "id": "react-tailwind",
+      "fixture": "evaluations/fixtures/react-tailwind",
+      "brief": "Audite a interface de busca da agenda fictícia sem editar arquivos. Público: equipe que procura compromissos. Use o preview local autorizado e dados sintéticos; não envie dados reais.",
+      "expected": [
+        {
+          "id": "E1",
+          "priority": "P1",
+          "summary": "O campo de busca não tem rótulo visível nem programático.",
+          "evidence": "src/main.jsx: input com placeholder e sem label ou aria-label."
+        },
+        {
+          "id": "E2",
+          "priority": "P1",
+          "summary": "Foco de teclado removido do botão e do campo.",
+          "evidence": "src/style.css: button:focus, input:focus { outline: none; }."
+        },
+        {
+          "id": "E3",
+          "priority": "P2",
+          "summary": "Resultado vazio não oferece sugestão para alterar a busca.",
+          "evidence": "src/main.jsx: mensagem Nenhum resultado sem ação contextual."
+        }
+      ],
+      "decoys": [
+        {
+          "id": "D1",
+          "summary": "Link de ajuda com destino e texto explícitos."
+        }
+      ],
+      "preserve": [
+        {
+          "id": "P1",
+          "summary": "A busca é local e não envia dados para servidor."
+        },
+        {
+          "id": "P2",
+          "summary": "Link e conteúdo de ajuda."
+        }
+      ]
     }
   ]
 }

@@ -6,6 +6,9 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ### Added
 
+- Add structured UX knowledge units, a coverage map, editorial and automated checks, journey/state guidance and a runnable synthetic React/Tailwind evaluation fixture. Sources and real agent performance remain unverified.
+- Add stack-specific inspection guidance and optional report stack metadata; require project inspection before editing platform-specific files.
+
 - Add product-specific UX guidance, synthetic stack-marker evaluation fixtures, safe local stack detection and an opt-in accessibility summary without DOM snippets.
 - Add a reference availability workflow, a DNS pinning investigation, release-readiness checks and contributor automation; accessibility, platform integration and agent quality still require real-world validation.
 
@@ -14,6 +17,8 @@ Notable changes to the repository are recorded here. The automation package vers
 - Require the latest completed successful CI run and its full matrix for the exact main commit before creating a release; GitHub branch protection and live workflow behavior require separate verification.
 
 ### Breaking
+
+- Stack detector `confidence` now returns `signal` or `likely` instead of `possible`; these are marker counts, not proof or calibrated probabilities.
 
 - DNS resolution failures and timeouts now block requests by default; `--allow-unresolved-dns` explicitly restores the weaker proxy-compatible behavior.
 
