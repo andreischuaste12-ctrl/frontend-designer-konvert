@@ -188,6 +188,38 @@ Fontes marcadas como verificadas foram lidas no texto normativo indicado, no com
 - **Métrica a monitorar:** abandono após o primeiro erro.
 - **Fonte:** WCAG 2.2 SC 3.3.7 Redundant Entry e SC 3.3.1 Error Identification — github.com/w3c/wcag@9b94e18, guidelines/sc/22/redundant-entry.html e guidelines/sc/20/error-identification.html · verificado em 2026-10-31 · revisão: agente de IA, pendente de revisão humana
 
+## Ferramentas web e transformação de dados
+
+### UXK-UTL-001 — Ferramenta: entrada preservada e resultado utilizável
+- **Contexto:** ferramentas web · conversores, validadores, geradores e processadores de dados
+- **Estados:** vazio, normal, erro, sucesso
+- **Quando se aplica:** a pessoa fornece dados ou opções para obter um resultado.
+- **Exceções:** páginas somente informativas, sem entrada nem resultado produzido pela ferramenta.
+- **Evidência a coletar:** tentativa com entrada válida e inválida; comportamento após editar a entrada; resultado produzido; ações para copiar ou baixar; confirmação dessas ações.
+- **Método:** inspeção
+- **Prioridade padrão:** P2
+- **Recomendação:** Informar o formato esperado antes da entrada, preservar o conteúdo quando houver erro e deixar claro qual resultado foi produzido. Confirmar quando copiar ou baixar for concluído.
+- **Critério de aceite:** A pessoa consegue identificar o formato de entrada, corrigir uma entrada inválida sem perder o conteúdo, distinguir o resultado da entrada e perceber se a cópia ou o download foi concluído.
+- **Preservar:** conteúdo inserido, opções escolhidas e resultado válido durante correções.
+- **Dependência externa:** não aplicável
+- **Métrica a monitorar:** falhas de conclusão após entrada inválida e tentativas repetidas de copiar ou baixar.
+- **Fonte:** não verificada — critério interno da skill, sem referência externa.
+
+### UXK-UTL-002 — Ferramenta: tratamento de dados sensíveis explicado
+- **Contexto:** ferramentas web · processamento de credenciais, chaves, tokens ou dados pessoais
+- **Estados:** normal, carregando, sucesso
+- **Quando se aplica:** a ferramenta aceita dados que podem permitir acesso a contas, identificar uma pessoa ou revelar informação confidencial.
+- **Exceções:** ferramentas que não recebem nem processam dados desse tipo.
+- **Evidência a coletar:** mensagem apresentada antes da entrada; indicação de processamento local ou remoto; comportamento observável durante o uso; informação sobre retenção ou descarte.
+- **Método:** inspeção
+- **Prioridade padrão:** P1
+- **Recomendação:** Explicar antes do uso onde os dados são processados e se são enviados ou retidos. Basear essas informações no comportamento verificável da ferramenta.
+- **Critério de aceite:** Antes de inserir dados sensíveis, a pessoa encontra uma explicação compreensível sobre processamento e retenção. A interface não afirma que os dados permanecem no dispositivo sem evidência que confirme isso.
+- **Preservar:** controles de acesso, regras de retenção e requisitos de segurança definidos pelo produto.
+- **Dependência externa:** pendente — quando o fluxo de dados ou a retenção não puderem ser confirmados, solicitar validação da equipe responsável.
+- **Métrica a monitorar:** dúvidas ou abandonos relacionados ao tratamento dos dados.
+- **Fonte:** não verificada — critério interno da skill, sem referência externa.
+
 ## Navegação mobile, busca e listagem
 
 ### UXK-NAV-005 — Navegação por teclado com foco visível e não encoberto

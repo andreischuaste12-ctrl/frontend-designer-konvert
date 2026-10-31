@@ -7,7 +7,7 @@ export const REQUIRED = ['Contexto', 'Estados', 'Quando se aplica', 'Exceções'
 export const SPECIFIC_FIELDS = ['Quando se aplica', 'Exceções', 'Evidência a coletar', 'Recomendação', 'Critério de aceite', 'Preservar', 'Métrica a monitorar'];
 const methods = new Set(['automático', 'inspeção', 'hipótese']);
 const states = new Set(['normal', 'carregando', 'erro', 'sucesso', 'vazio', 'recuperação']);
-const idPattern = /UXK-(?:CHK|FRM|NAV|ERR|DSH|GEN)-\d{3}/g;
+const idPattern = /UXK-(?:CHK|FRM|NAV|ERR|DSH|GEN|UTL)-\d{3}/g;
 const JOURNEYS = /^(?:Checkout and payment|Forms and sign-up|Mobile navigation, search and listings|Errors, empty states and recovery|Tables and dashboards)$/;
 const STACK_COLUMNS = new Map([['Shopify', /\bShopify\b/], ['VTEX IO', /\bVTEX\b/], ['WordPress/Woo', /\bWordPress\b|\bWooCommerce\b/], ['React/Next + Tailwind', /\bReact\b|\bNext\.js\b|\bTailwind\b/], ['HTML', /\bHTML\b/]]);
 const STATE_COLUMNS = new Map([['Normal', 'normal'], ['Loading', 'carregando'], ['Error', 'erro'], ['Success', 'sucesso'], ['Empty', 'vazio'], ['Recovery', 'recuperação']]);
@@ -27,7 +27,7 @@ export const isVerifiedSource = (source) => /verificado em \d{4}-\d{2}-\d{2}/i.t
 
 export function checkUnits(markdown, file = 'input') {
   const errors = [], ids = [], units = new Map();
-  const heads = [...markdown.matchAll(/^###\s+(UXK-(?:CHK|FRM|NAV|ERR|DSH|GEN)-\d{3})(?=\s|$).*$/gm)];
+  const heads = [...markdown.matchAll(/^###\s+(UXK-(?:CHK|FRM|NAV|ERR|DSH|GEN|UTL)-\d{3})(?=\s|$).*$/gm)];
   const candidateHeads = [...markdown.matchAll(/^###\s+UXK-.*$/gm)];
   if (candidateHeads.length !== heads.length) errors.push(`${file}: invalid unit heading`);
   for (const [i, head] of heads.entries()) {

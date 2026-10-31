@@ -30,6 +30,7 @@ test('accepts complete units and rejects missing, invalid, or duplicate fields a
   assert.ok(checkUnits(unit({ Estados: 'desconhecido' })).errors.length);
   assert.ok(checkUnits(unit({ Fonte: 'alegação sem verificação' })).errors.length);
   assert.ok(checkUnits(unit().replace('UXK-CHK-001', 'UXK-BAD-001')).errors.length);
+  assert.deepEqual(checkUnits(unit({}, 'UXK-UTL-001')).errors, []);
 });
 
 test('a verified source needs a date and a commit or URL', () => {
@@ -82,4 +83,5 @@ test('unit IDs cited in skills and docs must exist', () => {
   const known = new Set(['UXK-CHK-001']);
   assert.deepEqual(checkUnitReferences([['skill.md', 'Use UXK-CHK-001 como critério.']], known), []);
   assert.deepEqual(checkUnitReferences([['skill.md', 'Use UXK-DSH-052.']], known), ['skill.md: cites unknown unit UXK-DSH-052']);
+  assert.deepEqual(checkUnitReferences([['skill.md', 'Use UXK-UTL-001.']], known), ['skill.md: cites unknown unit UXK-UTL-001']);
 });

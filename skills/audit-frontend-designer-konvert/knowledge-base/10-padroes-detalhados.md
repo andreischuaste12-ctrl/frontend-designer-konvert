@@ -173,6 +173,21 @@ Unidades para problemas recorrentes que não cabem em um único estado. Aplique 
 - **Métrica a monitorar:** toques repetidos ou errados, quando houver dados.
 - **Fonte:** WCAG 2.2 SC 2.5.8 Target Size (Minimum) e SC 2.5.5 Target Size (Enhanced) — github.com/w3c/wcag@9b94e18, guidelines/sc/22/target-size-minimum.html e guidelines/sc/21/target-size-enhanced.html · verificado em 2026-10-31 · revisão: agente de IA, pendente de revisão humana
 
+### UXK-NAV-055 — Ação por gesto com alternativa visível
+- **Contexto:** navegação e ações de conteúdo · interfaces web · mobile
+- **Estados:** normal, sucesso, recuperação
+- **Quando se aplica:** a interface permite executar uma ação por deslizar, arrastar ou outro gesto de toque.
+- **Exceções:** gestos usados apenas para complementar uma ação que também está claramente disponível por controle visível.
+- **Evidência a coletar:** tela antes e depois do gesto; controles visíveis que executam a mesma ação; resultado ao tocar nesses controles.
+- **Método:** inspeção
+- **Prioridade padrão:** P2
+- **Recomendação:** Não deixar uma ação disponível somente por gesto. Exibir um controle identificável para executar a mesma ação e dar retorno visível após a interação.
+- **Critério de aceite:** A pessoa consegue executar a ação por um controle visível, sem depender de descobrir ou realizar o gesto. Após a ação, a interface informa o resultado e mantém disponível a recuperação quando aplicável.
+- **Preservar:** conteúdo, posição e estado da tarefa durante a interação.
+- **Dependência externa:** não aplicável
+- **Métrica a monitorar:** tentativas repetidas ou ações não concluídas em telas com interação por gesto.
+- **Fonte:** não verificada — critério interno da skill, sem referência externa.
+
 ## Erros e conexão
 
 ### UXK-ERR-051 — Página não encontrada que orienta a pessoa

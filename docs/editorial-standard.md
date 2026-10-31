@@ -1,6 +1,6 @@
 # Knowledge-unit editorial standard
 
-Units are inspection prompts, not evidence that a problem exists. Author skill content in Portuguese; repository documentation stays in English. Keep agent-facing material inside the installed skill. A unit addresses one problem and has one independently testable acceptance criterion. IDs are globally unique `UXK-<journey>-NNN`: CHK checkout, FRM forms, NAV navigation, ERR errors and recovery, DSH dashboards, GEN transversal. Stack-specific units use the hundreds digit for the stack: 1xx Shopify, 2xx VTEX IO, 3xx WordPress/WooCommerce, 4xx React/Next.js, 5xx static HTML, and must name the stack in `Contexto`.
+Units are inspection prompts, not evidence that a problem exists. Author skill content in Portuguese; repository documentation stays in English. Keep agent-facing material inside the installed skill. A unit addresses one problem and has one independently testable acceptance criterion. IDs are globally unique `UXK-<journey>-NNN`: CHK checkout, FRM forms, NAV navigation, ERR errors and recovery, DSH dashboards, GEN transversal, UTL web tools and data transformation. Stack-specific units use the hundreds digit for the stack: 1xx Shopify, 2xx VTEX IO, 3xx WordPress/WooCommerce, 4xx React/Next.js, 5xx static HTML, and must name the stack in `Contexto`.
 
 ## Format
 

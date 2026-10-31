@@ -220,6 +220,21 @@ Estas unidades complementam as unidades gerais quando a stack muda **onde** o pr
 - **Métrica a monitorar:** erros de preenchimento nos formulários em React.
 - **Fonte:** React — github.com/reactjs/react.dev@0821e7d, `src/content/reference/react-dom/components/input.md` · verificado em 2026-10-31 · revisão: agente de IA, pendente de revisão humana
 
+### UXK-FRM-402 — React: campo customizado mantém vínculo, valor e foco
+- **Contexto:** formulários · componentes de campo customizados · React/Next.js
+- **Estados:** normal, erro
+- **Quando se aplica:** um componente de UI encapsula o campo editável e é conectado ao estado de um formulário.
+- **Exceções:** campos nativos usados diretamente, sem componente intermediário.
+- **Evidência a coletar:** componente adaptador e campo interno; alteração do valor; envio com campo inválido; destino do foco; associação entre rótulo, campo e mensagem de erro.
+- **Método:** inspeção
+- **Prioridade padrão:** P1
+- **Recomendação:** Encaminhar ao campo editável os dados e eventos necessários para atualizar o valor e receber foco. Manter a associação entre rótulo, campo e erro durante a validação.
+- **Critério de aceite:** Ao editar o componente, o formulário recebe o valor atualizado. Ao enviar com esse campo inválido, o foco chega ao campo editável correto, e o erro pode ser associado a ele e percebido sem depender apenas da cor.
+- **Preservar:** regras de validação e API pública do componente.
+- **Dependência externa:** não aplicável
+- **Métrica a monitorar:** abandono do formulário após uma tentativa de envio com erro.
+- **Fonte:** não verificada — critério interno de integração e usabilidade de formulários React.
+
 ### UXK-NAV-401 — Next.js: título único para o anúncio de rota
 - **Contexto:** navegação · transições no cliente · React/Next.js
 - **Estados:** normal
