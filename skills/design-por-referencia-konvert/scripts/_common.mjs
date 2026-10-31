@@ -29,7 +29,8 @@ export function loadPlaywright() {
 
 export async function launch(pw) {
   try {
-    return await pw.chromium.launch();
+    const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
+    return await pw.chromium.launch(executablePath ? { executablePath } : {});
   } catch (err) {
     return fail(
       `Não foi possível iniciar o Chromium: ${String(err.message).split('\n')[0]}\n` +
@@ -39,17 +40,47 @@ export async function launch(pw) {
   }
 }
 
-export function checkUrl(raw) {
+export function checkUrl(raw, { allowFile = false } = {}) {
   let u;
   try {
     u = new URL(raw);
   } catch {
-    return fail(`URL inválida: ${raw}`);
+    return fail('URL inválida. O valor informado foi omitido da mensagem por privacidade.');
+  }
+  if (u.protocol === 'file:' && !allowFile) {
+    return fail('URLs file:// estão desativadas por padrão. Use --allow-file apenas para arquivos locais que você controla.');
   }
   if (!['http:', 'https:', 'file:'].includes(u.protocol)) {
-    return fail(`Protocolo não permitido: ${u.protocol} (use http, https ou file)`);
+    return fail(`Protocolo não permitido: ${u.protocol} (use http ou https; file:// requer --allow-file)`);
   }
   return u;
+}
+
+// Outputs can be shared or committed accidentally. Strip URL userinfo, query strings,
+// fragments, and local file paths before writing URLs into reports or logs.
+export function redactUrl(raw) {
+  try {
+    const u = new URL(String(raw));
+    if (u.protocol === 'file:') return 'file://[local-path-redacted]';
+    if (u.protocol === 'data:') return 'data:[content-redacted]';
+    u.username = '';
+    u.password = '';
+    u.search = '';
+    u.hash = '';
+    return `${u.origin}${u.pathname === '/' ? '/' : '/[path-redacted]'}`;
+  } catch {
+    return '[URL omitted]';
+  }
+}
+
+export function redactText(raw, limit = 300) {
+  return String(raw)
+    .replace(/https?:\/\/[^\s"'<>)}\]]+/gi, (url) => redactUrl(url.replace(/[.,;:!?]+$/, '')))
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[email redacted]')
+    .replace(/(?:\/(?:home|Users|workspace|tmp)\/)[^\s"'<>]+/g, '[local-path-redacted]')
+    .replace(/[A-Z]:\\Users\\[^\s"'<>]+/gi, '[local-path-redacted]')
+    .replace(/\b(email|e-?mail|full[_-]?name|name|username|user[_-]?id|customer[_-]?id|account[_-]?id|session(?:[_-]?id)?|token|access[_-]?key|api[_-]?key|secret|password|authorization|signature)\s*[:=]\s*[^\s,;&]+/gi, '$1=[redacted]')
+    .slice(0, limit);
 }
 
 export function resolveRoutes(base, csv) {

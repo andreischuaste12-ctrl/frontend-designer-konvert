@@ -17,17 +17,24 @@ Skill para agentes de código que converte uma referência visual (DESIGN.md, UR
 | `scripts/extract-styles.mjs` | Estilos computados, variáveis CSS, fontes, escala tipográfica, contraste e alvos de toque. |
 | `scripts/image-manifest.mjs` | Inventário de imagens do projeto e do render, e roteiro de revisão. |
 | `scripts/_common.mjs` | Utilitários compartilhados pelos scripts. |
-| `evals/evals.json` | Casos de teste de ativação e comportamento. |
-| `evals/evals-visao.proposta.json` | Casos novos de captura e visão, para mesclar a `evals.json`. |
+| `evals/evals-visao.proposta.json` | Proposta de cenários para avaliação manual da skill; não é uma suíte executável. |
+| `tests/` | Testes unitários e smoke test local dos três scripts. |
+| `package.json` e `package-lock.json` | Runtime mínimo, Playwright fixado e comandos reproduzíveis de validação. |
 
 ## Requisitos dos scripts
 
-Node 18 ou superior e Playwright com Chromium. Os scripts não instalam nada e só leem: navegação GET, sem cliques nem envio de formulários. Saídas vão para `.audit/` (mantenha fora do Git).
+Node 20 ou superior e Chromium do Playwright. As dependências estão fixadas no lockfile; instale e valide a partir desta pasta:
 
 ```bash
-npm i -D playwright
+npm ci
 npx playwright install chromium
+npm run check
+npm test
 ```
+
+Os scripts não instalam dependências nem clicam ou enviam formulários. Eles carregam a página em Chromium, que executa o JavaScript do site. Use apenas URLs de projetos que você está autorizado a inspecionar e prefira dados fictícios. Credenciais, parâmetros de consulta e fragmentos são removidos dos URLs gravados nos relatórios; mensagens de erro também passam por sanitização. As saídas ficam em `.audit/`, ignorada pelo `.gitignore` raiz.
+
+O inventário de imagens não copia arquivos por padrão. Use `--save-images` apenas quando precisar revisar cópias locais; não versione nem redistribua imagens sem conferir os direitos. Capturas podem revelar texto e informações presentes na tela, portanto revise os arquivos antes de compartilhar.
 
 Exemplos, a partir da raiz do projeto (`<skill>` é a pasta da skill):
 
@@ -35,18 +42,19 @@ Exemplos, a partir da raiz do projeto (`<skill>` é a pasta da skill):
 node <skill>/scripts/capture.mjs --url http://localhost:3000 --routes /,/produto
 node <skill>/scripts/extract-styles.mjs --url http://localhost:3000 --width 1440
 node <skill>/scripts/image-manifest.mjs --root . --url http://localhost:3000
+# Para copiar imagens do render explicitamente, acrescente: --save-images
 ```
 
 ## Instalação
 
-Copie a pasta inteira (com `references/`, `scripts/` e `evals/`) para o diretório de skills da ferramenta:
+Copie a pasta inteira (incluindo `references/`, `scripts/`, `tests/` e `examples/`) para o diretório de skills da ferramenta. O arquivo `evals-visao.proposta.json` é uma proposta de cenários, não um runner.
 
 | Ferramenta | Projeto | Usuário |
 | --- | --- | --- |
 | Claude Code | `.claude/skills/design-por-referencia-konvert/` | `~/.claude/skills/design-por-referencia-konvert/` |
 | Codex | `.agents/skills/design-por-referencia-konvert/` | `~/.agents/skills/design-por-referencia-konvert/` |
 
-Os caminhos do Codex devem ser confirmados na versão instalada. Reinicie ou atualize o agente se a skill não for detectada.
+Reinicie ou atualize o agente se a skill não for detectada. Se a instalação for feita em outro projeto, proteja `.audit/` no `.gitignore` desse projeto antes de executar os scripts.
 
 ## Quando usar
 

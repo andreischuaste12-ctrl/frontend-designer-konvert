@@ -1,0 +1,22 @@
+# Local audits may contain screenshots, rendered text, source URLs, and third-party images.
+.audit/
+
+# Dependencies, browser downloads, test output, and local tooling state.
+node_modules/
+playwright-report/
+test-results/
+coverage/
+.cache/
+.DS_Store
+Thumbs.db
+
+# Local environment and credential material. Keep example templates trackable.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519

@@ -9,6 +9,8 @@ Improve the product the user already has. First understand its users, purpose, c
 
 Before any visual redesign or code change, use the first knowledge-base module: [Auditoria estética e compreensão do público](knowledge-base/01-auditoria-estetica-e-publico.md). Treat it as the required discovery and diagnosis phase. Preserve existing strengths, separate observed facts from assumptions, and connect every recommendation to a user task or a validation need.
 
+If a supplied URL, screenshot, or design guide is the central source and the user wants it implemented, hand the implementation step to [`design-por-referencia-konvert`](../design-por-referencia-konvert/SKILL.md) after the audience and experience audit. Keep this skill as the lead for audits that do not require reference-driven implementation.
+
 ## Workflow
 
 1. **Understand the project.** Read the README, agent instructions, package manifests, routes, existing design tokens, and the key page/component files. Identify the framework and the actual run, build, and test commands. Start the app and inspect the relevant flow when the environment supports it. Preserve the current stack and established conventions.

@@ -7,16 +7,18 @@
 import { parseArgs } from 'node:util';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { loadPlaywright, launch, checkUrl, ensureDir, metricsInit, preparePage, fail } from './_common.mjs';
+import { loadPlaywright, launch, checkUrl, ensureDir, metricsInit, preparePage, redactUrl, redactText, fail } from './_common.mjs';
 
 const HELP = `Uso: node image-manifest.mjs [--root <dir>] [--url <url>] [opções]
 
   --root <dir>   Varre o projeto em busca de imagens e das suas referências.
   --url <url>    Mede as imagens no render.
+  --allow-file   Permite uma URL file:// local explicitamente.
   --width <px>   Largura do viewport no modo --url (padrão: 1440). Rode também com 375.
   --out <dir>    Saída (padrão: .audit/images).
   --skip <lista> Pastas extras a ignorar, separadas por vírgula.
-  --no-save      No modo --url, não salvar cópias das imagens.
+  --save-images  Copia até 60 imagens para a saída (opt-in; confirme os direitos antes de compartilhar).
+  --no-save      Mantido por compatibilidade; imagens não são copiadas por padrão.
   --timeout <ms> Timeout de navegação (padrão: 30000).
 
 Saída: images-static.json/.md e/ou images-rendered.json/.md, e imagens-revisao.md (roteiro de revisão visual).`;
@@ -25,9 +27,11 @@ const { values: a } = parseArgs({
   options: {
     root: { type: 'string' },
     url: { type: 'string' },
+    'allow-file': { type: 'boolean', default: false },
     width: { type: 'string', default: '1440' },
     out: { type: 'string', default: '.audit/images' },
     skip: { type: 'string', default: '' },
+    'save-images': { type: 'boolean', default: false },
     'no-save': { type: 'boolean', default: false },
     timeout: { type: 'string', default: '30000' },
     help: { type: 'boolean', default: false },
@@ -37,6 +41,7 @@ if (a.help || (!a.root && !a.url)) {
   console.log(HELP);
   process.exit(a.help ? 0 : 1);
 }
+if (a['save-images'] && a['no-save']) fail('Use --save-images ou --no-save, não ambos.');
 
 const outDir = await ensureDir(path.resolve(a.out));
 const kb = (n) => (n == null ? 'n/d' : n >= 1048576 ? `${(n / 1048576).toFixed(2)} MB` : `${(n / 1024).toFixed(1)} KB`);
@@ -213,12 +218,12 @@ if (a.root) {
 
 // ---------------------------------------------------------------- renderizado
 if (a.url) {
-  const url = checkUrl(a.url);
+  const url = checkUrl(a.url, { allowFile: a['allow-file'] });
   const width = Number(a.width) || 1440;
   const timeout = Number(a.timeout) || 30000;
   const pw = loadPlaywright();
   const browser = await launch(pw);
-  const ctx = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce', bypassCSP: true });
+  const ctx = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
   await ctx.addInitScript(metricsInit);
   const page = await ctx.newPage();
 
@@ -245,7 +250,7 @@ if (a.url) {
     await preparePage(page, url.href, timeout);
   } catch (err) {
     await browser.close();
-    fail(`Falha ao abrir ${url.href}: ${String(err.message).split('\n')[0]}`, 3);
+    fail(`Falha ao abrir ${redactUrl(url.href)}: ${redactText(String(err.message).split('\n')[0])}`, 3);
   }
   await Promise.allSettled(pending);
 
@@ -313,7 +318,7 @@ if (a.url) {
   });
 
   let saved = 0;
-  if (!a['no-save']) {
+  if (a['save-images'] && !a['no-save']) {
     const dir = await ensureDir(path.join(outDir, 'files'));
     const done = new Map();
     for (const it of items) {
@@ -321,30 +326,37 @@ if (a.url) {
       if (!done.has(it.src)) {
         if (saved >= 60) break;
         saved += 1;
-        let base = decodeURIComponent(it.src.split('?')[0].split('/').pop() || 'imagem').replace(/[^\w.-]+/g, '_').slice(0, 60);
-        if (!/\.[a-z0-9]{2,5}$/i.test(base)) base += `.${it.format}`;
-        const file = `${String(saved).padStart(2, '0')}-${base}`;
+        const ext = /^[a-z0-9]{2,5}$/i.test(it.format) ? it.format : 'bin';
+        const file = `image-${String(saved).padStart(2, '0')}.${ext}`;
         await fs.writeFile(path.join(dir, file), it._body);
         done.set(it.src, `files/${file}`);
       }
       it.savedAs = done.get(it.src);
     }
   }
-  const clean = items.map(({ _body, ...rest }) => rest);
-  await fs.writeFile(path.join(outDir, 'images-rendered.json'), JSON.stringify({ url: url.href, width, lcp: dom.lcp, cls: dom.cls, items: clean }, null, 2), 'utf8');
+  const redactValues = (value) => {
+    if (typeof value === 'string') return redactText(value, 100000);
+    if (Array.isArray(value)) return value.map(redactValues);
+    if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, redactValues(child)]));
+    return value;
+  };
+  const clean = items.map(({ _body, ...rest }) => redactValues({ ...rest, src: redactUrl(rest.src) }));
+  const safeLcp = dom.lcp ? { ...dom.lcp, url: dom.lcp.url ? redactUrl(dom.lcp.url) : null } : null;
+  const safeUrl = redactUrl(url.href);
+  await fs.writeFile(path.join(outDir, 'images-rendered.json'), JSON.stringify({ url: safeUrl, width, lcp: safeLcp, cls: dom.cls, items: clean }, null, 2), 'utf8');
   const rows = clean
     .map((i) => `| ${i.kind} | ${i.src.startsWith('data:') ? 'data-uri' : i.src.slice(0, 90)} | ${i.format} | ${i.natural ? i.natural.join('×') : '—'} | ${i.rendered.join('×')} | ${kb(i.bytes)} | ${i.kind === 'img' ? (i.alt === null ? 'AUSENTE' : i.alt === '' ? 'vazio' : 'ok') : '—'} | ${i.loading ?? '—'} | ${i.flags.join('; ') || '—'} |`)
     .join('\n');
   await fs.writeFile(
     path.join(outDir, 'images-rendered.md'),
-    `# Imagens no render\n\nMedido em ${url.href}, viewport ${width}px (DPR 1), ${new Date().toISOString()}. LCP: ${dom.lcp ? `${dom.lcp.time}ms ${dom.lcp.tag} ${dom.lcp.url ?? ''}` : 'n/d'} · CLS: ${dom.cls} (laboratório, indicativo).\n\n| Tipo | Origem | Formato | Natural | Renderizado | Peso | alt | loading | Alertas |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${rows}\n`,
+    `# Imagens no render\n\nMedido em ${safeUrl}, viewport ${width}px (DPR 1), ${new Date().toISOString()}. LCP: ${safeLcp ? `${safeLcp.time}ms ${safeLcp.tag} ${safeLcp.url ?? ''}` : 'n/d'} · CLS: ${dom.cls} (laboratório, indicativo).\n\n| Tipo | Origem | Formato | Natural | Renderizado | Peso | alt | loading | Alertas |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${rows}\n`,
     'utf8',
   );
   clean.forEach((i, n) =>
     review.push({
       id: `R${n + 1}`,
-      where: i.savedAs ? `${path.join(outDir, i.savedAs)} (origem: ${i.src.slice(0, 80)})` : i.src.slice(0, 120),
-      facts: `${i.kind} ${i.format} natural ${i.natural ? i.natural.join('×') : '—'} renderizada ${i.rendered.join('×')} ${kb(i.bytes)}; alt: ${i.kind === 'img' ? (i.alt === null ? 'AUSENTE' : JSON.stringify(i.alt)) : '—'}; alerts: ${i.flags.join('; ') || 'nenhum'}`,
+      where: i.savedAs ? `${i.savedAs} (origem: ${i.src.slice(0, 80)})` : i.src.slice(0, 120),
+      facts: redactText(`${i.kind} ${i.format} natural ${i.natural ? i.natural.join('×') : '—'} renderizada ${i.rendered.join('×')} ${kb(i.bytes)}; alt: ${i.kind === 'img' ? (i.alt === null ? 'AUSENTE' : JSON.stringify(i.alt)) : '—'}; alerts: ${i.flags.join('; ') || 'nenhum'}`, 1000),
     }),
   );
   console.log(`Render (${width}px): ${clean.length} imagens, ${saved} cópias salvas → images-rendered.json/.md`);

@@ -10,17 +10,19 @@ import {
   launch,
   checkUrl,
   resolveRoutes,
-  routeSlug,
   ensureDir,
   intList,
   metricsInit,
   preparePage,
+  redactUrl,
+  redactText,
   fail,
 } from './_common.mjs';
 
 const HELP = `Uso: node capture.mjs --url <url> [opções]
 
-  --url <url>              Página ou base do site (http, https ou file). Obrigatório.
+  --url <url>              Página ou base do site (http ou https). Obrigatório.
+  --allow-file             Permite uma URL file:// local explicitamente.
   --routes </a,/b>         Rotas relativas à URL (padrão: só a URL).
   --out <dir>              Saída (padrão: .audit/screenshots). Mantenha fora do Git.
   --widths <lista>         Larguras em px (padrão: 320,375,768,1024,1440).
@@ -32,11 +34,12 @@ const HELP = `Uso: node capture.mjs --url <url> [opções]
   --no-mask                Não mascarar campos de texto (use só com dados fictícios).
   --timeout <ms>           Timeout de navegação (padrão: 30000).
 
-Saída: rota__largura__estado.png + capture-index.json (metadados e evidências).`;
+Saída: route-NN__largura__estado.png + capture-index.json (metadados sanitizados e evidências).`;
 
 const { values: a } = parseArgs({
   options: {
     url: { type: 'string' },
+    'allow-file': { type: 'boolean', default: false },
     routes: { type: 'string', default: '' },
     out: { type: 'string', default: '.audit/screenshots' },
     widths: { type: 'string', default: '320,375,768,1024,1440' },
@@ -56,7 +59,7 @@ if (a.help || !a.url) {
   process.exit(a.help ? 0 : 1);
 }
 
-const base = checkUrl(a.url);
+const base = checkUrl(a.url, { allowFile: a['allow-file'] });
 const routes = resolveRoutes(base, a.routes);
 const widths = intList(a.widths, { min: 200, max: 4000 });
 const schemes = String(a.schemes).split(',').map((s) => s.trim()).filter((s) => s === 'light' || s === 'dark');
@@ -79,11 +82,11 @@ const browser = await launch(pw);
 const index = {
   tool: 'capture.mjs',
   startedAt: new Date().toISOString(),
-  base: base.href,
+  base: redactUrl(base.href),
   widths,
   schemes,
   notes: [
-    'Animações e transições congeladas via CSS injetado; rolagem completa feita antes da captura (lazy loading).',
+    'CSS tenta congelar animações sem ignorar CSP; rolagem completa feita antes da captura (lazy loading).',
     'Banners de consentimento não são clicados: se cobrirem a página, aparecem nas capturas.',
     'LCP/CLS são medidas de laboratório (indicativas). Candidatos a overflow incluem elementos fora da tela de propósito.',
     'Campos de texto mascarados, salvo --no-mask.',
@@ -107,27 +110,27 @@ async function shootAround(page, el, file, mask) {
   return true;
 }
 
-async function captureRoute(ctx, route, width, scheme) {
-  const slug = routeSlug(route);
+async function captureRoute(ctx, route, width, scheme, routeIndex) {
+  const slug = `route-${String(routeIndex).padStart(2, '0')}`;
   const sfx = scheme === 'light' ? '' : `-${scheme}`;
   const name = (state) => `${slug}__${width}__${state}${sfx}.png`;
-  const record = (file, state) => index.files.push({ file, route: route.pathname, width, scheme, state });
+  const record = (file, state) => index.files.push({ file, route: slug, width, scheme, state });
   const page = await ctx.newPage();
   const consoleErrors = [];
   const failedRequests = [];
   page.on('console', (m) => {
-    if (m.type() === 'error') consoleErrors.push(m.text().slice(0, 300));
+    if (m.type() === 'error') consoleErrors.push(redactText(m.text()));
   });
-  page.on('pageerror', (e) => consoleErrors.push(`pageerror: ${String(e.message).slice(0, 300)}`));
+  page.on('pageerror', (e) => consoleErrors.push(`pageerror: ${redactText(e.message)}`));
   page.on('requestfailed', (r) =>
-    failedRequests.push({ url: r.url().slice(0, 200), reason: r.failure()?.errorText ?? null }),
+    failedRequests.push({ url: redactUrl(r.url()), reason: redactText(r.failure()?.errorText ?? '', 120) }),
   );
 
-  const info = { route: route.href, slug, width, scheme };
+  const info = { route: redactUrl(route.href), slug, width, scheme };
   try {
     const resp = await preparePage(page, route.href, timeout);
     info.status = resp ? resp.status() : null;
-    info.finalUrl = page.url();
+    info.finalUrl = redactUrl(page.url());
     const m = await page.evaluate(() => ({
       title: document.title,
       lang: document.documentElement.lang || null,
@@ -139,6 +142,8 @@ async function captureRoute(ctx, route, width, scheme) {
       cls: Number((window.__audit?.cls ?? 0).toFixed(4)),
     }));
     Object.assign(info, m);
+    if (typeof info.title === 'string') info.title = redactText(info.title);
+    if (info.lcp?.url) info.lcp.url = redactUrl(info.lcp.url);
     info.horizontalOverflow = m.docWidth > m.innerWidth + 1;
     if (info.horizontalOverflow) {
       info.overflowCandidates = await page.evaluate(() => {
@@ -159,6 +164,11 @@ async function captureRoute(ctx, route, width, scheme) {
         }
         return out;
       });
+      info.overflowCandidates = info.overflowCandidates.map((item) => ({
+        ...item,
+        id: item.id ? redactText(item.id, 100) : null,
+        class: item.class ? redactText(item.class, 100) : null,
+      }));
     }
 
     const mask = a['no-mask'] ? [] : [page.locator(MASK_SEL)];
@@ -169,7 +179,7 @@ async function captureRoute(ctx, route, width, scheme) {
       await page.screenshot({ path: path.join(outDir, f), fullPage: true, mask });
       record(f, 'full');
     } catch (err) {
-      info.fullPageError = String(err.message).split('\n')[0];
+      info.fullPageError = redactText(String(err.message).split('\n')[0]);
     }
 
     // Fatias com sobreposição: detalhes legíveis mesmo se o visualizador reduzir imagens grandes.
@@ -212,7 +222,7 @@ async function captureRoute(ctx, route, width, scheme) {
       for (const p of picks) {
         n += 1;
         const el = page.locator(CONTROL_SEL).nth(p.i);
-        const entry = { n, label: p.label, files: [] };
+        const entry = { n, label: redactText(p.label, 100), files: [] };
         try {
           await page.mouse.move(0, 0);
           await page.keyboard.press('Shift'); // marca modalidade de teclado para :focus-visible
@@ -230,13 +240,13 @@ async function captureRoute(ctx, route, width, scheme) {
             record(fh, `ctrl-${n}-hover`);
           }
         } catch (err) {
-          entry.error = String(err.message).split('\n')[0];
+          entry.error = redactText(String(err.message).split('\n')[0]);
         }
         info.controls.push(entry);
       }
     }
   } catch (err) {
-    info.error = String(err.message).split('\n')[0];
+    info.error = redactText(String(err.message).split('\n')[0]);
   } finally {
     info.consoleErrors = consoleErrors.slice(0, 10);
     info.failedRequests = failedRequests.slice(0, 10);
@@ -251,11 +261,10 @@ for (const scheme of schemes) {
       viewport: { width, height: 900 },
       colorScheme: scheme,
       reducedMotion: 'reduce',
-      bypassCSP: true, // permite injetar o CSS que congela animações
     });
     await ctx.addInitScript(metricsInit);
-    for (const route of routes) {
-      const info = await captureRoute(ctx, route, width, scheme);
+    for (const [routeIndex, route] of routes.entries()) {
+      const info = await captureRoute(ctx, route, width, scheme, routeIndex + 1);
       index.pages.push(info);
       const status = info.error
         ? `ERRO ${info.error}`

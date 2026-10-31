@@ -8,12 +8,13 @@ Imagens definem boa parte da fidelidade visual e do desempenho percebido. Este r
 # Projeto (estático): formato, dimensões, peso, onde é referenciada, alt no markup
 node <skill>/scripts/image-manifest.mjs --root .
 
-# Render: tamanho natural x renderizado, alt, lazy, LCP, bytes, formato; salva cópias para abrir
+# Render: tamanho natural x renderizado, alt, lazy, LCP, bytes e formato; não salva cópias por padrão
 node <skill>/scripts/image-manifest.mjs --url http://localhost:3000 --width 1440
 node <skill>/scripts/image-manifest.mjs --url http://localhost:3000 --width 375
+# Para salvar até 60 cópias locais explicitamente, acrescente --save-images
 ```
 
-Saída em `.audit/images/`: `images-static.md/.json`, `images-rendered.md/.json`, `files/` (cópias das imagens vistas no render, até 60) e `imagens-revisao.md` (roteiro de revisão em lotes de 8). Use `--no-save` para não copiar arquivos e `--skip pasta1,pasta2` para ignorar pastas. O script ignora `node_modules`, `.git`, builds, caches, `.audit`, links simbólicos e arquivos `.env`/chaves.
+Saída em `.audit/images/`: `images-static.md/.json`, `images-rendered.md/.json` e `imagens-revisao.md` (roteiro de revisão em lotes de 8). Com `--save-images`, também cria `files/` com até 60 cópias nomeadas sem usar nomes de origem. Use `--skip pasta1,pasta2` para ignorar pastas. O script ignora `node_modules`, `.git`, builds, caches, `.audit`, links simbólicos e arquivos `.env`/chaves. URL credentials, paths, query strings, fragments, emails e file paths são removidos dos relatórios.
 
 Rode o render em 375 e 1440 px: `srcset` e `sizes` podem escolher arquivos diferentes.
 

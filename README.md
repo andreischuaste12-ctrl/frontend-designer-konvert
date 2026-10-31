@@ -1,50 +1,79 @@
-# Frontend Designer
+# Frontend Design Skills
 
-A skill for evaluating and improving frontend interfaces with a focus on visual design, clarity, usability, and real-world context. Before proposing a redesign or changing code, it guides the agent to understand the project, identify its audience and primary task, audit what already works, and document opportunities while separating evidence from assumptions.
+This repository contains two complementary skills for coding agents. It is a skills-and-tools repository, not a web application.
 
-## What the skill includes
+## Skills
 
-- Aesthetic audits tied to comprehension, readability, trust, and task completion.
-- Audience and usage-context analysis without inventing personas.
-- An organized reference catalog for ecommerce, landing pages, product flows, visual direction, components, typography, usability, and accessibility.
-- Guidance for proposing, implementing, and verifying improvements within the existing stack.
+### `frontend-designer`
 
-## Activation trigger
+Use it to understand a product and its audience, audit the current experience and visual design, identify what works and what should improve, then implement focused usability and responsive-design improvements.
 
-Use the `frontend-designer` skill when a task asks you to analyze or audit a website or frontend application, assess its visual design or usability, understand its audience, research references, improve a landing page, review a user journey, or implement visual and responsive improvements.
+Start with this skill when the request is to audit, evaluate, or improve an existing interface. It does not require a visual reference.
 
-Requests that should activate the skill include:
+### `design-por-referencia-konvert`
 
-- “Audit this page's experience and visual design before changing the code.”
-- “Analyze who uses this site and suggest usability improvements.”
-- “Compare this landing page with relevant references and implement the highest-priority improvements.”
-- “Review this interface on desktop and mobile while preserving what already works.”
+Use it when the task is to adapt a supplied design guide, URL, screenshot, or visual direction into an implementation, with rendered captures and measured styles to check fidelity.
 
-## Download and install
+Use this skill when a reference is central to the task. It complements `frontend-designer`: first understand the product and its users; then use the reference-conversion workflow for the implementation. Do not use a gallery example as proof of usability.
 
-Use Git and Bash to clone only the skill folder into this project's skills directory:
+## Install both skills
+
+From the root of the project where you want to install the skills, run:
 
 ```bash
+tmp_dir="$(mktemp -d)"
+trap 'rm -rf "$tmp_dir"' EXIT
 git clone --depth 1 --filter=blob:none --sparse \
   https://github.com/andreischuaste12-ctrl/frontend-designer-konvert.git \
-  /tmp/frontend-designer-konvert
-git -C /tmp/frontend-designer-konvert sparse-checkout set skills/frontend-designer
+  "$tmp_dir/repo"
+git -C "$tmp_dir/repo" sparse-checkout set \
+  skills/frontend-designer \
+  skills/design-por-referencia-konvert
 mkdir -p .agents/skills
-cp -R /tmp/frontend-designer-konvert/skills/frontend-designer .agents/skills/
+cp -R "$tmp_dir/repo"/skills/* .agents/skills/
 ```
 
-The expected result is `.agents/skills/frontend-designer/SKILL.md` alongside its `knowledge-base` folder. If your agent uses a different skills directory, copy `skills/frontend-designer` to the location it recognizes. Restart or refresh the agent if it does not detect the skill automatically.
+The expected result is `.agents/skills/frontend-designer/SKILL.md` and `.agents/skills/design-por-referencia-konvert/SKILL.md`, each with its supporting knowledge base, references, and scripts. If your agent uses a different skills directory, copy the `skills` folders there. Refresh the agent if it does not detect the skills automatically.
 
-## Structure
+## Privacy and safe use
+
+- Keep generated audits in `.audit/`; the root `.gitignore` excludes this folder because captures and reports can contain page content, URLs, or third-party images.
+- When installing into another repository, add `.audit/` to that repository's `.gitignore` (or direct output outside the checkout) before running capture tools.
+- Use test or synthetic account data. Do not capture authenticated pages containing real customer information unless explicitly required and approved.
+- Do not put credentials, private URLs, customer data, or session identifiers in committed files, screenshots, issue text, or reports.
+- The audit scripts are intended for sites and local projects you are authorized to inspect. Review outputs before sharing them.
+
+## Validate the reference tooling
+
+The browser tools are maintained as a package inside the reference-driven skill, not at the repository root:
+
+```bash
+cd skills/design-por-referencia-konvert
+npm ci
+npm run check
+npm test
+```
+
+The smoke test uses a synthetic page on loopback and the installed Playwright Chromium. GitHub Actions runs syntax and unit checks on Node 20, 22, and 24, and runs the browser smoke test on Node 22.
+
+## Repository layout
 
 ```text
-skills/frontend-designer/
-├── SKILL.md
-└── knowledge-base/
-    ├── 01-auditoria-estetica-e-publico.md
-    └── 02-catalogo-de-referencias.md
+skills/
+├── frontend-designer/
+│   ├── SKILL.md
+│   └── knowledge-base/
+└── design-por-referencia-konvert/
+    ├── SKILL.md
+    ├── examples/
+    ├── references/
+    ├── scripts/
+    └── tests/
+
+.github/workflows/skill-tools.yml
+CHANGELOG.md
 ```
 
 ## Author and license
 
-Created by **Andrei Schuaste**. This project is distributed under the MIT License. See [LICENSE](LICENSE) for the full terms.
+Created by **Andrei Schuaste**. This repository is distributed under the MIT License. See [LICENSE](LICENSE) for the full terms.

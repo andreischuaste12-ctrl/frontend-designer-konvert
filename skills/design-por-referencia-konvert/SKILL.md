@@ -56,9 +56,11 @@ Entregue de forma curta: fonte e nível de fidelidade usados, tabela de papéis 
 
 ## Evidência visual e privacidade
 
-- Capturas e medições são somente leitura sobre o alvo: só navegação GET; não clique em aceitar cookies, não envie formulários, não faça login sem o usuário fornecer o acesso.
-- Campos de texto saem mascarados; use dados fictícios. Não exponha dados pessoais em capturas, logs ou relatório.
-- Guarde as saídas em `.audit/` (ou fora do repositório) e não as versione nem as publique: podem conter imagens e textos de terceiros.
+- Os scripts não clicam nem enviam formulários, mas o navegador executa JavaScript da página e pode carregar recursos externos. GET não garante ausência de efeitos colaterais; use apenas alvos que o usuário autorizou inspecionar.
+- Campos de formulário saem mascarados nas capturas; use dados fictícios. Isso não mascara nomes, mensagens, conteúdo já renderizado nem dados em imagens. Não rode auditorias autenticadas com dados reais sem necessidade e autorização explícita.
+- Antes de executar scripts, confirme que `.audit/` está ignorada pelo Git no projeto auditado (`git check-ignore .audit/`). Se não estiver, adicione essa entrada ao `.gitignore` local ou escolha uma saída fora do checkout.
+- Metadados de saída removem credenciais, query strings, fragmentos, emails e caminhos locais de URLs. Mesmo assim, revise capturas e relatórios antes de compartilhar: conteúdo da página pode conter dados pessoais ou de clientes.
+- Cópias de imagens ficam desativadas por padrão. Use `--save-images` apenas se necessário, mantenha-as fora do Git e confira direitos antes de compartilhar.
 - Nunca leia nem imprima `.env`, chaves ou credenciais.
 
 ## Direitos e redistribuição

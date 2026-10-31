@@ -5,11 +5,12 @@
 import { parseArgs } from 'node:util';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { loadPlaywright, launch, checkUrl, ensureDir, metricsInit, preparePage, fail } from './_common.mjs';
+import { loadPlaywright, launch, checkUrl, ensureDir, metricsInit, preparePage, redactUrl, redactText, fail } from './_common.mjs';
 
 const HELP = `Uso: node extract-styles.mjs --url <url> [opções]
 
-  --url <url>        Página (http, https ou file). Obrigatório.
+  --url <url>        Página (http ou https). Obrigatório.
+  --allow-file       Permite uma URL file:// local explicitamente.
   --out <dir>        Saída (padrão: .audit/styles).
   --width <px>       Largura do viewport (padrão: 1440). Rode também com 375.
   --scheme <s>       light | dark (padrão: light).
@@ -22,6 +23,7 @@ Saída: computed-styles.json, styles-summary.md, aria-snapshot.yml (quando supor
 const { values: a } = parseArgs({
   options: {
     url: { type: 'string' },
+    'allow-file': { type: 'boolean', default: false },
     out: { type: 'string', default: '.audit/styles' },
     width: { type: 'string', default: '1440' },
     scheme: { type: 'string', default: 'light' },
@@ -36,7 +38,7 @@ if (a.help || !a.url) {
   process.exit(a.help ? 0 : 1);
 }
 
-const url = checkUrl(a.url);
+const url = checkUrl(a.url, { allowFile: a['allow-file'] });
 const width = Number(a.width) || 1440;
 const scheme = a.scheme === 'dark' ? 'dark' : 'light';
 const maxPer = Math.max(1, Number(a['max-per']) || 12);
@@ -49,7 +51,6 @@ const ctx = await browser.newContext({
   viewport: { width, height: 900 },
   colorScheme: scheme,
   reducedMotion: 'reduce',
-  bypassCSP: true,
 });
 await ctx.addInitScript(metricsInit);
 const page = await ctx.newPage();
@@ -59,7 +60,7 @@ try {
   resp = await preparePage(page, url.href, timeout);
 } catch (err) {
   await browser.close();
-  fail(`Falha ao abrir ${url.href}: ${String(err.message).split('\n')[0]}`, 3);
+  fail(`Falha ao abrir ${redactUrl(url.href)}: ${redactText(String(err.message).split('\n')[0])}`, 3);
 }
 
 const data = await page.evaluate(
@@ -306,19 +307,27 @@ const data = await page.evaluate(
 
 let aria = null;
 try {
-  aria = await page.locator('body').ariaSnapshot();
+  aria = redactText(await page.locator('body').ariaSnapshot(), 100000);
   await fs.writeFile(path.join(outDir, 'aria-snapshot.yml'), aria, 'utf8');
 } catch {
   /* versão do Playwright sem ariaSnapshot */
 }
 await browser.close();
 
-const meta = { tool: 'extract-styles.mjs', url: url.href, status: resp ? resp.status() : null, width, scheme, at: new Date().toISOString() };
-await fs.writeFile(path.join(outDir, 'computed-styles.json'), JSON.stringify({ meta, ...data }, null, 2), 'utf8');
+function redactValues(value) {
+  if (typeof value === 'string') return redactText(value, 100000);
+  if (Array.isArray(value)) return value.map(redactValues);
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, redactValues(child)]));
+  return value;
+}
+const safeData = redactValues(data);
+Object.assign(data, safeData);
+const meta = { tool: 'extract-styles.mjs', url: redactUrl(url.href), status: resp ? resp.status() : null, width, scheme, at: new Date().toISOString() };
+await fs.writeFile(path.join(outDir, 'computed-styles.json'), JSON.stringify({ meta, ...safeData }, null, 2), 'utf8');
 
-const fails = data.elements.filter((e) => e.contrastStatus === 'falha');
-const indet = data.elements.filter((e) => e.contrastStatus === 'indeterminado');
-const smallNow = data.targets.filter((t) => t.lt24 && !t.inline);
+const fails = safeData.elements.filter((e) => e.contrastStatus === 'falha');
+const indet = safeData.elements.filter((e) => e.contrastStatus === 'indeterminado');
+const smallNow = safeData.targets.filter((t) => t.lt24 && !t.inline);
 const list = (rows, fmt) => (rows.length ? rows.map(fmt).join('\n') : '_nenhum_');
 const md = `# Estilos medidos
 
@@ -359,7 +368,7 @@ ${list(fails.slice(0, 25), (e) => `- ${e.selector} "${e.text}" · ${e.color} sob
 ${list(data.targets.slice(0, 30), (t) => `- ${t.selector} "${t.text}" ${t.w}×${t.h}${t.lt24 ? ' · <24' : ''}${t.inline ? ' · em linha (possível exceção)' : ''}`)}
 
 ## Títulos
-${list(data.headings.slice(0, 40), (h) => `- ${'  '.repeat(h.level - 1)}h${h.level} ${h.text}`)}
+${list(safeData.headings.slice(0, 40), (h) => `- ${'  '.repeat(h.level - 1)}h${h.level} ${h.text}`)}
 `;
 await fs.writeFile(path.join(outDir, 'styles-summary.md'), md, 'utf8');
 console.log(`OK: ${data.elements.length} exemplos · ${data.rootVars.length} variáveis CSS · ${fails.length} falhas de contraste · ${smallNow.length} alvos <24px`);

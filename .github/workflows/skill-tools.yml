@@ -1,0 +1,52 @@
+name: Validate reference design skill
+
+on:
+  push:
+    paths:
+      - 'skills/design-por-referencia-konvert/**'
+      - '.github/workflows/skill-tools.yml'
+  pull_request:
+    paths:
+      - 'skills/design-por-referencia-konvert/**'
+      - '.github/workflows/skill-tools.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20, 22, 24]
+    defaults:
+      run:
+        working-directory: skills/design-por-referencia-konvert
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: skills/design-por-referencia-konvert/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm run test:unit
+
+  smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: skills/design-por-referencia-konvert
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: skills/design-por-referencia-konvert/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:smoke

@@ -1,0 +1,23 @@
+{
+  "tool": "capture.mjs",
+  "startedAt": "2026-01-01T00:00:00.000Z",
+  "base": "https://shop.example/[path-redacted]",
+  "widths": [375],
+  "schemes": ["light"],
+  "pages": [
+    {
+      "route": "https://shop.example/[path-redacted]",
+      "slug": "route-01",
+      "width": 375,
+      "scheme": "light",
+      "status": 200,
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "failedRequests": []
+    }
+  ],
+  "files": [
+    { "file": "route-01__375__full.png", "route": "route-01", "width": 375, "scheme": "light", "state": "full" }
+  ],
+  "finishedAt": "2026-01-01T00:00:01.000Z"
+}
