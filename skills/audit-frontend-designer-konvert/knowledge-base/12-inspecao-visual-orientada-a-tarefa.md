@@ -20,6 +20,8 @@ Registre a rota, a tarefa da pessoa, o estado da interface, a largura da tela e 
 
 Compare o estado inicial com o estado após uma interação somente quando essa interação for autorizada e segura. Os scripts de captura da executora não clicam nem enviam formulários; para estados não observados, registre a lacuna em vez de descrever um resultado imaginado.
 
+Quando o alvo é um componente ou diff delimitado, leia a implementação apenas para explicar o comportamento de design observado: rótulo, foco, estado, conteúdo, reflow e movimento. Cite o arquivo e a linha que sustentam o achado. Não transforme essa revisão em diagnóstico de cache, SEO, backend ou desempenho sem evidência e escopo apropriados.
+
 ## Formular o achado
 
 1. Aponte o elemento e o estado observados, com a captura ou a leitura de código que sustenta a afirmação.

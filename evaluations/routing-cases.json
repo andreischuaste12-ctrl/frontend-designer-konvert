@@ -130,8 +130,9 @@
   {
     "id": "reference-06",
     "skill": "design-por-referencia-konvert",
-    "prompt": "Use this written visual direction to implement and validate the WordPress checkout UI.",
+    "prompt": "Refine the opening and closing motion of this existing modal without changing its content or focus behavior.",
     "shouldTrigger": true,
+    "expectedFlow": ["design-por-referencia-konvert"],
     "language": "en"
   },
   {
@@ -308,8 +309,9 @@
   {
     "id": "reference-pt-06",
     "skill": "design-por-referencia-konvert",
-    "prompt": "Use esta direção visual escrita para implementar e validar a UI do checkout WordPress.",
+    "prompt": "Refine o movimento de entrada e saída deste modal existente sem mudar o conteúdo nem o comportamento do foco.",
     "shouldTrigger": true,
+    "expectedFlow": ["design-por-referencia-konvert"],
     "language": "pt-BR"
   },
   {

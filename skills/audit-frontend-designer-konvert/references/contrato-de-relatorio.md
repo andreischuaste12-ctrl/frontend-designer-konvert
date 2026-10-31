@@ -6,7 +6,7 @@ Toda auditoria de design UX/UI concluída produz um relatório em Markdown e out
 
 O nível superior contém:
 
-- `schema_version`: versão inteira do esquema (`2` neste contrato). Relatórios `1` ainda são lidos, mas toda dependência descrita neles conta como pendente.
+- `schema_version`: versão inteira do esquema (`3` para relatórios novos). Relatórios `2` continuam aceitos sem metadados estruturados; relatórios `1` também são lidos, mas toda dependência descrita neles conta como pendente. Uma versão antiga não ganha evidência inventada na migração.
 - `report_id`: ID estável e não identificável do relatório.
 - `project`: rótulo curto do projeto; não inclua URLs privadas, caminhos pessoais, IDs de conta nem dados de clientes.
 - `scope`: rotas, tarefas, viewports, estados e dimensões da auditoria cobertos.
@@ -26,6 +26,9 @@ Cada achado deve conter:
 | `priority` | Um entre `P0`, `P1`, `P2`, `P3`. |
 | `location` | Rota/componente/elemento/viewport ou caminho relativo no código; use `unknown` se indisponível. |
 | `evidence_observed` | Evidência direta e sua fonte. Rotule claramente inferência ou hipótese. |
+| `finding_kind` | Na versão 3: `problem` para barreira demonstrada, `opportunity` para melhoria observável, ou `needs_validation` para hipótese ainda não verificada. Preferência pessoal sem relação com a tarefa não é achado. |
+| `evidence` | Na versão 3: objeto com `type` (`rendered_capture`, `interaction`, `dom`, `source_code` ou `provided_material`), `source` sanitizada, `state` e `viewport`. Não cite artefato não criado ou não inspecionado. |
+| `inference` e `hypothesis` | Na versão 3: texto ou `null` para cada campo. Separe a interpretação da observação do efeito que depende de teste ou dados. |
 | `probable_impact` | Efeito provável na compreensão, percepção, confiança, esforço ou capacidade de concluir uma tarefa. Marque como hipótese os efeitos psicológicos não testados. |
 | `confidence` | Objeto com `level` (`high`, `medium` ou `low`) e `reason` curto. |
 | `preserve` | Comportamento, conteúdo, componente, marca, integração ou contrato que não deve mudar neste achado. |
@@ -43,6 +46,8 @@ Cada achado deve conter:
 | `resolved` | A dependência foi atendida. | `detail` e `resolution`: a decisão tomada e quem decidiu |
 
 Um achado só é implementável quando `approved_for_implementation` é `true`, `external_dependency.status` não é `pending` **e** o ID corresponde à autorização independente do usuário. Aprovação não resolve dependência, e dependência resolvida não equivale a aprovação. Só registre `resolved` com a decisão vinda do usuário ou do responsável indicado; não deduza a resolução.
+
+Na versão 3, `needs_validation` não pode ser marcado como aprovado para implementação. Primeiro obtenha a validação e reclassifique o achado com nova evidência. `opportunity` ainda exige aprovação e critério de aceite; não o apresente como defeito confirmado.
 
 O significado de P0–P3 e as regras de evidência estão na [orientação de relatório e handoff](../knowledge-base/03-relatorio-e-handoff.md).
 
@@ -76,6 +81,8 @@ Use `not_observed` quando o estado existe mas não foi examinado (tempo, ferrame
 
 ## Renderização em Markdown
 
+Para a versão 3, cada achado também traz `- **Classe:** problema|oportunidade|a validar`, `- **Fonte da evidência:** <tipo> — <fonte>; estado <estado>; viewport <viewport>`, `- **Inferência:** <texto|nenhuma>` e `- **Hipótese:** <texto|nenhuma>`. Os tipos em português são `captura`, `interação`, `DOM`, `código` e `material fornecido`. Esses campos espelham o JSON; não substituem a evidência observada.
+
 Cada achado usa um cabeçalho `### UX-001` seguido de itens `- **Rótulo:** valor`. Os rótulos verificados são `Prioridade`, `Local`, `Evidência observada`, `Impacto provável`, `Próximo passo`, `Critério de aceite`, `Dependência externa` e `Aprovado para implementação`. O validador normaliza espaços e quebras de linha nos campos textuais e aceita escapes Markdown comuns; os valores devem corresponder ao JSON. O estado da dependência usa `pendente`, `resolvida` ou `não aplicável`; aprovação usa `true` ou `false`. `Confiança` começa com `alta`, `média` ou `baixa`, seguida de ` — ` e do motivo do JSON; `Preservar` lista, em uma linha, todos os itens do `preserve` do achado. A seção `## O que preservar` contém todos os itens do `preserve` geral. Com `coverage`, a seção `## Cobertura` traz uma tabela com as colunas Página ou fluxo, Tarefa, Estado, Viewport, Stack, Resultado (`observado`, `não observado`, `não se aplica`, `bloqueado`), Evidência ou motivo e Achados, uma linha por item do JSON.
 
 Inclua o contexto do relatório e os limites de evidência, depois uma seção por achado com todos os campos obrigatórios, seguida dos itens a preservar do projeto inteiro e do handoff proposto. Mantenha IDs e valores do Markdown alinhados ao JSON. Mantenha os achados estritamente sobre UX/UI e psicologia do design. Não inclua edições de código-fonte nem descreva recomendações como trabalho concluído.
@@ -84,7 +91,7 @@ Inclua o contexto do relatório e os limites de evidência, depois uma seção p
 
 Veja o [relatório em Markdown](../examples/audit-report.example.md) sintético e o [relatório em JSON](../examples/audit-report.example.json) correspondente. Ambos usam detalhes de produto fictícios e não contêm pesquisa real nem resultados de usuário medidos.
 
-O Markdown e o JSON são verificados por ID, prioridade, aprovação, dependência, campos textuais principais, confiança, listas de preservação (de cada achado e geral) e linhas de cobertura. A pessoa aprova lendo o Markdown e a executora lê o JSON, então divergências bloqueiam a validação. Equivalência semântica ainda exige revisão humana. A checagem de privacidade é melhor esforço, não garantia.
+O Markdown e o JSON são verificados por ID, prioridade, aprovação, dependência, campos textuais principais, confiança, listas de preservação (de cada achado e geral) e linhas de cobertura. Na versão 3, classe, fonte da evidência, inferência e hipótese também precisam coincidir. A pessoa aprova lendo o Markdown e a executora lê o JSON, então divergências bloqueiam a validação. Equivalência semântica ainda exige revisão humana. A checagem de privacidade é melhor esforço, não garantia.
 
 As [unidades de conhecimento](unidades-de-conhecimento.md) orientam a inspeção e a correspondência com os campos; apenas evidência efetivamente coletada pode integrar um achado.
 

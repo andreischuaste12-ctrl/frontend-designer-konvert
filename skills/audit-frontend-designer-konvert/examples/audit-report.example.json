@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "report_id": "SYNTH-001",
   "project": "página de produto fictícia",
   "stack": {
@@ -109,6 +109,10 @@
       "priority": "P1",
       "location": "página de produto fictícia, painel de preço e compra",
       "evidence_observed": "No fluxo sintético, o custo de entrega só aparece depois de adicionar o item ao carrinho.",
+      "finding_kind": "problem",
+      "evidence": { "type": "interaction", "source": "fluxo sintético de compra", "state": "normal", "viewport": "375 px" },
+      "inference": "A sequência exige adicionar ao carrinho para descobrir como o frete é apresentado.",
+      "hypothesis": "A ausência da informação antecipada pode gerar surpresa; não houve teste com compradores.",
       "probable_impact": "Compradores podem adiar a decisão ou se surpreender com um custo inesperado; este efeito é uma hipótese, não um resultado medido.",
       "confidence": {
         "level": "medium",
@@ -133,6 +137,10 @@
       "priority": "P2",
       "location": "página de produto fictícia, seletor de opções",
       "evidence_observed": "Os rótulos das opções contêm códigos internos de papel, sem explicação no briefing sintético.",
+      "finding_kind": "needs_validation",
+      "evidence": { "type": "rendered_capture", "source": "captura sintética route-01__375__light.png", "state": "normal", "viewport": "375 px" },
+      "inference": "O briefing sintético não define o significado dos códigos exibidos.",
+      "hypothesis": "Compradores de primeira viagem podem ter dificuldade para comparar opções; falta validação com usuários.",
       "probable_impact": "Compradores de primeira viagem podem não comparar as opções com confiança; a compreensão não foi testada.",
       "confidence": {
         "level": "low",
@@ -156,6 +164,10 @@
       "priority": "P2",
       "location": "página de produto fictícia, botão de compra em mobile (375 px)",
       "evidence_observed": "Na captura sintética, o botão de compra usa texto cinza-claro sobre fundo cinza e tem o mesmo peso visual dos links secundários ao lado.",
+      "finding_kind": "problem",
+      "evidence": { "type": "rendered_capture", "source": "captura sintética route-01__375__light.png", "state": "normal", "viewport": "375 px" },
+      "inference": "O controle principal não se diferencia visualmente dos links secundários no painel.",
+      "hypothesis": "O reconhecimento da ação pode ser mais lento; o efeito em compras não foi medido.",
       "probable_impact": "A ação principal pode demorar mais a ser reconhecida; o efeito na conclusão da compra é uma hipótese não medida.",
       "confidence": {
         "level": "medium",

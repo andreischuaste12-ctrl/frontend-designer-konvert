@@ -6,9 +6,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 const PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
 const CONFIDENCE = ['high', 'medium', 'low'];
+const FINDING_KINDS = ['problem', 'opportunity', 'needs_validation'];
+const EVIDENCE_TYPES = ['rendered_capture', 'interaction', 'dom', 'source_code', 'provided_material'];
 const DEPENDENCY_STATUS = ['not_applicable', 'pending', 'resolved'];
 const ID_PATTERN = /^[A-Za-z][A-Za-z0-9]*-\d{3,}$/;
 // Coverage records what was actually inspected; states follow the knowledge units.
@@ -36,7 +38,7 @@ export function normalizeReport(report) {
   if (!report || typeof report !== 'object' || report.schema_version !== 1 || !Array.isArray(report.findings)) return report;
   return {
     ...report,
-    schema_version: CURRENT_SCHEMA_VERSION,
+    schema_version: 2,
     findings: report.findings.map((finding) => {
       if (!finding || typeof finding !== 'object') return finding;
       const { requires_external_data_or_approval: legacy, ...rest } = finding;
@@ -50,7 +52,7 @@ export function normalizeReport(report) {
   };
 }
 
-function scanPrivate(value, where, errors, warnings) {
+export function scanPrivate(value, where, errors, warnings) {
   if (typeof value === 'string') {
     for (const [pattern, label, severity] of PRIVATE_PATTERNS) {
       if (pattern.test(value)) (severity === 'error' ? errors : warnings).push(`${where}: possible ${label}; redact before sharing`);
@@ -70,7 +72,7 @@ function validateDependency(dep, where, errors) {
   if (dep.status !== 'resolved' && dep.resolution !== undefined) errors.push(`${where}.external_dependency.resolution is only allowed when status is resolved`);
 }
 
-function validateFinding(finding, index, errors) {
+function validateFinding(finding, index, errors, schemaVersion) {
   const where = `findings[${index}]`;
   if (!finding || typeof finding !== 'object' || Array.isArray(finding)) { errors.push(`${where} must be an object`); return; }
   if (!isText(finding.id) || !ID_PATTERN.test(finding.id)) errors.push(`${where}.id must look like UX-001`);
@@ -83,6 +85,17 @@ function validateFinding(finding, index, errors) {
   if (typeof finding.approved_for_implementation !== 'boolean') errors.push(`${where}.approved_for_implementation must be a boolean`);
   if ('requires_external_data_or_approval' in finding) errors.push(`${where}.requires_external_data_or_approval belongs to schema_version 1; use external_dependency`);
   validateDependency(finding.external_dependency, where, errors);
+  if (schemaVersion === CURRENT_SCHEMA_VERSION) {
+    if (!FINDING_KINDS.includes(finding.finding_kind)) errors.push(`${where}.finding_kind must be one of ${FINDING_KINDS.join(', ')}`);
+    if (finding.finding_kind === 'needs_validation' && finding.approved_for_implementation === true) errors.push(`${where}.needs_validation cannot be approved for implementation before validation`);
+    const evidence = finding.evidence;
+    if (!evidence || typeof evidence !== 'object' || Array.isArray(evidence) || !EVIDENCE_TYPES.includes(evidence.type) || !isText(evidence.source) || !isText(evidence.state) || !isText(evidence.viewport)) {
+      errors.push(`${where}.evidence needs type, source, state and viewport`);
+    }
+    for (const field of ['inference', 'hypothesis']) {
+      if (!Object.hasOwn(finding, field) || (finding[field] !== null && !isText(finding[field]))) errors.push(`${where}.${field} must be null or a non-empty string`);
+    }
+  }
 }
 
 /**
@@ -119,7 +132,8 @@ export function validateAuditReport(input) {
   const warnings = [];
   if (!input || typeof input !== 'object' || Array.isArray(input)) return { errors: ['report must be a JSON object'], warnings, report: input };
   if (input.schema_version === 1) warnings.push('schema_version 1 is deprecated: described dependencies are treated as pending; migrate to external_dependency');
-  else if (input.schema_version !== CURRENT_SCHEMA_VERSION) errors.push(`schema_version must be ${CURRENT_SCHEMA_VERSION} (or legacy 1)`);
+  else if (input.schema_version === 2) warnings.push('schema_version 2 is supported for existing reports; new reports should use version 3 with structured evidence');
+  else if (input.schema_version !== CURRENT_SCHEMA_VERSION) errors.push(`schema_version must be ${CURRENT_SCHEMA_VERSION} (or legacy 1 or 2)`);
   const report = normalizeReport(input);
   if (!isText(report.report_id)) errors.push('report_id must be a non-empty string');
   if (!isText(report.project)) errors.push('project must be a non-empty string');
@@ -132,7 +146,7 @@ export function validateAuditReport(input) {
   if (!isTextList(report.preserve)) errors.push('preserve must be a list of strings');
   if (!Array.isArray(report.findings)) errors.push('findings must be a list');
   else {
-    report.findings.forEach((finding, i) => validateFinding(finding, i, errors));
+    report.findings.forEach((finding, i) => validateFinding(finding, i, errors, input.schema_version));
     const ids = report.findings.map((f) => f?.id).filter(Boolean);
     const duplicates = [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
     if (duplicates.length) errors.push(`finding IDs must be unique: ${duplicates.join(', ')}`);
@@ -200,6 +214,18 @@ export function compareMarkdownIds(report, markdown) {
     const approval = section.match(/^\s*-\s+\*\*Aprovado para implementação:\*\*\s*(true|false)\s*$/im)?.[1]?.toLowerCase();
     if (priority !== finding.priority) errors.push(`Markdown priority differs or is missing for ${finding.id}`);
     if (approval !== String(finding.approved_for_implementation)) errors.push(`Markdown approval differs or is missing for ${finding.id}`);
+    if (report?.schema_version === CURRENT_SCHEMA_VERSION) {
+      const kindLabels = { problem: 'problema', opportunity: 'oportunidade', needs_validation: 'a validar' };
+      const evidenceLabels = { rendered_capture: 'captura', interaction: 'interação', dom: 'DOM', source_code: 'código', provided_material: 'material fornecido' };
+      if (plain(section.match(/^\s*-\s+\*\*Classe:\*\*\s*(.*)$/im)?.[1]) !== plain(kindLabels[finding.finding_kind])) errors.push(`Markdown finding_kind differs or is missing for ${finding.id}`);
+      const source = plain(section.match(/^\s*-\s+\*\*Fonte da evidência:\*\*\s*(.*)$/im)?.[1]);
+      const expectedSource = plain(`${evidenceLabels[finding.evidence?.type]} — ${finding.evidence?.source}; estado ${finding.evidence?.state}; viewport ${finding.evidence?.viewport}`);
+      if (source !== expectedSource) errors.push(`Markdown evidence source differs or is missing for ${finding.id}`);
+      for (const [label, field] of [['Inferência', 'inference'], ['Hipótese', 'hypothesis']]) {
+        const value = plain(section.match(new RegExp(`^\\s*-\\s+\\*\\*${label}:\\*\\*\\s*(.*)$`, 'im'))?.[1]);
+        if (value !== plain(finding[field] ?? 'nenhuma')) errors.push(`Markdown ${field} differs or is missing for ${finding.id}`);
+      }
+    }
     for (const [label, field] of [['Local', 'location'], ['Evidência observada', 'evidence_observed'], ['Impacto provável', 'probable_impact'], ['Próximo passo', 'next_step'], ['Critério de aceite', 'acceptance_criteria']]) {
       const lines = section.split('\n');
       const prefix = new RegExp(`^\\s*-\\s+\\*\\*${label}:\\*\\*\\s*(.*)$`, 'i');

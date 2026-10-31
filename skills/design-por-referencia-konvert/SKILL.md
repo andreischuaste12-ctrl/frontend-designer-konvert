@@ -1,6 +1,6 @@
 ---
 name: design-por-referencia-konvert
-description: Implement approved audit findings, adapt a visual reference, or make a directly requested, scoped refinement to an existing frontend. Cover visual hierarchy, typography, color, motion, UX copy, responsive behavior, and interface states with rendered before/after verification. Preserve the project's stack, content, integrations, and accessibility. Use audit-frontend-designer-konvert for a read-only audit and create-frontend-from-zero-konvert for a new interface.
+description: Implement approved audit findings, adapt a visual reference, or make a directly requested, scoped refinement to an existing frontend. Cover visual hierarchy, typography, color, motion, UX copy, responsive behavior, interface states, and measured UI performance with rendered before/after verification. Preserve the project's stack, content, integrations, and accessibility. Use audit-frontend-designer-konvert for a read-only audit and create-frontend-from-zero-konvert for a new interface.
 ---
 
 # Design por referência
@@ -49,6 +49,7 @@ Associe cada papel ao token, à variável ou ao componente que já existe. Crie 
 - Para um pedido direto de refinamento, escolha a intervenção aplicável em [refinamento de interface](references/refinamento-de-interface.md) e vincule a mudança a uma tarefa e a um resultado observável. Não use esse caminho para contornar aprovação de achados da auditora.
 - Quando o alvo usa Tailwind e a mudança afeta tokens, temas ou componentes compartilhados, siga [Tailwind no sistema visual](references/tailwind-no-sistema-visual.md) depois de confirmar a versão e o consumidor reais.
 - Quando a interface depende de convenções Next.js, use [Next.js na interface](references/nextjs-na-interface.md) para localizar a rota, preservar a fronteira cliente/servidor e verificar estados e recursos renderizados.
+- Para transições e microinterações, siga [movimento de interface](references/movimento-de-interface.md); não reutilize snippets de bibliotecas externas. Se o sintoma principal for lentidão, use [diagnóstico de desempenho](references/desempenho-percebido.md) com medição comparável antes/depois.
 - Preserve a semântica HTML, a ordem de foco, os estados (hover, foco, ativo, desabilitado, erro, vazio, carregando) e a copy existente.
 - Parta do conteúdo real para o layout: breakpoints nascem de onde o conteúdo quebra, não de uma lista fixa.
 - Não adicione dependência, fonte remota ou imagem remota sem necessidade demonstrada.
@@ -58,11 +59,15 @@ Associe cada papel ao token, à variável ou ao componente que já existe. Crie 
 
 Execute o checklist de [validação](references/validacao.md) proporcional ao escopo. Para relatório de auditoria ou refinamento direto, capture e extraia estilos antes de editar; depois repita `capture.mjs` e `extract-styles.mjs` com os mesmos perfis, rotas, larguras e estados e use `compare.mjs` para comparar antes/depois. Para referência visual, compare também com a fonte. Não afirme fidelidade visual sem abrir a interface ou comparar capturas. Corrija regressões observadas antes de concluir.
 
+Quando a mudança afeta uma tarefa interativa ou exige regressão reproduzível, complemente a inspeção estática com [verificação de fluxos](references/testes-de-fluxos.md) em ambiente autorizado. Os scripts de captura não executam cliques nem envios.
+
 Confirme manualmente que as rotas e páginas correspondem antes de usar `--confirm-page-mapping`; identificadores por ordem não provam correspondência. Use `scripts/compare.mjs` conforme [captura e inspeção](references/captura-e-inspecao.md) para registrar diferenças de estilos e, quando apropriado, pixels. Amostras são pareadas por categoria/seletor; seletores diferentes exigem correspondência humana. Diferença de pixels não é nota de usabilidade.
 
 ### 7. Relatar
 
 Entregue de forma curta: entrada e escopo usados, nível de fidelidade quando houver referência, papéis afetados e origem dos valores, arquivos alterados, verificações executadas com resultado e o que ficou sem verificar. Cite as evidências (arquivos de captura, `computed-styles.json`, manifesto de imagens) e as limitações de renderização.
+
+Registre a execução em `execution-record.json` no diretório de saída autorizado, seguindo [registro de execução](../audit-frontend-designer-konvert/references/registro-de-execucao.md). Para um relatório aprovado, associe cada `criterion_id` ao ID do achado e valide o registro com [`validate-execution-record.mjs`](../audit-frontend-designer-konvert/scripts/validate-execution-record.mjs) usando `--report` e `--approved-ids` fornecidos pela autorização do usuário. Um critério sem verificação efetiva fica `blocked` ou `not_run`; não o marque `passed`. Esse gate estrutural complementa as capturas antes/depois e a revisão humana do critério de aceite.
 
 ## Evidência visual e privacidade
 

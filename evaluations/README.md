@@ -2,6 +2,8 @@
 
 Three evaluations answer different questions. None of them calls a model: an agent run is observed, recorded, and then scored by a script. No result has been recorded yet, so no routing accuracy, audit quality, or handoff compliance is claimed.
 
+Do not score a run in a context that has seen the case labels or planted-issue answer key. A self-score from such a context is not a blind agent evaluation. Run clean agent sessions against isolated fixture copies, with only the prompt and installed skills visible. Store raw outputs privately, review them for sensitive content, and publish only aggregate results and a source commit after grading. A repository check or a synthetic example cannot substitute for these runs.
+
 | Evaluation | Question | Scored by | Deterministic? |
 | --- | --- | --- | --- |
 | Routing | Does the right skill lead for a prompt? | `scripts/evaluate-routing.mjs` | Scoring yes; decisions observed |
@@ -93,3 +95,5 @@ node scripts/check-handoff-scope.mjs --case evaluations/handoff/loja.json --afte
 ```
 
 It hashes the pristine fixture and the executed copy, then exits 0 only if every changed file belongs to an implementable finding (`LOJA-001`, `LOJA-002`) and each of those findings changed something. Changes to protected files, to files of blocked findings, or to unmapped files are violations (exit 1). The check is file-level: it proves scope discipline, not that the change satisfies the acceptance criteria. Verify those with the executor's before/after captures and `compare.mjs`.
+
+For a real executor run, also validate its private `execution-record.json` with `audit-frontend-designer-konvert/scripts/validate-execution-record.mjs --report <report.json> --approved-ids <user-approved-ids>`. This gate requires a passed check with evidence for each approved implementable finding. Grade the actual rendered behavior and evidence separately; the record validator checks structure, not truth or user authorization.

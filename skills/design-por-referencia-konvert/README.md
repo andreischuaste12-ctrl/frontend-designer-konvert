@@ -12,6 +12,9 @@ A coding-agent skill for implementing approved audit findings, adapting a visual
 | `references/refinamento-de-interface.md` | Scoped visual and interaction refinements, alternatives, and verification. |
 | `references/tailwind-no-sistema-visual.md` | Version-aware tokens, themes, component contracts, generated CSS, and consumer checks. |
 | `references/nextjs-na-interface.md` | Route and version inspection, client boundaries, interface states, rendered assets, and verification. |
+| `references/movimento-de-interface.md` | Purposeful transitions, interruption, focus, and reduced-motion checks. |
+| `references/testes-de-fluxos.md` | Safe, reproducible browser-flow checks using the target project's runner. |
+| `references/desempenho-percebido.md` | Symptom-based UI performance diagnosis and comparable verification. |
 | `references/papeis-e-tokens.md` | Visual roles, evidence labels, and mapping to the target project. |
 | `references/captura-e-inspecao.md` | Rendering, screenshots, inspection, and style measurement. |
 | `references/inventario-de-imagens.md` | Image manifest, findings, and visual-review guide. |

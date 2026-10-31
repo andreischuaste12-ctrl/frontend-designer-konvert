@@ -63,7 +63,7 @@ test('structural violations are reported, including the auditor never implementi
   for (const pattern of [/priority must be one of/, /confidence needs level/, /preserve must be a list/, /IDs must be unique: UX-001/, /implementation_performed must be false/]) {
     assert.ok(errors.some((e) => pattern.test(e)), String(pattern));
   }
-  assert.match(validateAuditReport({ ...example, schema_version: 3 }).errors.join('\n'), /schema_version must be 2/);
+  assert.match(validateAuditReport({ ...example, schema_version: 4 }).errors.join('\n'), /schema_version must be 3/);
   assert.match(validateAuditReport([]).errors.join('\n'), /JSON object/);
 });
 
@@ -82,6 +82,23 @@ test('schema_version 1 reports migrate conservatively: any described dependency 
   assert.equal(normalizeReport(example), example, 'current reports are returned unchanged');
   const mixed = { ...example, findings: [{ ...example.findings[0], requires_external_data_or_approval: false }] };
   assert.match(validateAuditReport(mixed).errors.join('\n'), /belongs to schema_version 1/);
+});
+
+test('version 3 requires structured evidence and separates findings from hypotheses', async () => {
+  const example = await load();
+  const first = example.findings[0];
+  const check = (patch) => validateAuditReport({ ...example, findings: [{ ...first, ...patch }], coverage: undefined }).errors;
+  assert.ok(check({ evidence: undefined }).some((e) => /evidence needs type/.test(e)));
+  assert.ok(check({ finding_kind: 'personal_preference' }).some((e) => /finding_kind/.test(e)));
+  assert.ok(check({ inference: undefined }).some((e) => /inference/.test(e)));
+  assert.ok(check({ hypothesis: '' }).some((e) => /hypothesis/.test(e)));
+  assert.ok(check({ finding_kind: 'needs_validation', approved_for_implementation: true }).some((e) => /cannot be approved/.test(e)));
+  const legacy = { ...example, schema_version: 2, findings: [{ ...first, evidence: undefined, finding_kind: undefined, inference: undefined, hypothesis: undefined }], coverage: undefined };
+  assert.deepEqual(validateAuditReport(legacy).errors, []);
+  assert.match(validateAuditReport(legacy).warnings.join('\n'), /version 2 is supported/);
+  const md = await fs.readFile(markdownUrl, 'utf8');
+  assert.match(compareMarkdownIds(example, md.replace('**Classe:** problema', '**Classe:** oportunidade')).join('\n'), /finding_kind differs/);
+  assert.match(compareMarkdownIds(example, md.replace('**Fonte da evidência:** interação', '**Fonte da evidência:** código')).join('\n'), /evidence source differs/);
 });
 
 test('likely private data is flagged before a report is shared', async () => {

@@ -6,7 +6,7 @@ This repository contains three complementary skills for coding agents. It is a s
 
 ### `audit-frontend-designer-konvert`
 
-Use it as a read-only UX/UI design reviewer. It studies audience needs, user journeys, visual and interaction design, accessibility as experienced in the interface, and evidence-informed design psychology, then produces a structured Markdown and JSON report validated by `scripts/validate-report.mjs`. It never edits the audited project; it writes only the report and capture evidence to an ignored output directory.
+Use it as a read-only UX/UI design reviewer. It studies audience needs, user journeys, visual and interaction design, accessibility as experienced in the interface, and evidence-informed design psychology, then produces a structured Markdown and JSON report validated by `scripts/validate-report.mjs`. New reports use schema version 3 to distinguish observed evidence, inference, and hypothesis. It never edits the audited project; it writes only the report, a minimal execution record, and capture evidence to an ignored output directory.
 
 Start with this skill when the request is to audit or evaluate an existing interface. It does not require a visual reference.
 
@@ -18,7 +18,7 @@ Use this skill directly when a visual reference must be reproduced or the user n
 
 The auditor uses the executor's browser scripts for rendered evidence, so install both skills together; without them the auditor still works read-only but reports the missing evidence.
 
-The [capability map](docs/experience-capabilities.md) shows how visual evaluation, creation, and refinement are divided across the three skills and which browser interactions are not implemented.
+The [capability map](docs/experience-capabilities.md) shows how visual evaluation, creation, and refinement are divided across the three skills and which browser interactions are not implemented. The [execution record](skills/audit-frontend-designer-konvert/references/registro-de-execucao.md) captures inspected states, decisions, blocked actions, and acceptance checks without retaining raw prompts or URLs. For report-driven implementation, a structural gate requires a passed, evidenced check for each independently approved finding; human review of the result remains necessary.
 
 ### `create-frontend-from-zero-konvert`
 
@@ -83,7 +83,7 @@ See the [installation guide](docs/installation.md) for PowerShell, Claude Code p
 - Keep generated audits in `.audit/`; the root `.gitignore` excludes this folder because captures and reports can contain page content, URLs, or third-party images.
 - When installing into another repository, add `.audit/` to that repository's `.gitignore` (or direct output outside the checkout) before running capture tools.
 - Use test or synthetic account data. Do not capture authenticated pages containing real customer information unless explicitly required and approved.
-- Do not put credentials, private URLs, customer data, or session identifiers in committed files, screenshots, issue text, or reports.
+- Do not put credentials, private URLs, customer data, or session identifiers in committed files, screenshots, issue text, reports, or execution records.
 - The audit scripts are intended for sites and local projects you are authorized to inspect. Review outputs before sharing them.
 
 ## Validate the reference tooling
@@ -98,7 +98,7 @@ npm run check
 npm test
 ```
 
-From the repository root, run `node scripts/validate-repository.mjs` to check JavaScript/JSON syntax, the audit report contract on the synthetic example, evaluation cases, skill metadata, knowledge-module links, relative Markdown links, and manifest/lockfile consistency. Run `node --test "scripts/*.test.mjs" "skills/audit-frontend-designer-konvert/tests/*.test.mjs"` for the scorers, the handoff scope checker, the repository contract, the install verifier, and the report validator. After copying all three current skills into a project, `node scripts/verify-install.mjs <skills-dir>` checks their structure. The v0.1.0 verifier checks its two released skills.
+From the repository root, run `node scripts/validate-repository.mjs` to check JavaScript/JSON syntax, the audit report and execution record contracts on synthetic examples, evaluation cases, skill metadata, knowledge-module links, relative Markdown links, and manifest/lockfile consistency. Run `node --test "scripts/*.test.mjs" "skills/audit-frontend-designer-konvert/tests/*.test.mjs"` for the scorers, handoff scope and acceptance checks, repository contract, install verifier, and report validator. After copying all three current skills into a project, `node scripts/verify-install.mjs <skills-dir>` checks their structure. The v0.1.0 verifier checks its two released skills.
 
 The [evaluation guide](evaluations/README.md) covers routing, audit quality on synthetic projects (with planted issues, legitimate decoys, and preserve items), and a deterministic handoff scope check. The scorers are tested; no agent run has been recorded, so routing accuracy, audit quality, and handoff compliance remain unmeasured.
 

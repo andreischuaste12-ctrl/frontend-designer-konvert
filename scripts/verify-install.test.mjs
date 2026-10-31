@@ -49,6 +49,14 @@ test('reports a missing audit report validator', async () => {
   } finally { await fs.rm(dir, { recursive: true, force: true }); }
 });
 
+test('reports a missing execution record validator', async () => {
+  const dir = await installCopy();
+  try {
+    await fs.rm(path.join(dir, 'audit-frontend-designer-konvert/scripts/validate-execution-record.mjs'));
+    assert.ok((await verifyInstall(dir)).includes('audit-frontend-designer-konvert: missing scripts/validate-execution-record.mjs'));
+  } finally { await fs.rm(dir, { recursive: true, force: true }); }
+});
+
 test('reports a missing creation skill', async () => {
   const dir = await installCopy();
   try {

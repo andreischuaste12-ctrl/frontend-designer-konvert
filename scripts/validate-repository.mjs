@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 import { isDeepStrictEqual } from 'node:util';
 import { validateSkillDirectories, validateWorkflowTriggers } from './skill-directory-contract.mjs';
 import { validateAuditReport, compareMarkdownIds } from '../skills/audit-frontend-designer-konvert/scripts/validate-report.mjs';
+import { validateExecutionRecord } from '../skills/audit-frontend-designer-konvert/scripts/validate-execution-record.mjs';
 import { validateAuditCases } from './evaluate-audit.mjs';
 import { validateHandoffCase } from './check-handoff-scope.mjs';
 import { checkKnowledge } from './check-knowledge-units.mjs';
@@ -112,6 +113,8 @@ const auditReport = jsonFiles.get(path.join(auditDir, 'audit-report.example.json
 const auditCheck = validateAuditReport(auditReport);
 errors.push(...auditCheck.errors.map((e) => `audit-report.example.json: ${e}`), ...auditCheck.warnings.map((w) => `audit-report.example.json: ${w}`));
 if (!auditCheck.errors.length) errors.push(...compareMarkdownIds(auditCheck.report, await fs.readFile(path.join(auditDir, 'audit-report.example.md'), 'utf8')).map((e) => `audit-report.example.md: ${e}`));
+const executionRecordCheck = validateExecutionRecord(jsonFiles.get(path.join(auditDir, 'execution-record.example.json')));
+errors.push(...executionRecordCheck.errors.map((e) => `execution-record.example.json: ${e}`), ...executionRecordCheck.warnings.map((w) => `execution-record.example.json: ${w}`));
 const auditCases = jsonFiles.get(path.join(root, 'evaluations/audit-quality/cases.json'));
 errors.push(...validateAuditCases(auditCases).map((e) => `evaluations/audit-quality/cases.json: ${e}`));
 for (const item of auditCases?.cases ?? []) {

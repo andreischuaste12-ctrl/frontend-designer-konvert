@@ -28,9 +28,13 @@ Somente o que estava no escopo. Lacunas ficam explícitas; o catálogo de conhec
 
 ### UX-001 — O custo de entrega só aparece depois do carrinho
 
+- **Classe:** problema
 - **Prioridade:** P1
 - **Local:** página de produto fictícia, painel de preço e compra
 - **Evidência observada:** No fluxo sintético, o custo de entrega só aparece depois de adicionar o item ao carrinho.
+- **Fonte da evidência:** interação — fluxo sintético de compra; estado normal; viewport 375 px
+- **Inferência:** A sequência exige adicionar ao carrinho para descobrir como o frete é apresentado.
+- **Hipótese:** A ausência da informação antecipada pode gerar surpresa; não houve teste com compradores.
 - **Impacto provável:** Compradores podem adiar a decisão ou se surpreender com um custo inesperado; este efeito é uma hipótese, não um resultado medido.
 - **Confiança:** média — a sequência é visível no fluxo sintético fornecido; o impacto no usuário é hipótese.
 - **Preservar:** Regras de frete existentes, cálculo do preço total, contrato do checkout e ação de compra.
@@ -41,9 +45,13 @@ Somente o que estava no escopo. Lacunas ficam explícitas; o catálogo de conhec
 
 ### UX-002 — Códigos internos das opções precisam de explicação
 
+- **Classe:** a validar
 - **Prioridade:** P2
 - **Local:** página de produto fictícia, seletor de opções
 - **Evidência observada:** Os rótulos das opções contêm códigos internos de papel, sem explicação no briefing sintético.
+- **Fonte da evidência:** captura — captura sintética route-01__375__light.png; estado normal; viewport 375 px
+- **Inferência:** O briefing sintético não define o significado dos códigos exibidos.
+- **Hipótese:** Compradores de primeira viagem podem ter dificuldade para comparar opções; falta validação com usuários.
 - **Impacto provável:** Compradores de primeira viagem podem não comparar as opções com confiança; a compreensão não foi testada.
 - **Confiança:** baixa — os rótulos com código foram observados, mas a compreensão dos compradores não foi testada.
 - **Preservar:** Opções disponíveis, valores dos dados do produto e comportamento de seleção.
@@ -54,9 +62,13 @@ Somente o que estava no escopo. Lacunas ficam explícitas; o catálogo de conhec
 
 ### UX-003 — Botão de compra sem destaque em mobile
 
+- **Classe:** problema
 - **Prioridade:** P2
 - **Local:** página de produto fictícia, botão de compra em mobile (375 px)
 - **Evidência observada:** Na captura sintética, o botão de compra usa texto cinza-claro sobre fundo cinza e tem o mesmo peso visual dos links secundários ao lado.
+- **Fonte da evidência:** captura — captura sintética route-01__375__light.png; estado normal; viewport 375 px
+- **Inferência:** O controle principal não se diferencia visualmente dos links secundários no painel.
+- **Hipótese:** O reconhecimento da ação pode ser mais lento; o efeito em compras não foi medido.
 - **Impacto provável:** A ação principal pode demorar mais a ser reconhecida; o efeito na conclusão da compra é uma hipótese não medida.
 - **Confiança:** média — contraste e peso visual foram observados na captura sintética; o comportamento dos compradores não foi testado.
 - **Preservar:** Texto do botão, nome acessível e evento de adicionar ao carrinho.
