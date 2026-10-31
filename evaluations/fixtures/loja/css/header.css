@@ -1,0 +1,8 @@
+.site-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.5rem; border-bottom: 1px solid #e5e5e5; }
+.logo { font-weight: 700; font-size: 1.25rem; color: #222; text-decoration: none; }
+.nav { display: flex; flex-wrap: wrap; gap: 1rem; }
+.nav a { color: #333; text-decoration: none; }
+@media (max-width: 600px) {
+  .nav { gap: 0.75rem; font-size: 0.9rem; }
+  .nav a { color: #b5b5b5; }
+}

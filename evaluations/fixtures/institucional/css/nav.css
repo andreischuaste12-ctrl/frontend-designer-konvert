@@ -1,0 +1,7 @@
+.header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 2rem; border-bottom: 1px solid #e3e7ee; }
+.brand { font-family: Georgia, serif; font-size: 1.3rem; color: #14284b; text-decoration: none; font-weight: 700; }
+.menu ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 1.1rem; }
+.menu a, .sub-trigger { color: #1f2a3a; text-decoration: none; font-size: 0.95rem; }
+.has-sub { position: relative; }
+.submenu { display: none !important; position: absolute; top: 100%; left: 0; background: #fff; border: 1px solid #e3e7ee; padding: 0.5rem 1rem; flex-direction: column; min-width: 220px; z-index: 10; }
+.has-sub:hover .submenu { display: flex !important; }

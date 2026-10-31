@@ -1,0 +1,6 @@
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; color: #222; background: #fff; line-height: 1.5; }
+a { color: #1d4f91; }
+button:focus, a:focus, input:focus { outline: none; }
+h1 { font-size: 1.75rem; margin: 0.25rem 0; }
+h2 { font-size: 1.25rem; }

@@ -1,0 +1,137 @@
+{
+  "schema_version": 2,
+  "report_id": "EVAL-LOJA-001",
+  "project": "loja sintética de avaliação",
+  "scope": {
+    "routes": [
+      "index.html"
+    ],
+    "tasks": [
+      "escolher a cor e adicionar ao carrinho"
+    ],
+    "viewports": [
+      "375 px",
+      "1440 px"
+    ]
+  },
+  "evidence_limits": [
+    "Projeto sintético sem pesquisa com usuários.",
+    "Estados após envio de formulário não foram observados."
+  ],
+  "preserve": [
+    "Evento add_to_cart, id add-to-cart e data-sku do botão de compra.",
+    "Valores de preço e parcelamento.",
+    "Breadcrumb, h1 e canonical."
+  ],
+  "findings": [
+    {
+      "id": "LOJA-001",
+      "priority": "P1",
+      "location": "index.html, painel de compra; estilos em css/product.css",
+      "evidence_observed": "O botão de compra usa #9b9b9b sobre #e6e6e6 (2,23:1) e peso 400, com menos destaque que os links secundários (6,66:1).",
+      "probable_impact": "A ação principal pode ser reconhecida mais tarde que as secundárias; efeito na conversão não medido.",
+      "confidence": {
+        "level": "high",
+        "reason": "Cores e pesos medidos nos estilos."
+      },
+      "preserve": [
+        "Texto do botão",
+        "id add-to-cart e data-sku"
+      ],
+      "next_step": "Dar ao botão de compra o maior destaque do painel usando cor sólida com contraste mínimo de 4,5:1.",
+      "acceptance_criteria": "O botão de compra é o controle mais destacado do painel em 375 px e 1440 px, com contraste de texto de pelo menos 4,5:1; texto, id e data-sku permanecem iguais.",
+      "external_dependency": {
+        "status": "not_applicable"
+      },
+      "approved_for_implementation": true
+    },
+    {
+      "id": "LOJA-002",
+      "priority": "P2",
+      "location": "cabeçalho em telas até 600 px; css/header.css",
+      "evidence_observed": "Os links de navegação ficam #b5b5b5 sobre branco (2,05:1) no media query de 600 px.",
+      "probable_impact": "Em mobile, a navegação pode ser difícil de ler; hipótese não testada com usuários.",
+      "confidence": {
+        "level": "high",
+        "reason": "Cor medida no media query."
+      },
+      "preserve": [
+        "Itens e rotas da navegação"
+      ],
+      "next_step": "Aplicar a cor de texto aprovada pela marca aos links em telas pequenas.",
+      "acceptance_criteria": "Em 375 px, os links do cabeçalho têm contraste de pelo menos 4,5:1 e as rotas não mudam.",
+      "external_dependency": {
+        "status": "resolved",
+        "detail": "A cor dos links em mobile precisava de aprovação da marca.",
+        "resolution": "Responsável fictício pela marca aprovou #333333 para os links em telas pequenas."
+      },
+      "approved_for_implementation": true
+    },
+    {
+      "id": "LOJA-003",
+      "priority": "P1",
+      "location": "index.html, informação de frete no painel de compra",
+      "evidence_observed": "A página só informa 'Frete calculado no carrinho.', sem estimativa nem campo de CEP.",
+      "probable_impact": "O custo total fica desconhecido até o carrinho; impacto no abandono é hipótese.",
+      "confidence": {
+        "level": "medium",
+        "reason": "Texto observado; regras de frete desconhecidas."
+      },
+      "preserve": [
+        "Cálculo de frete do carrinho"
+      ],
+      "next_step": "Mostrar estimativa de frete ou campo de CEP perto do preço, conforme as regras de frete aprovadas.",
+      "acceptance_criteria": "A página informa como o frete é calculado antes do carrinho, usando regras aprovadas.",
+      "external_dependency": {
+        "status": "pending",
+        "detail": "O responsável fictício pela operação precisa definir as regras de estimativa de frete."
+      },
+      "approved_for_implementation": true
+    },
+    {
+      "id": "LOJA-004",
+      "priority": "P3",
+      "location": "rodapé; css/footer.css",
+      "evidence_observed": "A política de trocas aparece em 10 px, #aaa sobre branco (2,32:1).",
+      "probable_impact": "Informação de confiança pode passar despercebida; hipótese.",
+      "confidence": {
+        "level": "high",
+        "reason": "Tamanho e cor medidos."
+      },
+      "preserve": [
+        "Links de política e contato"
+      ],
+      "next_step": "Aumentar o tamanho e o contraste do texto do rodapé.",
+      "acceptance_criteria": "O texto do rodapé tem pelo menos 14 px e contraste de 4,5:1.",
+      "external_dependency": {
+        "status": "not_applicable"
+      },
+      "approved_for_implementation": false
+    },
+    {
+      "id": "LOJA-005",
+      "priority": "P1",
+      "location": "estilos globais; css/base.css",
+      "evidence_observed": "O indicador de foco foi removido de botões, links e campos (outline: none).",
+      "probable_impact": "Quem navega por teclado pode perder a posição na página.",
+      "confidence": {
+        "level": "high",
+        "reason": "Regra observada no CSS."
+      },
+      "preserve": [
+        "Comportamento de clique e toque"
+      ],
+      "next_step": "Restaurar um indicador de foco visível e consistente.",
+      "acceptance_criteria": "Todo controle focável mostra indicador visível com contraste de 3:1.",
+      "external_dependency": {
+        "status": "not_applicable"
+      },
+      "approved_for_implementation": false
+    }
+  ],
+  "handoff": {
+    "proposed_skill": "design-por-referencia-konvert",
+    "summary": "Implementar LOJA-001 e LOJA-002. LOJA-003 está aprovado, mas bloqueado pela dependência pendente; LOJA-004 e LOJA-005 não foram aprovados.",
+    "implementation_performed": false
+  }
+}

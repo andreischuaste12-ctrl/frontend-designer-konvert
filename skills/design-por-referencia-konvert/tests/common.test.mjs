@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { redactText, redactUrl, resolveRoutes, routeSlug, intList, targetBlockReason, installRequestGuards } from '../scripts/_common.mjs';
+import { redactText, redactUrl, resolveRoutes, routeSlug, intList, targetBlockReason, installRequestGuards, resolvedBlockReason } from '../scripts/_common.mjs';
 import path from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 
@@ -207,4 +207,52 @@ test('local-network permission restoration is scoped to loopback main origins on
     assert.ok(fulfilled && !aborted);
     if (expected) assert.deepEqual(grants[0], { permissions: ['local-network-access'], options: { origin: new URL(raw).origin } });
   }
+});
+
+test('resolved hostnames inherit the literal-IP policy, and lookup failures stay non-blocking', async () => {
+  const lookupFor = (addresses) => async () => addresses.map((address) => ({ address, family: address.includes(':') ? 6 : 4 }));
+  assert.match(await resolvedBlockReason('metadata-alias.example.test', { lookup: lookupFor(['169.254.169.254']) }) ?? '', /metadata.*resolved address/);
+  assert.match(await resolvedBlockReason('internal.example.test', { lookup: lookupFor(['93.184.216.34', '10.0.0.5']) }) ?? '', /allow-private/);
+  assert.equal(await resolvedBlockReason('internal.example.test', { allowPrivate: true, lookup: lookupFor(['10.0.0.5']) }), null);
+  assert.match(await resolvedBlockReason('mapped.example.test', { allowPrivate: true, lookup: lookupFor(['::ffff:169.254.169.254']) }) ?? '', /metadata/);
+  assert.match(await resolvedBlockReason('mapped.example.test', { lookup: lookupFor(['::ffff:10.0.0.5']) }) ?? '', /allow-private/, 'dotted mapped tails from the resolver are normalized');
+  assert.match(await resolvedBlockReason('odd.example.test', { lookup: lookupFor(['not-an-address']) }) ?? '', /unexpected resolver output/);
+  assert.match(await resolvedBlockReason('link-local.example.test', { allowPrivate: true, lookup: lookupFor(['fe80::1%eth0']) }) ?? '', /blocked/);
+  assert.equal(await resolvedBlockReason('public.example.test', { lookup: lookupFor(['93.184.216.34', '2606:4700:4700::1111']) }), null);
+  assert.equal(await resolvedBlockReason('localhost', { lookup: lookupFor(['127.0.0.1', '::1']) }), null);
+  assert.equal(await resolvedBlockReason('unresolvable.example.test', { lookup: async () => { throw new Error('ENOTFOUND'); } }), null);
+  let calls = 0;
+  assert.equal(await resolvedBlockReason('10.0.0.5', { lookup: async () => { calls++; return []; } }), null);
+  assert.equal(calls, 0, 'literal addresses are classified without DNS');
+});
+
+test('request and WebSocket guards block names that resolve to forbidden addresses, resolving each host once', async () => {
+  let calls = 0;
+  const lookup = async (host) => { calls++; return [{ address: host.startsWith('internal') ? '192.168.1.10' : '93.184.216.34', family: 4 }]; };
+  async function inspect(url, options = {}) {
+    let handler, socketHandler, result;
+    const blockedTargets = new Set();
+    await installRequestGuards({ route: async (_pattern, fn) => { handler = fn; }, routeWebSocket: async (_pattern, fn) => { socketHandler = fn; } }, { ...options, blockedTargets, lookup });
+    if (/^wss?:/.test(url)) await socketHandler({ url: () => url, close: async () => { result = 'blocked'; }, connectToServer: () => { result = 'connected'; } });
+    else {
+      await handler({
+        request: () => ({ url: () => url, method: () => 'GET' }),
+        fetch: async () => ({ status: () => 200, headers: () => ({}), dispose: async () => {} }),
+        fulfill: async () => { result = 'continued'; }, abort: async () => { result = 'blocked'; }, continue: async () => { result = 'continued'; },
+      });
+      await handler({
+        request: () => ({ url: () => `${url}second`, method: () => 'GET' }),
+        fetch: async () => ({ status: () => 200, headers: () => ({}), dispose: async () => {} }),
+        fulfill: async () => {}, abort: async () => {}, continue: async () => {},
+      });
+    }
+    return { result, blockedTargets: [...blockedTargets] };
+  }
+  calls = 0;
+  assert.deepEqual(await inspect('http://internal.example.test/'), { result: 'blocked', blockedTargets: ['internal.example.test'] });
+  assert.equal(calls, 1, 'the same host is resolved once per guarded context');
+  assert.equal((await inspect('http://internal.example.test/', { allowPrivate: true })).result, 'continued');
+  assert.equal((await inspect('http://public.example.test/')).result, 'continued');
+  assert.equal((await inspect('ws://internal.example.test/socket')).result, 'blocked');
+  assert.equal((await inspect('wss://public.example.test/socket')).result, 'connected');
 });

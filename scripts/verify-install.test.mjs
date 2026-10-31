@@ -40,3 +40,11 @@ test('reports a relative link that resolves to nothing', async () => {
     assert.ok(errors.some((e) => e.includes('missing relative link references/nao-existe.md')));
   } finally { await fs.rm(dir, { recursive: true, force: true }); }
 });
+
+test('reports a missing audit report validator', async () => {
+  const dir = await installCopy();
+  try {
+    await fs.rm(path.join(dir, 'audit-frontend-designer-konvert/scripts/validate-report.mjs'));
+    assert.ok((await verifyInstall(dir)).includes('audit-frontend-designer-konvert: missing scripts/validate-report.mjs'));
+  } finally { await fs.rm(dir, { recursive: true, force: true }); }
+});

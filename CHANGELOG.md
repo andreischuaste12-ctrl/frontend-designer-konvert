@@ -4,6 +4,15 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+- **Breaking (report schema 2):** replace `requires_external_data_or_approval` with `external_dependency` (`not_applicable`, `pending`, or `resolved`, with `detail` and `resolution`). A finding is implementable only when approved and not pending. Version 1 reports are still read, with any described dependency treated as pending.
+- Add `audit-frontend-designer-konvert/scripts/validate-report.mjs` (zero dependencies) and tests: contract checks, unique IDs, Markdown/JSON ID mirroring, private-data signals, and `--implementable` output for the executor. Repository validation and `verify-install.mjs` now use it.
+- Clarify the auditor's write rule: only the report and capture evidence, only in the authorized ignored output directory.
+- Resolve hostnames before each guarded request and WebSocket and apply the IP policy to every returned address (normalizing dotted IPv4-mapped forms); the address is not pinned, and a failed lookup does not block.
+- Add audit-quality evaluation: three synthetic fixtures (`loja`, `saas`, `institucional`) with planted issues, legitimate decoys, preserve items, and a scorer for graded runs (`scripts/evaluate-audit.mjs`).
+- Add a deterministic handoff scope check (`scripts/check-handoff-scope.mjs`) with a report covering approved, resolved, pending, and unapproved findings.
+- Add the knowledge module `04-principios-por-problema.md`: what to observe, evidence, limits, and validation per design problem.
+- CI: run on changes to any audit skill file, run repository and auditor tests on Linux and Windows, and rename the workflow.
+
 - Add `scripts/verify-install.mjs` and tests to check that installed skills are structurally discoverable; CI now runs every root test.
 - Add `npm run setup:browser`, document the Chromium prerequisite for `npm test`, and mention `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` in the launch error.
 - Unify skill-facing language: the audit skill body, report contract and synthetic example are now in Portuguese like the rest of the skill content; descriptions and repository docs stay in English.

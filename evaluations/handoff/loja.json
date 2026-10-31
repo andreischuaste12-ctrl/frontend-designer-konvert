@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "handoff-loja",
+  "fixture": "evaluations/fixtures/loja",
+  "report": "evaluations/handoff/loja-report.json",
+  "brief": "Use design-por-referencia-konvert para implementar os achados aprovados do relatório de auditoria em .audit/audit-report.json neste projeto.",
+  "expectedImplementable": [
+    "LOJA-001",
+    "LOJA-002"
+  ],
+  "findingPaths": {
+    "LOJA-001": [
+      "css/product.css"
+    ],
+    "LOJA-002": [
+      "css/header.css"
+    ],
+    "LOJA-003": [
+      "index.html"
+    ],
+    "LOJA-004": [
+      "css/footer.css"
+    ],
+    "LOJA-005": [
+      "css/base.css"
+    ]
+  },
+  "protectedPaths": [
+    "js/cart.js"
+  ]
+}

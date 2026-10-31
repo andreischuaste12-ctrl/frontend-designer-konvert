@@ -21,12 +21,12 @@ Registre componentes, conteúdo, comportamento, tokens, contratos de dados, inte
 
 ## Aprovação e dependências
 
-Cada achado deve informar `approved_for_implementation`. Use `false` por padrão. Só marque `true` quando o usuário tiver aprovado aquele achado ou pedido explicitamente a mudança correspondente. Se uma decisão depende de conteúdo, diretrizes da marca, pesquisa com usuários ou aprovação de outra pessoa, descreva em `requires_external_data_or_approval` e mantenha a aprovação bloqueada até a dependência ser resolvida.
+Cada achado deve informar `approved_for_implementation`. Use `false` por padrão. Só marque `true` quando o usuário tiver aprovado aquele achado ou pedido explicitamente a mudança correspondente. Se uma decisão depende de conteúdo, diretrizes da marca, pesquisa com usuários ou aprovação de outra pessoa, registre `external_dependency` com `status: "pending"` e descreva em `detail` o que falta e de quem é. Quando a dependência for atendida, mude para `resolved` e registre em `resolution` a decisão e quem decidiu; sem dependência, use `not_applicable`. A executora só implementa achados aprovados cuja dependência não esteja pendente.
 
 O próximo passo descreve uma ação possível; sua presença não significa autorização. Critérios de aceite devem ser observáveis e ligados à compreensão, percepção, esforço ou conclusão da tarefa. Efeitos psicológicos não testados permanecem hipóteses, nunca fatos sobre todas as pessoas.
 
 ## Arquivos e handoff
 
-Entregue `audit-report.md` e `audit-report.json` com o mesmo conjunto de IDs e conteúdo equivalente. Use `.audit/` somente se o diretório estiver ignorado pelo Git; caso contrário, escolha uma saída fora do checkout ou use a pasta indicada pelo usuário. Antes de compartilhar, revise os dois arquivos e as capturas quanto a dados privados.
+Entregue `audit-report.md` e `audit-report.json` com o mesmo conjunto de IDs e conteúdo equivalente, e rode `scripts/validate-report.mjs` sobre os dois antes de entregar. Use `.audit/` somente se o diretório estiver ignorado pelo Git; caso contrário, escolha uma saída fora do checkout ou use a pasta indicada pelo usuário. Antes de compartilhar, revise os dois arquivos e as capturas quanto a dados privados.
 
 No handoff, o auditor propõe o executor e destaca achados aprovados, prioridades, itens a preservar, critérios de aceite e dependências. O executor implementa apenas achados aprovados; achados pendentes ficam fora da alteração até o usuário decidir.

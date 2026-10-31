@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nimbus Agenda | Planos</title>
+  <link rel="stylesheet" href="css/site.css">
+  <link rel="stylesheet" href="css/pricing.css">
+  <link rel="stylesheet" href="css/form.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">Nimbus Agenda</a>
+    <nav aria-label="Principal"><a href="#recursos">Recursos</a> <a href="#planos">Planos</a> <a href="#perguntas">Perguntas</a> <a href="/entrar">Entrar</a></nav>
+  </header>
+
+  <section class="hero">
+    <h1>Orquestração omnichannel sinérgica para operações de alta performance</h1>
+    <p class="hero-sub">Potencialize a jornada ponta a ponta com inteligência integrada.</p>
+    <div class="hero-actions">
+      <a class="hero-link" href="#cadastro">Comece grátis</a>
+      <a class="hero-link" href="/demo">Agendar demo</a>
+      <a class="hero-link" href="#planos">Ver planos</a>
+    </div>
+  </section>
+
+  <section class="logos" aria-label="Clientes">
+    <span>Clínica Sol</span><span>Studio Ipê</span><span>Oficina Norte</span><span>Escola Vela</span>
+  </section>
+
+  <section id="recursos" class="features">
+    <h2>Recursos</h2>
+    <div class="feature"><h3>Agenda compartilhada</h3><p class="muted">Sua equipe vê horários livres em tempo real e evita conflitos de reserva.</p></div>
+    <div class="feature"><h3>Lembretes automáticos</h3><p class="muted">Clientes recebem lembrete por e-mail ou SMS um dia antes do atendimento.</p></div>
+    <div class="feature"><h3>Pagamento antecipado</h3><p class="muted">Cobre um sinal no momento da reserva para reduzir faltas.</p></div>
+  </section>
+
+  <section id="planos" class="pricing">
+    <h2>Planos</h2>
+    <div class="billing-toggle" role="group" aria-label="Período de cobrança">
+      <label><input type="radio" name="periodo" value="mensal"> Mensal</label>
+      <label><input type="radio" name="periodo" value="anual" checked> Anual</label>
+    </div>
+    <div class="plans">
+      <article class="plan" data-plan="essencial">
+        <h3>Essencial</h3>
+        <p class="plan-price">R$ 39</p>
+        <ul><li>1 agenda</li><li>Lembretes por e-mail</li><li>Até 100 reservas por mês</li></ul>
+      </article>
+      <article class="plan plan-featured" data-plan="equipe">
+        <span class="plan-tag">Recomendado para equipes de 5 a 20 pessoas</span>
+        <h3>Equipe</h3>
+        <p class="plan-price">R$ 79</p>
+        <ul><li>Até 20 agendas</li><li>Lembretes por e-mail e SMS</li><li>Reservas ilimitadas</li><li>Pagamento antecipado</li></ul>
+      </article>
+      <article class="plan" data-plan="empresa">
+        <h3>Empresa</h3>
+        <p class="plan-price">R$ 189</p>
+        <ul><li>Agendas ilimitadas</li><li>Integrações via API</li><li>Suporte prioritário</li></ul>
+      </article>
+    </div>
+    <p class="fine-print">*Valores por agenda. No plano anual, o total de 12 meses é cobrado antecipadamente.</p>
+  </section>
+
+  <section id="cadastro" class="signup">
+    <h2>Teste grátis por 14 dias</h2>
+    <form id="signup-form" action="/api/signup" method="post" novalidate>
+      <input type="text" name="nome" placeholder="Nome completo" autocomplete="name">
+      <input type="email" name="email" placeholder="E-mail corporativo" autocomplete="email">
+      <input type="text" name="empresa" placeholder="Empresa" autocomplete="organization">
+      <input type="password" name="senha" placeholder="Senha (mín. 8 caracteres)" autocomplete="new-password">
+      <button type="submit">Criar conta</button>
+      <p class="form-error" role="alert" hidden></p>
+    </form>
+  </section>
+
+  <section id="perguntas" class="faq">
+    <h2>Perguntas frequentes</h2>
+    <details><summary>Preciso de cartão de crédito para testar?</summary><p>Não. O teste de 14 dias não pede dados de pagamento.</p></details>
+    <details><summary>Posso mudar de plano depois?</summary><p>Sim. A mudança vale a partir do próximo ciclo de cobrança.</p></details>
+    <details><summary>Como funciona o cancelamento?</summary><p>Cancele quando quiser em Configurações &gt; Assinatura. No plano mensal não há multa.</p></details>
+    <details><summary>Os dados dos meus clientes ficam seguros?</summary><p>Os dados são criptografados em trânsito e em repouso.</p></details>
+    <details><summary>Existe desconto para ONGs?</summary><p>Sim, fale com o time comercial.</p></details>
+  </section>
+
+  <footer class="footer"><p>Nimbus Agenda (empresa fictícia para avaliação).</p></footer>
+  <script src="js/signup.js"></script>
+</body>
+</html>

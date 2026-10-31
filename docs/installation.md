@@ -37,9 +37,9 @@ Use these commands for a fresh installation. Before updating an existing copy, b
 
 ## Verify
 
-Run `node scripts/verify-install.mjs <skills-dir>` from a clone of this repository (for example `.agents/skills` or `.claude/skills` in the target project). It checks that both skills exist with valid frontmatter, that every relative link resolves, and that the browser scripts and lockfile are present. It proves structure, not that your agent activates the skill. Then confirm the behavior below.
+Run `node scripts/verify-install.mjs <skills-dir>` from a clone of this repository (for example `.agents/skills` or `.claude/skills` in the target project). It checks that both skills exist with valid frontmatter, that every relative link resolves, and that the browser scripts, lockfile, and audit report validator are present. It proves structure, not that your agent activates the skill. Then confirm the behavior below.
 
-Confirm that both installed folders contain SKILL.md and supporting files. Ask the agent: “Use audit-frontend-designer-konvert to audit this page without editing it.” It should inspect the product, audience, journeys, and interface read-only; preserve strengths; distinguish observations from hypotheses; and produce Markdown and JSON reports. For “audit and fix,” it should finish the audit and propose a handoff before implementation. The executor only implements findings the user approves.
+Confirm that both installed folders contain SKILL.md and supporting files. Ask the agent: “Use audit-frontend-designer-konvert to audit this page without editing it.” It should inspect the product, audience, journeys, and interface read-only; preserve strengths; distinguish observations from hypotheses; and produce Markdown and JSON reports. For “audit and fix,” it should finish the audit, validate the report with `audit-frontend-designer-konvert/scripts/validate-report.mjs`, and propose a handoff before implementation. The executor only implements findings the user approves whose external dependency is not pending.
 
 Then try a synthetic reference request: “Use design-por-referencia-konvert to apply this DESIGN.md to the sample page.” It should establish scope, respect project tokens, implement the reference, and report actual visual checks. These manual checks are useful examples, not measured activation accuracy.
 

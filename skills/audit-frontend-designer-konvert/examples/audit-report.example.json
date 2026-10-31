@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "report_id": "SYNTH-001",
   "project": "página de produto fictícia",
   "scope": {
@@ -45,7 +45,10 @@
       ],
       "next_step": "Pedir ao responsável pelo produto as regras aprovadas de estimativa de frete e, se autorizado, mostrar uma estimativa perto do preço.",
       "acceptance_criteria": "A página de produto informa como o custo de entrega é determinado antes do carrinho, usando as regras de frete aprovadas; as verificações de teclado e mobile passam.",
-      "requires_external_data_or_approval": "O responsável pelo produto precisa confirmar as regras de frete.",
+      "external_dependency": {
+        "status": "pending",
+        "detail": "O responsável pelo produto precisa confirmar as regras de frete."
+      },
       "approved_for_implementation": false
     },
     {
@@ -65,13 +68,40 @@
       ],
       "next_step": "Solicitar atributos aprovados em linguagem simples e validar a compreensão com compradores representativos.",
       "acceptance_criteria": "Cada opção expõe um atributo aprovado e compreensível, sem alterar o valor de produto subjacente.",
-      "requires_external_data_or_approval": "São necessários nomes de atributos aprovados e validação com usuários.",
+      "external_dependency": {
+        "status": "pending",
+        "detail": "São necessários nomes de atributos aprovados e validação com usuários."
+      },
       "approved_for_implementation": false
+    },
+    {
+      "id": "UX-003",
+      "priority": "P2",
+      "location": "página de produto fictícia, botão de compra em mobile (375 px)",
+      "evidence_observed": "Na captura sintética, o botão de compra usa texto cinza-claro sobre fundo cinza e tem o mesmo peso visual dos links secundários ao lado.",
+      "probable_impact": "A ação principal pode demorar mais a ser reconhecida; o efeito na conclusão da compra é uma hipótese não medida.",
+      "confidence": {
+        "level": "medium",
+        "reason": "Contraste e peso visual foram observados na captura sintética; o comportamento dos compradores não foi testado."
+      },
+      "preserve": [
+        "Texto do botão",
+        "Nome acessível",
+        "Evento de adicionar ao carrinho"
+      ],
+      "next_step": "Aplicar ao botão de compra a cor primária aprovada pela marca e diferenciá-lo dos links secundários.",
+      "acceptance_criteria": "O botão de compra é o controle de maior destaque no painel em 375 px e 1440 px, com contraste de texto de pelo menos 4,5:1 e foco visível; texto, nome acessível e evento permanecem iguais.",
+      "external_dependency": {
+        "status": "resolved",
+        "detail": "A cor primária para ações precisava de aprovação da marca.",
+        "resolution": "Responsável pela marca (fictício) aprovou o token de cor primária existente para o botão de compra."
+      },
+      "approved_for_implementation": true
     }
   ],
   "handoff": {
     "proposed_skill": "design-por-referencia-konvert",
-    "summary": "Depois que o usuário aprovar achados individuais e as entradas externas necessárias estiverem disponíveis, implementar apenas os achados aprovados e verificar seus critérios de aceite.",
+    "summary": "UX-003 está aprovado e com dependência resolvida, então pode ser implementado. UX-001 e UX-002 continuam bloqueados por dependências pendentes; implementar só depois que as entradas externas forem resolvidas e o usuário aprovar cada achado.",
     "implementation_performed": false
   }
 }

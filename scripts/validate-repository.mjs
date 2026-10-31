@@ -5,6 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { isDeepStrictEqual } from 'node:util';
 import { validateSkillDirectories } from './skill-directory-contract.mjs';
+import { validateAuditReport, compareMarkdownIds } from '../skills/audit-frontend-designer-konvert/scripts/validate-report.mjs';
+import { validateAuditCases } from './evaluate-audit.mjs';
+import { validateHandoffCase } from './check-handoff-scope.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
@@ -92,7 +95,22 @@ const capture = jsonFiles.get(path.join(tooling, 'examples/capture-index.example
 if (!capture || capture.tool !== 'capture.mjs' || !Array.isArray(capture.widths) || !capture.widths.every((n) => Number.isInteger(n) && n > 0) || !Array.isArray(capture.pages) || !Array.isArray(capture.files) || !capture.files.every((f) => f && typeof f.file === 'string' && path.basename(f.file) === f.file && Number.isInteger(f.width) && ['light', 'dark'].includes(f.scheme))) errors.push('Invalid capture-index example shape.');
 const images = jsonFiles.get(path.join(tooling, 'examples/image-manifest.example.json'));
 if (!images || typeof images.url !== 'string' || !Number.isInteger(images.width) || !Array.isArray(images.items) || !images.items.every((i) => i && ['img', 'background'].includes(i.kind) && typeof i.src === 'string' && Array.isArray(i.rendered) && i.rendered.length === 2 && i.rendered.every((n) => Number.isFinite(n) && n >= 0) && Array.isArray(i.flags))) errors.push('Invalid image-manifest example shape.');
-const auditReport = jsonFiles.get(path.join(root, 'skills/audit-frontend-designer-konvert/examples/audit-report.example.json'));
-if (!auditReport || auditReport.schema_version !== 1 || !Array.isArray(auditReport.findings) || auditReport.findings.some((f) => !f?.id || !['P0', 'P1', 'P2', 'P3'].includes(f.priority) || typeof f.location !== 'string' || typeof f.evidence_observed !== 'string' || typeof f.probable_impact !== 'string' || !['high', 'medium', 'low'].includes(f.confidence?.level) || !Array.isArray(f.preserve) || typeof f.next_step !== 'string' || typeof f.acceptance_criteria !== 'string' || !(typeof f.requires_external_data_or_approval === 'string' || f.requires_external_data_or_approval === false) || typeof f.approved_for_implementation !== 'boolean')) errors.push('Invalid audit report example shape.');
+const auditDir = path.join(root, 'skills/audit-frontend-designer-konvert/examples');
+const auditReport = jsonFiles.get(path.join(auditDir, 'audit-report.example.json'));
+const auditCheck = validateAuditReport(auditReport);
+errors.push(...auditCheck.errors.map((e) => `audit-report.example.json: ${e}`), ...auditCheck.warnings.map((w) => `audit-report.example.json: ${w}`));
+if (!auditCheck.errors.length) errors.push(...compareMarkdownIds(auditCheck.report, await fs.readFile(path.join(auditDir, 'audit-report.example.md'), 'utf8')).map((e) => `audit-report.example.md: ${e}`));
+const auditCases = jsonFiles.get(path.join(root, 'evaluations/audit-quality/cases.json'));
+errors.push(...validateAuditCases(auditCases).map((e) => `evaluations/audit-quality/cases.json: ${e}`));
+for (const item of auditCases?.cases ?? []) {
+  try { await fs.access(path.join(root, item.fixture, 'index.html')); } catch { errors.push(`evaluations/audit-quality/cases.json: fixture for ${item.id} is missing index.html`); }
+}
+for (const name of await fs.readdir(path.join(root, 'evaluations/handoff'))) {
+  const handoff = jsonFiles.get(path.join(root, 'evaluations/handoff', name));
+  if (!name.endsWith('.json') || name.endsWith('-report.json') || !handoff) continue;
+  const { errors: handoffErrors } = validateHandoffCase(handoff, jsonFiles.get(path.resolve(root, handoff.report ?? '')));
+  errors.push(...handoffErrors.map((e) => `evaluations/handoff/${name}: ${e}`));
+  try { await fs.access(path.join(root, handoff.fixture)); } catch { errors.push(`evaluations/handoff/${name}: fixture is missing`); }
+}
 if (errors.length) { console.error(errors.join('\n')); process.exitCode = 1; }
-else console.log(`Validated ${checked} Markdown files, ${syntaxChecked} JavaScript modules, ${jsonFiles.size} JSON files, example shapes, skill metadata, relative links, and tooling lockfile.`);
+else console.log(`Validated ${checked} Markdown files, ${syntaxChecked} JavaScript modules, ${jsonFiles.size} JSON files, example shapes, audit report contract, evaluation cases, skill metadata, relative links, and tooling lockfile.`);

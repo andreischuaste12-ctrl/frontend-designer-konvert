@@ -6,14 +6,14 @@ Toda auditoria de design UX/UI concluída produz um relatório em Markdown e out
 
 O nível superior contém:
 
-- `schema_version`: versão inteira do esquema (`1` neste contrato).
+- `schema_version`: versão inteira do esquema (`2` neste contrato). Relatórios `1` ainda são lidos, mas toda dependência descrita neles conta como pendente.
 - `report_id`: ID estável e não identificável do relatório.
 - `project`: rótulo curto do projeto; não inclua URLs privadas, caminhos pessoais, IDs de conta nem dados de clientes.
 - `scope`: rotas, tarefas, viewports, estados e dimensões da auditoria cobertos.
 - `evidence_limits`: ferramentas, dados ou verificações indisponíveis e seu efeito na confiança.
 - `preserve`: pontos fortes e contratos do projeto inteiro que devem ficar intactos.
 - `findings`: lista de achados com os campos abaixo.
-- `handoff`: próxima skill proposta e um resumo conciso; isso não autoriza mudanças não aprovadas.
+- `handoff`: objeto com `proposed_skill` (`design-por-referencia-konvert`), `summary` conciso e `implementation_performed: false`; isso não autoriza mudanças não aprovadas.
 
 ## Campos obrigatórios de cada achado
 
@@ -30,10 +30,30 @@ Cada achado deve conter:
 | `preserve` | Comportamento, conteúdo, componente, marca, integração ou contrato que não deve mudar neste achado. |
 | `next_step` | Ação concreta proposta. Uma recomendação não é aprovação. |
 | `acceptance_criteria` | Condição observável de uma mudança bem-sucedida. |
-| `requires_external_data_or_approval` | `false` ou a descrição do dado/aprovação necessária e de quem é. |
+| `external_dependency` | Objeto com `status` e, conforme o estado, `detail` e `resolution` (tabela abaixo). |
 | `approved_for_implementation` | Booleano. Padrão `false`; só `true` quando o usuário aprova explicitamente este achado ou a mudança exata. |
 
-O significado de P0–P3 e as regras de evidência estão na [orientação de relatório e handoff](../knowledge-base/03-relatorio-e-handoff.md). Uma dependência externa deve ser resolvida antes da implementação, mesmo que a aprovação esteja registrada.
+## Dependência externa
+
+| `status` | Quando usar | Campos exigidos |
+| --- | --- | --- |
+| `not_applicable` | O achado não depende de dado, conteúdo, pesquisa ou aprovação de terceiros. | nenhum |
+| `pending` | Falta um dado ou uma decisão de outra pessoa. | `detail`: o que falta e de quem é |
+| `resolved` | A dependência foi atendida. | `detail` e `resolution`: a decisão tomada e quem decidiu |
+
+Um achado só é implementável quando `approved_for_implementation` é `true` **e** `external_dependency.status` não é `pending`. Aprovação não resolve dependência, e dependência resolvida não equivale a aprovação. Só registre `resolved` com a decisão vinda do usuário ou do responsável indicado; não deduza a resolução.
+
+O significado de P0–P3 e as regras de evidência estão na [orientação de relatório e handoff](../knowledge-base/03-relatorio-e-handoff.md).
+
+## Validação
+
+Antes de entregar, valide os dois arquivos:
+
+```bash
+node .agents/skills/audit-frontend-designer-konvert/scripts/validate-report.mjs .audit/audit-report.json --markdown .audit/audit-report.md
+```
+
+Execute na raiz do projeto auditado, trocando `.agents/skills` pela pasta onde a skill foi instalada (por exemplo `.claude/skills`). O script só lê arquivos e não precisa de dependências além do Node.js 20+. O validador confere campos, estados de dependência, IDs únicos, o espelhamento dos IDs no Markdown e sinais de dados privados (emails, tokens e parâmetros sensíveis bloqueiam; caminhos pessoais geram aviso). `--implementable` lista em JSON os achados que a executora pode implementar e o motivo de cada bloqueio. Ele não julga a qualidade do conteúdo; isso continua exigindo revisão.
 
 ## Renderização em Markdown
 
