@@ -18,8 +18,8 @@ test('redactUrl hides local file paths and data URI contents', () => {
 });
 
 test('redactText removes email addresses, secrets, and query values', () => {
-  const safe = redactText('owner@example.invalid token=sample name=customer-name https://example.test/a?email=owner%40example.invalid /home/andrei/private.log');
-  assert.doesNotMatch(safe, /owner@example\.invalid|sample|customer-name|email=|\/home\/andrei/i);
+  const safe = redactText('owner@example.invalid token=sample name=customer-name https://example.test/a?email=owner%40example.invalid /home/example-user/private.log');
+  assert.doesNotMatch(safe, /owner@example\.invalid|sample|customer-name|email=|\/home\/example-user/i);
   assert.match(safe, /\[email redacted\]/);
 });
 
