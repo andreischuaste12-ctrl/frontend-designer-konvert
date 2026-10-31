@@ -1,6 +1,6 @@
 # Fundação visual
 
-Defina os tokens antes dos componentes. Uma única fonte de tokens evita valores soltos no código e permite ajustar a direção visual sem reescrever a interface.
+Identifique os papéis de tokens e defina a direção visual antes de escolher seus valores e criar os componentes. Uma única fonte de tokens evita valores soltos no código e permite ajustar a direção visual sem reescrever a interface.
 
 ## Papéis mínimos
 
@@ -15,6 +15,26 @@ Ponto de partida que funciona na maioria dos projetos:
 | Espaçamento | Unidade-base e escala múltipla dela | Densidade do produto: dashboard é mais denso que landing. |
 | Forma | Raio e espessura de borda consistentes | Tom da marca. |
 | Movimento | Durações curtas, só para feedback e transição de estado | Sempre respeitar `prefers-reduced-motion`. |
+
+## Derivar uma direção visual
+
+Antes de escolher valores concretos de cores, fontes ou efeitos, traduza o brief em decisões visuais. Use evidências fornecidas sobre a marca, a tarefa e o contexto de uso; a categoria de produto, sozinha, não determina o estilo.
+
+1. Identifique o que precisa ganhar atenção primeiro para a tarefa principal e o que deve permanecer secundário.
+2. Considere o contexto de uso: leitura ou operação, frequência, dispositivo, quantidade de informação e condições de acessibilidade.
+3. Como ponto de partida, defina uma característica visual dominante e, se útil, uma de apoio. Acrescente outras quando o brief ou a identidade justificar, preservando a coerência. Explique como as escolhas ajudam a tarefa e combinam com a identidade informada.
+4. Registre até dois efeitos ou padrões a evitar quando houver motivo concreto — por exemplo, movimento que atrasa uma tarefa frequente ou ornamentação que compete com dados importantes. Não use listas universais de tendências ou antipatrones.
+5. Converta as decisões em valores de tokens e componentes. Se houver mais de uma página, mantenha a base consistente e documente exceções apenas quando uma tarefa ou conteúdo exigir diferença.
+
+| Decisão | Pergunta de controle | Registro mínimo |
+| --- | --- | --- |
+| Hierarquia | O que a pessoa precisa notar ou fazer primeiro? | Elemento primário e secundário, ligados à tarefa. |
+| Expressão | Que impressão visual foi pedida ou sustentada pelo brief? | Traço dominante, apoios pertinentes e evidência de origem. |
+| Densidade | Quanto conteúdo precisa ser comparado ou operado na mesma tela? | Justificativa de espaçamento, agrupamento e quantidade de informação. |
+| Movimento | Alguma animação melhora orientação ou feedback? | Uso específico, comportamento sem movimento e preferência reduzida. |
+| Exceções | O que poderia competir com a tarefa ou tornar o uso mais difícil? | Até dois padrões a evitar, quando aplicável, e a razão observável. |
+
+Se a marca ou a direção visual não foi fornecida, escolha uma direção original mínima que sustente a tarefa, registre-a como decisão e avance. Não infira paleta, personalidade, público ou preferência estética apenas pelo setor; quando duas opções mudarem materialmente o resultado, declare a suposição ou pergunte conforme o brief.
 
 ## Restrições verificáveis
 
