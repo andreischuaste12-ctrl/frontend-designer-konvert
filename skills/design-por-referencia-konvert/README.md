@@ -45,6 +45,8 @@ Images are not copied by default. Use `--save-images` only when local review cop
 
 CIDR checks cover literal private/reserved IP ranges and embedded IPv4 in mapped/compatible IPv6, well-known NAT64, and 6to4. Local-use NAT64 and Teredo are denied because their translation behavior cannot be inferred safely. DNS rebinding and deployment-specific translations remain outside these guards' guarantees; they are not a network sandbox.
 
+HTTP redirects are not automatically forwarded to Chromium. Approved GET main-navigation hops are validated and restarted with a 20-hop limit; subresource and non-GET redirects are aborted and listed in `blockedRedirects`. Missing redirected assets require canonical URLs or a partial-coverage report. Response mediation changes timing and buffering behavior; laboratory metrics are not production network measurements. Text redaction covers known formats only and does not sanitize screenshot pixels.
+
 ## Examples
 
 Run commands from the target project's root; `<skill>` is the path to this skill folder:

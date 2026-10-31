@@ -4,6 +4,10 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+- Prevent Chromium from following unchecked HTTP redirects; validate/restart GET main-navigation hops and block redirected subresources/non-GET navigation with explicit reporting.
+- Redact common authorization/cookie/JWT formats, Windows/WSL/Unix paths, Brazilian identifiers/phones, and static project-root paths; retain best-effort/manual-review limits.
+- Use native screenshot animation/caret controls under CSP, add redirect/CSP regressions, split script smoke scenarios, and validate JSON syntax and example shapes.
+- Report effective Playwright/browser versions and executable source without full filesystem paths.
 - Classify literal IPs by CIDR, including compatible/translated IPv6, NAT64, 6to4, reserved and benchmark ranges; explicitly deny ambiguous local-use NAT64 and Teredo.
 - Route WebSockets through target/tracker guards, reject them with write blocking, and disable service workers in shared inspection contexts; add independent browser controls and regression tests.
 - Pin CI actions to verified upstream commits, add job timeouts/concurrency and ignore-file triggers, and validate all JavaScript modules, knowledge links, and tooling lockfile consistency.

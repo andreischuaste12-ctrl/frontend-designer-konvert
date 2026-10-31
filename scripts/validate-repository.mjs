@@ -9,12 +9,18 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
 let checked = 0;
 let syntaxChecked = 0;
+const jsonFiles = new Map();
 async function walk(dir) {
   for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
     if (entry.name.startsWith('.') || ['node_modules', 'coverage'].includes(entry.name)) continue;
     const file = path.join(dir, entry.name);
     if (entry.isDirectory()) { await walk(file); continue; }
     if (!entry.isFile()) continue;
+    if (file.endsWith('.json')) {
+      try { jsonFiles.set(file, JSON.parse(await fs.readFile(file, 'utf8'))); }
+      catch { errors.push(`${path.relative(root, file)}: invalid JSON`); }
+      continue;
+    }
     if (file.endsWith('.mjs')) {
       const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' });
       syntaxChecked++;
@@ -53,17 +59,23 @@ async function walk(dir) {
 }
 await walk(root);
 const tooling = path.join(root, 'skills/design-por-referencia-konvert');
-const manifest = JSON.parse(await fs.readFile(path.join(tooling, 'package.json'), 'utf8'));
-const lock = JSON.parse(await fs.readFile(path.join(tooling, 'package-lock.json'), 'utf8'));
+const manifest = jsonFiles.get(path.join(tooling, 'package.json')) ?? {};
+const lock = jsonFiles.get(path.join(tooling, 'package-lock.json')) ?? {};
 const lockedManifest = lock.packages?.[''];
 if (!lockedManifest || manifest.name !== lock.name || manifest.version !== lock.version || manifest.version !== lockedManifest.version ||
     !isDeepStrictEqual(manifest.devDependencies, lockedManifest.devDependencies) || !isDeepStrictEqual(manifest.engines, lockedManifest.engines)) errors.push('Tooling package manifest and lockfile are inconsistent.');
-const routingCases = JSON.parse(await fs.readFile(path.join(root, 'evaluations/routing-cases.json'), 'utf8'));
-if (new Set(routingCases.map((c) => c.id)).size !== routingCases.length) errors.push('Routing case IDs must be unique.');
+const rawRouting = jsonFiles.get(path.join(root, 'evaluations/routing-cases.json'));
+if (!Array.isArray(rawRouting)) errors.push('Routing cases must be a JSON array.');
+const routingCases = Array.isArray(rawRouting) ? rawRouting : [];
+if (new Set(routingCases.map((c) => c?.id)).size !== routingCases.length) errors.push('Routing case IDs must be unique.');
 for (const skill of ['frontend-designer', 'design-por-referencia-konvert']) {
-  const cases = routingCases.filter((c) => c.skill === skill);
+  const cases = routingCases.filter((c) => c?.skill === skill);
   if (cases.filter((c) => c.shouldTrigger === true).length < 6 || cases.filter((c) => c.shouldTrigger === false).length < 6) errors.push(`${skill}: requires at least 6 positive and 6 negative routing cases.`);
 }
-if (routingCases.some((c) => !c.id || typeof c.prompt !== 'string' || !c.prompt.trim() || typeof c.shouldTrigger !== 'boolean' || !['frontend-designer', 'design-por-referencia-konvert'].includes(c.skill))) errors.push('Invalid routing case.');
+if (routingCases.some((c) => !c || !c.id || typeof c.prompt !== 'string' || !c.prompt.trim() || typeof c.shouldTrigger !== 'boolean' || !['frontend-designer', 'design-por-referencia-konvert'].includes(c.skill))) errors.push('Invalid routing case.');
+const capture = jsonFiles.get(path.join(tooling, 'examples/capture-index.example.json'));
+if (!capture || capture.tool !== 'capture.mjs' || !Array.isArray(capture.widths) || !capture.widths.every((n) => Number.isInteger(n) && n > 0) || !Array.isArray(capture.pages) || !Array.isArray(capture.files) || !capture.files.every((f) => f && typeof f.file === 'string' && path.basename(f.file) === f.file && Number.isInteger(f.width) && ['light', 'dark'].includes(f.scheme))) errors.push('Invalid capture-index example shape.');
+const images = jsonFiles.get(path.join(tooling, 'examples/image-manifest.example.json'));
+if (!images || typeof images.url !== 'string' || !Number.isInteger(images.width) || !Array.isArray(images.items) || !images.items.every((i) => i && ['img', 'background'].includes(i.kind) && typeof i.src === 'string' && Array.isArray(i.rendered) && i.rendered.length === 2 && i.rendered.every((n) => Number.isFinite(n) && n >= 0) && Array.isArray(i.flags))) errors.push('Invalid image-manifest example shape.');
 if (errors.length) { console.error(errors.join('\n')); process.exitCode = 1; }
-else console.log(`Validated ${checked} Markdown files, ${syntaxChecked} JavaScript modules, skill metadata, relative links, and tooling lockfile.`);
+else console.log(`Validated ${checked} Markdown files, ${syntaxChecked} JavaScript modules, ${jsonFiles.size} JSON files, example shapes, skill metadata, relative links, and tooling lockfile.`);

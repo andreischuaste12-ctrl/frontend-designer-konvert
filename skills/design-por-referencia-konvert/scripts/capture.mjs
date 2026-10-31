@@ -41,6 +41,7 @@ const HELP = `Uso: node capture.mjs --url <url> [opções]
   --no-mask                Não mascarar campos de texto (use só com dados fictícios).
   --timeout <ms>           Timeout de navegação (padrão: 30000).
 
+Aviso: IPs resolvidos por DNS não são validados/fixados pelo guard; não é uma sandbox de rede.
 Saída: route-NN__largura__estado.png + capture-index.json (metadados sanitizados e evidências).`;
 
 const { values: a } = parseArgs({
@@ -99,6 +100,7 @@ const browser = await launch(pw);
 const trackingBlocked = new Set();
 const blockedTargets = new Set();
 const blockedWriteMethods = new Set();
+const blockedRedirects = new Set();
 
 const index = {
   tool: 'capture.mjs',
@@ -107,11 +109,12 @@ const index = {
   widths,
   schemes,
   profile: a.profile,
-  trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(),
+  trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(), blockedRedirects: [...blockedRedirects].sort(),
   trackingBlocked: [],
   blockedTargets: [],
   notes: [
-    'CSS tenta congelar animações sem ignorar CSP; rolagem completa feita antes da captura (lazy loading).',
+    'Capturas usam animações desativadas e caret oculto pelo Playwright; CSS injetado é reforço sujeito à CSP.',
+    'HTTP mediado sem redirects automáticos: navegação GET revalidada; redirects de subrecursos recusados. Métricas não representam rede de produção.',
     'Banners de consentimento não são clicados: se cobrirem a página, aparecem nas capturas.',
     'LCP/CLS são medidas de laboratório (indicativas). Candidatos a overflow incluem elementos fora da tela de propósito.',
     'Campos de texto mascarados, salvo --no-mask.',
@@ -132,7 +135,7 @@ async function shootAround(page, el, file, mask) {
   const width = Math.min(vp.width - x, box.width + pad * 2);
   const height = Math.min(vp.height - y, box.height + pad * 2);
   if (width <= 0 || height <= 0) return false;
-  await page.screenshot({ path: file, clip: { x, y, width, height }, mask });
+  await page.screenshot({ path: file, clip: { x, y, width, height }, mask, animations: 'disabled', caret: 'hide' });
   return true;
 }
 
@@ -205,7 +208,7 @@ async function captureRoute(ctx, route, width, scheme, routeIndex) {
     // Página inteira (pode falhar em páginas muito altas; as fatias cobrem esse caso).
     try {
       const f = name('full');
-      await page.screenshot({ path: path.join(outDir, f), fullPage: true, mask });
+      await page.screenshot({ path: path.join(outDir, f), fullPage: true, mask, animations: 'disabled', caret: 'hide' });
       record(f, 'full');
     } catch (err) {
       info.fullPageError = redactText(String(err.message).split('\n')[0]);
@@ -224,6 +227,7 @@ async function captureRoute(ctx, route, width, scheme, routeIndex) {
         fullPage: true,
         clip: { x: 0, y, width: m.innerWidth, height: h },
         mask,
+        animations: 'disabled', caret: 'hide',
       });
       record(f, `tile-${tiles}`);
     }
@@ -293,7 +297,7 @@ for (const scheme of schemes) {
     });
     await installRequestGuards(ctx, {
       allowFile: a['allow-file'], allowPrivate: a['allow-private'], allowTracking: a['allow-tracking'],
-      trackingBlocked, blockedTargets, blockWrites: a['block-writes'], blockedWriteMethods,
+      trackingBlocked, blockedTargets, blockWrites: a['block-writes'], blockedWriteMethods, blockedRedirects,
     });
     await ctx.addInitScript(metricsInit);
     for (const [routeIndex, route] of routes.entries()) {
@@ -314,6 +318,7 @@ index.finishedAt = new Date().toISOString();
 index.trackingBlocked = [...trackingBlocked].sort();
 index.blockedTargets = [...blockedTargets].sort();
 index.blockedWriteMethods = [...blockedWriteMethods].sort();
+index.blockedRedirects = [...blockedRedirects].sort();
 await fs.writeFile(path.join(outDir, 'capture-index.json'), JSON.stringify(index, null, 2), 'utf8');
-console.log(`\n${index.files.length} arquivos de captura + capture-index.json em ${outDir}`);
+console.log(`\n${index.files.length} arquivos de captura + capture-index.json no diretório de saída`);
 console.log('Lembrete: mantenha esta pasta fora do Git (ex.: .audit/ no .gitignore) e não publique as capturas.');

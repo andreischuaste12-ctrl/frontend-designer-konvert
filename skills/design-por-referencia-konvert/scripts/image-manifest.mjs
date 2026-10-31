@@ -25,6 +25,7 @@ const HELP = `Uso: node image-manifest.mjs [--root <dir>] [--url <url>] [opçõe
   --no-save      Mantido por compatibilidade; imagens não são copiadas por padrão.
   --timeout <ms> Timeout de navegação (padrão: 30000).
 
+Aviso: IPs resolvidos por DNS não são validados/fixados pelo guard; não é uma sandbox de rede.
 Saída: images-static.json/.md e/ou images-rendered.json/.md, e imagens-revisao.md (roteiro de revisão visual).`;
 
 const { values: a } = parseArgs({
@@ -214,7 +215,7 @@ async function scanStatic(rootArg) {
     if (i.alt.some((x) => x.alt === 'ausente')) i.flags.push('alt-ausente');
   }
   images.sort((x, y) => y.bytes - x.bytes);
-  return { root, total: images.length, totalBytes: images.reduce((s, i) => s + i.bytes, 0), images };
+  return { root: '[project-root-redacted]', total: images.length, totalBytes: images.reduce((s, i) => s + i.bytes, 0), images };
 }
 
 if (a.root) {
@@ -249,9 +250,10 @@ if (a.url) {
   const trackingBlocked = new Set();
   const blockedTargets = new Set();
   const blockedWriteMethods = new Set();
+  const blockedRedirects = new Set();
   await installRequestGuards(ctx, {
     allowFile: a['allow-file'], allowPrivate: a['allow-private'], allowTracking: a['allow-tracking'],
-    trackingBlocked, blockedTargets, blockWrites: a['block-writes'], blockedWriteMethods,
+    trackingBlocked, blockedTargets, blockWrites: a['block-writes'], blockedWriteMethods, blockedRedirects,
   });
   await ctx.addInitScript(metricsInit);
   const page = await ctx.newPage();
@@ -394,7 +396,7 @@ if (a.url) {
   const safeLcp = dom.lcp ? { ...dom.lcp, url: dom.lcp.url ? redactUrl(dom.lcp.url) : null } : null;
   const safeUrl = redactUrl(url.href);
   await fs.writeFile(path.join(outDir, 'images-rendered.json'), JSON.stringify({
-    url: safeUrl, width, lcp: safeLcp, cls: dom.cls, serviceWorkersBlocked: true, trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(),
+    url: safeUrl, width, lcp: safeLcp, cls: dom.cls, serviceWorkersBlocked: true, trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(), blockedRedirects: [...blockedRedirects].sort(),
     trackingBlocked: [...trackingBlocked].sort(), blockedTargets: [...blockedTargets].sort(), items: clean,
   }, null, 2), 'utf8');
   const rows = clean
@@ -402,7 +404,7 @@ if (a.url) {
     .join('\n');
   await fs.writeFile(
     path.join(outDir, 'images-rendered.md'),
-    `# Imagens no render\n\nMedido em ${safeUrl}, viewport ${width}px (DPR 1), ${new Date().toISOString()}. LCP: ${safeLcp ? `${safeLcp.time}ms ${safeLcp.tag} ${safeLcp.url ?? ''}` : 'n/d'} · CLS: ${dom.cls} (laboratório, indicativo).\nAnalytics bloqueados: ${[...trackingBlocked].sort().join(', ') || (a['allow-tracking'] ? 'bloqueio desativado pelo usuário' : 'nenhum observado')}. Alvos privados bloqueados: ${[...blockedTargets].sort().join(', ') || 'nenhum observado'}.\nblock-writes: ${a['block-writes']}; métodos bloqueados: ${[...blockedWriteMethods].sort().join(', ') || 'nenhum'}.\n\n| Tipo | Origem | Formato | Natural | Renderizado | Peso | alt | loading | Alertas |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${rows}\n`,
+    `# Imagens no render\n\nMedido em ${safeUrl}, viewport ${width}px (DPR 1), ${new Date().toISOString()}. LCP: ${safeLcp ? `${safeLcp.time}ms ${safeLcp.tag} ${safeLcp.url ?? ''}` : 'n/d'} · CLS: ${dom.cls} (laboratório, indicativo).\nAnalytics bloqueados: ${[...trackingBlocked].sort().join(', ') || (a['allow-tracking'] ? 'bloqueio desativado pelo usuário' : 'nenhum observado')}. Alvos privados bloqueados: ${[...blockedTargets].sort().join(', ') || 'nenhum observado'}.\nblock-writes: ${a['block-writes']}; redirects recusados: ${[...blockedRedirects].sort().join(', ') || 'nenhum'}; métodos bloqueados: ${[...blockedWriteMethods].sort().join(', ') || 'nenhum'}.\n\n| Tipo | Origem | Formato | Natural | Renderizado | Peso | alt | loading | Alertas |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${rows}\n`,
     'utf8',
   );
   clean.forEach((i, n) =>
@@ -430,4 +432,4 @@ await fs.writeFile(
   `# Revisão visual de imagens\n\nAbra cada imagem com a ferramenta de visualização, em lotes de até 8, e preencha o resumo logo após cada lote. SVG pode não abrir no visualizador: use as fatias de captura da página. Nada abaixo foi visto até ser preenchido.\n\n${guide || '_sem imagens_'}`,
   'utf8',
 );
-console.log(`Roteiro de revisão: ${review.length} itens em ${batches.length} lotes → imagens-revisao.md (em ${outDir})`);
+console.log(`Roteiro de revisão: ${review.length} itens em ${batches.length} lotes → imagens-revisao.md no diretório de saída`);

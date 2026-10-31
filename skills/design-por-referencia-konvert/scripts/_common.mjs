@@ -13,11 +13,17 @@ export function fail(msg, code = 1) {
 }
 
 // Prefere a dependência fixada da skill; usa a do projeto apenas como fallback.
+const playwrightVersions = new WeakMap();
 export function loadPlaywright() {
   const bases = [import.meta.url, path.join(process.cwd(), 'noop.js')];
   for (const base of bases) {
     try {
-      return createRequire(base)('playwright');
+      const require = createRequire(base);
+      const pw = require('playwright');
+      let version = 'unknown';
+      try { version = require('playwright/package.json').version; } catch { /* optional runtime diagnostic */ }
+      playwrightVersions.set(pw, /^\d+\.\d+\.\d+(?:[-.\w]*)$/.test(version) ? version : 'unknown');
+      return pw;
     } catch (err) {
       if (err.code !== 'MODULE_NOT_FOUND') throw err;
     }
@@ -30,12 +36,16 @@ export function loadPlaywright() {
 }
 
 export async function launch(pw) {
+  const source = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ? 'system-provided executable' : 'Playwright-managed executable';
+  console.log(`Playwright ${playwrightVersions.get(pw) ?? 'unknown'}; ${source}.`);
   try {
     const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
-    return await pw.chromium.launch(executablePath ? { executablePath } : {});
+    const browser = await pw.chromium.launch(executablePath ? { executablePath } : {});
+    console.log(`Chromium ${redactText(browser.version(), 60)}.`);
+    return browser;
   } catch (err) {
     return fail(
-      `Não foi possível iniciar o Chromium: ${String(err.message).split('\n')[0]}\n` +
+      `Não foi possível iniciar o Chromium: ${redactText(String(err.message).split('\n')[0])}\n` +
         'Rode `npx playwright install chromium` (este script não instala nada).',
       2,
     );
@@ -79,7 +89,10 @@ export function createInspectionContext(browser, options = {}) {
   return browser.newContext({ ...options, serviceWorkers: 'block' });
 }
 
-export async function installRequestGuards(context, { allowFile = false, allowPrivate = false, allowTracking = false, blockWrites = false, trackingBlocked = new Set(), blockedTargets = new Set(), blockedWriteMethods = new Set() } = {}) {
+const pendingNavigations = new WeakMap();
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+
+export async function installRequestGuards(context, { allowFile = false, allowPrivate = false, allowTracking = false, blockWrites = false, trackingBlocked = new Set(), blockedTargets = new Set(), blockedWriteMethods = new Set(), blockedRedirects = new Set() } = {}) {
   if (typeof context.routeWebSocket !== 'function') fail('Playwright with browser-context WebSocket routing is required. Install the pinned skill dependencies.', 2);
   await context.route('**/*', async (route) => {
     const raw = route.request().url();
@@ -103,7 +116,44 @@ export async function installRequestGuards(context, { allowFile = false, allowPr
       await route.abort('blockedbyclient');
       return;
     }
-    await route.continue();
+    if (!['http:', 'https:'].includes(u.protocol)) { await route.continue(); return; }
+    let response;
+    try {
+      // Fulfilled responses have no native remote address. Restore the browser's
+      // ordinary local-page access only for an explicitly visited loopback origin.
+      const host = networkHost(u.hostname);
+      const loopback = host === 'localhost' || host.endsWith('.localhost') || /^127(?:\.\d+){3}$/.test(host) || host === '::1';
+      if (loopback && route.request().isNavigationRequest?.() && context.grantPermissions) {
+        const frame = route.request().frame();
+        if (frame === frame.page().mainFrame()) await context.grantPermissions(['local-network-access'], { origin: u.origin }).catch(() => {});
+      }
+      // Chromium skips route handlers on later redirect hops. Never give it a 3xx.
+      response = await route.fetch({ maxRedirects: 0, timeout: 30000 });
+      const location = response.headers().location;
+      if (REDIRECT_STATUSES.has(response.status()) && location) {
+        let next;
+        try { next = new URL(location, raw); } catch { /* rejected below */ }
+        const invalid = !next || !['http:', 'https:'].includes(next.protocol) || targetBlockReason(next.href, { allowFile, allowPrivate });
+        const tracker = next && isTrackerUrl(next) && !allowTracking;
+        if (invalid) blockedTargets.add(next?.hostname || 'invalid-redirect');
+        if (tracker) trackingBlocked.add(next.hostname.toLowerCase());
+        const request = route.request();
+        const frame = request.isNavigationRequest() ? request.frame() : null;
+        // Restart only GET main navigation; never replay POST or subresources.
+        if (!invalid && !tracker && frame && frame === frame.page().mainFrame() && method === 'GET') {
+          pendingNavigations.set(frame.page(), next.href);
+          await route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>Guarded navigation</title>' });
+          return;
+        } else blockedRedirects.add(next?.hostname || 'invalid-redirect');
+        await route.abort('blockedbyclient');
+        return;
+      }
+      await route.fulfill({ response });
+    } catch {
+      await route.abort('failed').catch(() => {});
+    } finally {
+      if (response) await response.dispose();
+    }
   });
   await context.routeWebSocket('**/*', async (socket) => {
     const u = new URL(socket.url());
@@ -152,11 +202,18 @@ export function redactUrl(raw) {
 
 export function redactText(raw, limit = 300) {
   return String(raw)
-    .replace(/https?:\/\/[^\s"'<>)}\]]+/gi, (url) => redactUrl(url.replace(/[.,;:!?]+$/, '')))
+    .replace(/\b(authorization|proxy-authorization|set-cookie|cookie)\b["']?\s*[:=]\s*(?:"[^"\r\n]*"|'[^'\r\n]*'|[^\r\n]*)/gi, '$1=[redacted]')
+    .replace(/\b(Bearer|Basic)\s+[A-Za-z0-9._~+\/-]+=*/gi, '$1 [redacted]')
+    .replace(/\beyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*/g, '[JWT redacted]')
+    .replace(/(?:https?|wss?):\/\/[^\s"'<>)}\]]+/gi, (url) => redactUrl(url.replace(/[.,;:!?]+$/, '')))
     .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[email redacted]')
-    .replace(/(?:\/(?:home|Users|workspace|tmp)\/)[^\s"'<>]+/g, '[local-path-redacted]')
-    .replace(/[A-Z]:\\Users\\[^\s"'<>]+/gi, '[local-path-redacted]')
-    .replace(/\b(email|e-?mail|full[_-]?name|name|username|user[_-]?id|customer[_-]?id|account[_-]?id|session(?:[_-]?id)?|token|access[_-]?key|api[_-]?key|secret|password|authorization|signature)\s*[:=]\s*[^\s,;&]+/gi, '$1=[redacted]')
+    .replace(/\b[A-Z]:[\\/][^\r\n"'<>|]*/gi, '[local-path-redacted]')
+    .replace(/(?:\/(?:home|Users|workspace|tmp|mnt|root|var|opt|srv|private|etc|data|Volumes|run)\/)[^\r\n"'<>]*/g, '[local-path-redacted]')
+    .replace(/(?<!\d)(?:\d{3}\.\d{3}\.\d{3}-\d{2}|\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}|\d{14}|\d{11})(?!\d)/g, '[personal-id-or-phone redacted]')
+    .replace(/(?<!\w)(?:\+?55[\s.-]*)?(?:\(\d{2}\)|\d{2})[\s.-]*9?\d{4}[\s.-]\d{4}(?!\d)/g, '[phone redacted]')
+    .replace(/(?<!\w)\+?55\d{10,11}(?!\d)/g, '[phone redacted]')
+    .replace(/(?<!\d)\d{4,5}-\d{4}(?!\d)/g, '[phone redacted]')
+    .replace(/\b(email|e-?mail|full[_-]?name|name|username|user[_-]?id|customer[_-]?id|account[_-]?id|session(?:[_-]?id)?|token|access[_-]?key|api[_-]?key|secret|password|signature)\s*[:=]\s*(?:"[^"\r\n]*"|'[^'\r\n]*'|[^\s,;&]+)/gi, '$1=[redacted]')
     .slice(0, limit);
 }
 
@@ -235,7 +292,23 @@ async function autoScroll(page) {
 // Carrega a página e a deixa estável: fontes prontas, animações congeladas,
 // rolagem completa para disparar lazy loading. Retorna a resposta HTTP da navegação.
 export async function preparePage(page, url, timeout) {
-  const resp = await page.goto(url, { waitUntil: 'load', timeout });
+  let resp, current = url;
+  const deadline = Date.now() + timeout;
+  for (let hop = 0; ; hop++) {
+    if (hop > 20 || Date.now() >= deadline) throw new Error('Navigation redirect limit or timeout exceeded.');
+    pendingNavigations.delete(page);
+    try {
+      resp = await page.goto(current, { waitUntil: 'load', timeout: Math.max(1, deadline - Date.now()) });
+      const next = pendingNavigations.get(page);
+      if (next) { pendingNavigations.delete(page); current = next; continue; }
+      break;
+    } catch (err) {
+      const next = pendingNavigations.get(page);
+      pendingNavigations.delete(page);
+      if (!next) throw err;
+      current = next;
+    }
+  }
   await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
   await page.addStyleTag({ content: FREEZE_CSS }).catch(() => {});
   await page.evaluate(() => document.fonts.ready).catch(() => {});

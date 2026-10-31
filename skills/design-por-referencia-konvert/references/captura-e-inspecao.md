@@ -85,6 +85,8 @@ Use a mesma ordem de rotas, versão do navegador, fontes, conteúdo, larguras, e
 
 ## 8. Segurança e privacidade
 
+- Redirects HTTP não são entregues automaticamente ao navegador. Saltos GET da navegação principal são validados e reiniciados, com limite de 20; redirects de imagens, CSS, `fetch` e navegações não-GET são recusados e registrados em `blockedRedirects`. Recursos podem ficar ausentes: use URLs canônicas e registre a cobertura parcial. Redirects por script após o preparo podem ser interrompidos.
+- A mediação por `route.fetch` altera transporte/tempos e armazena respostas no Playwright; não representa uma medição de rede de produção nem limita o download total. Só origens principais loopback recebem restauração de permissão de rede local; origens públicas não recebem essa permissão.
 - WebSockets passam pela mesma política de alvos e trackers; `--block-writes` bloqueia todos eles e registra `WEBSOCKET`. Service workers ficam bloqueados em todos os contextos de inspeção. Registre essa condição se o produto depender de cache/offline ou atualização em tempo real.
 - A classificação de IP usa faixas CIDR e reclassifica o IPv4 de endereços mapped/compatible, NAT64 conhecido e 6to4. NAT64 local com prefixo de tradução desconhecido e Teredo são recusados. Isso não resolve nomes que apontam para IPs internos, DNS rebinding ou toda configuração de tradução da rede: o script não é uma sandbox.
 - A navegação usa GET, não clica, envia formulários nem confirma ações, mas executa JavaScript do alvo; GET não garante ausência de efeitos colaterais. Inspecione somente alvos autorizados.
@@ -101,5 +103,7 @@ Use a mesma ordem de rotas, versão do navegador, fontes, conteúdo, larguras, e
 ## 9. O que declarar no relatório
 
 Rotas, larguras, esquemas de cor e estados efetivamente capturados; o que ficou de fora e por quê; condições da captura (animações congeladas, mascaramento, banner não aceito); e quais valores são **medidos** e quais **inferidos**.
+
+Todas as capturas usam `animations: disabled` e `caret: hide` do Playwright, inclusive com CSP que impeça o CSS injetado. Isso trata animações CSS/Web Animations reconhecidas pelo navegador; vídeo, canvas e animação via JavaScript podem continuar dinâmicos. Animações finitas podem avançar ao final; registre esta condição ao comparar pixels.
 
 A extração amostra o DOM principal; não cobre integralmente iframes, Shadow DOM, pseudo-elementos, mistura de camadas nem contraste de foco. Esses casos exigem inspeção específica. Não interprete ausência de alerta como conformidade.

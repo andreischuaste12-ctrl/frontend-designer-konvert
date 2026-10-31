@@ -21,6 +21,7 @@ const HELP = `Uso: node extract-styles.mjs --url <url> [opções]
   --selectors <css>  Seletores extras, separados por vírgula (categoria "custom").
   --timeout <ms>     Timeout de navegação (padrão: 30000).
 
+Aviso: IPs resolvidos por DNS não são validados/fixados pelo guard; não é uma sandbox de rede.
 Saída: computed-styles.json, styles-summary.md, aria-snapshot.yml (quando suportado).`;
 
 const { values: a } = parseArgs({
@@ -61,9 +62,10 @@ const ctx = await createInspectionContext(browser, {
 const trackingBlocked = new Set();
 const blockedTargets = new Set();
 const blockedWriteMethods = new Set();
+const blockedRedirects = new Set();
 await installRequestGuards(ctx, {
   allowFile: a['allow-file'], allowPrivate: a['allow-private'], allowTracking: a['allow-tracking'],
-  trackingBlocked, blockedTargets, blockWrites: a['block-writes'], blockedWriteMethods,
+  trackingBlocked, blockedTargets, blockWrites: a['block-writes'], blockedWriteMethods, blockedRedirects,
 });
 await ctx.addInitScript(metricsInit);
 const page = await ctx.newPage();
@@ -365,7 +367,7 @@ const safeData = redactValues(data);
 Object.assign(data, safeData);
 const meta = {
   tool: 'extract-styles.mjs', url: redactUrl(url.href), status: resp ? resp.status() : null, width, scheme,
-  serviceWorkersBlocked: true, trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(), trackingBlocked: [...trackingBlocked].sort(), blockedTargets: [...blockedTargets].sort(),
+  serviceWorkersBlocked: true, trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(), blockedRedirects: [...blockedRedirects].sort(), trackingBlocked: [...trackingBlocked].sort(), blockedTargets: [...blockedTargets].sort(),
   at: new Date().toISOString(),
 };
 await fs.writeFile(path.join(outDir, 'computed-styles.json'), JSON.stringify({ meta, ...safeData }, null, 2), 'utf8');
@@ -379,6 +381,8 @@ const md = `# Estilos medidos
 Origem: **medido** no render (Chromium, ${width}px, ${scheme}) em ${meta.at}. URL: ${meta.url} (status ${meta.status}).
 Analytics bloqueados: ${meta.trackingBlocked.join(', ') || (meta.trackingAllowed ? 'bloqueio desativado pelo usuário' : 'nenhum observado')} · alvos privados bloqueados: ${meta.blockedTargets.join(', ') || 'nenhum observado'}.
 Métodos bloqueados: ${meta.blockedWriteMethods.join(', ') || 'nenhum'} · block-writes: ${meta.blockWrites}.
+Redirects recusados: ${meta.blockedRedirects.join(', ') || 'nenhum'}.
+HTTP mediado sem redirects automáticos; recursos redirecionados podem estar ausentes. Métricas são indicativas.
 Contraste é estimativa (fundo composto; imagem/gradiente = indeterminado) e não substitui avaliação de acessibilidade.
 
 ## Página
@@ -421,4 +425,4 @@ ${list(safeData.headings.slice(0, 40), (h) => `- ${'  '.repeat(h.level - 1)}h${h
 `;
 await fs.writeFile(path.join(outDir, 'styles-summary.md'), md, 'utf8');
 console.log(`OK: ${data.elements.length} exemplos · ${data.rootVars.length} variáveis CSS · ${fails.length} falhas de contraste · ${smallNow.length} alvos <24px`);
-console.log(`Arquivos em ${outDir}: computed-styles.json, styles-summary.md${aria ? ', aria-snapshot.yml' : ''}`);
+console.log(`Arquivos gravados: computed-styles.json, styles-summary.md${aria ? ', aria-snapshot.yml' : ''}`);

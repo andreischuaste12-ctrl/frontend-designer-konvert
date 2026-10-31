@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { redactText, redactUrl, resolveRoutes, routeSlug, intList, targetBlockReason, installRequestGuards } from '../scripts/_common.mjs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 
 test('redactUrl removes credentials, query strings, and fragments', () => {
   assert.equal(
@@ -21,6 +21,38 @@ test('redactText removes email addresses, secrets, and query values', () => {
   const safe = redactText('owner@example.invalid token=sample name=customer-name https://example.test/a?email=owner%40example.invalid /home/example-user/private.log');
   assert.doesNotMatch(safe, /owner@example\.invalid|sample|customer-name|email=|\/home\/example-user/i);
   assert.match(safe, /\[email redacted\]/);
+});
+
+test('redactText removes whole authorization/cookie values and standalone JWTs', () => {
+  const examples = [
+    'Authorization: Bearer synthetic-bearer-value',
+    'Proxy-Authorization: Basic c3ludGhldGljOnN5bnRoZXRpYw==',
+    'Bearer synthetic-bearer-value',
+    'Cookie: sid=synthetic-cookie; account=synthetic-account',
+    'Set-Cookie: sid=synthetic-cookie; Expires=Thu, 01 Jan 2037 00:00:00 GMT',
+    'eyJhbGciOiJub25lIn0.eyJzdWIiOiJzeW50aGV0aWMifQ.c3ludGhldGlj',
+    'password="synthetic secret with spaces"',
+  ];
+  for (const example of examples) {
+    const safe = redactText(example, 1000);
+    assert.doesNotMatch(safe, /synthetic|c3ludGhldGlj|eyJ|Expires=/i);
+    assert.match(safe, /redacted/);
+  }
+});
+
+test('redactText hides Windows/WSL paths and Brazilian identifiers/phones', () => {
+  for (const value of ['C:\\Projetos\\synthetic shop\\file.txt', 'D:\\dev\\synthetic\\file.txt', '/mnt/c/synthetic/file.txt', '/root/synthetic/file.txt', '/var/synthetic/file.txt', '000.000.000-00', '00.000.000/0000-00', '00000000000', '00000000000000', '+55 (11) 90000-0000', '(11) 4000-0000', '+5511900000000', '90000-0000', '4000-0000']) {
+    const safe = redactText(value, 1000);
+    assert.notEqual(safe, value);
+    assert.doesNotMatch(safe, /synthetic|0000|4000/);
+    assert.match(safe, /redacted/);
+  }
+});
+
+test('WebSocket diagnostics redact URL credentials, paths, and query values', () => {
+  const value = redactText('wss://synthetic-user:synthetic-password@example.test/private?token=synthetic-token');
+  assert.doesNotMatch(value, /synthetic|private|token=/);
+  assert.match(value, /wss:\/\/example.test/);
 });
 
 test('route helpers normalize paths and filter invalid widths', () => {
@@ -42,10 +74,11 @@ test('URL policy blocks cloud metadata and private networks unless explicitly al
 });
 
 test('file URLs require opt-in and must resolve inside the working project', () => {
-  const projectFile = pathToFileURL(path.join(process.cwd(), 'package.json')).href;
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const projectFile = pathToFileURL(path.join(root, 'package.json')).href;
   assert.equal(targetBlockReason(projectFile), 'file URLs require --allow-file');
-  assert.equal(targetBlockReason(projectFile, { allowFile: true }), null);
-  assert.match(targetBlockReason(pathToFileURL(process.execPath).href, { allowFile: true }), /outside the project root/);
+  assert.equal(targetBlockReason(projectFile, { allowFile: true, root }), null);
+  assert.match(targetBlockReason(pathToFileURL(process.execPath).href, { allowFile: true, root }), /outside the project root/);
 });
 
 test('mapped IPv6 cannot bypass private, metadata, or unspecified-address rules', () => {
@@ -78,6 +111,8 @@ test('request guards enforce mapped-target and optional method policies before c
     await installRequestGuards({ route: async (_pattern, fn) => { handler = fn; }, routeWebSocket: async () => {} }, { ...options, blockedWriteMethods });
     await handler({
       request: () => ({ url: () => url, method: () => method }),
+      fetch: async () => ({ status: () => 200, headers: () => ({}), dispose: async () => {} }),
+      fulfill: async () => { result = 'continued'; },
       abort: async () => { result = 'blocked'; }, continue: async () => { result = 'continued'; },
     });
     return { result, methods: [...blockedWriteMethods] };
@@ -135,4 +170,41 @@ test('WebSocket guards apply target and tracker policy before connecting', async
   }
   const writes = await inspect('ws://localhost:3000/socket', { blockWrites: true });
   assert.equal(writes.result, 'blocked'); assert.ok(writes.blockedWriteMethods.has('WEBSOCKET'));
+});
+
+test('redirect destinations are checked before being sent to the browser', async () => {
+  for (const location of ['http://169.254.169.254/', 'http://[64:ff9b::a9fe:a9fe]/', 'https://google-analytics.com/g/collect', 'file:///etc/passwd', 'javascript:alert(1)', 'http://192.0.2.1/', 'http://127.0.0.1/asset']) {
+    let handler, aborted = false, fetches = 0, fulfilled = false, fetchOptions;
+    const blockedRedirects = new Set();
+    await installRequestGuards({ route: async (_pattern, fn) => { handler = fn; }, routeWebSocket: async () => {} }, { blockedRedirects });
+    await handler({
+      request: () => ({ url: () => 'http://127.0.0.1/resource', method: () => 'GET', isNavigationRequest: () => false }),
+      fetch: async (options) => { fetches++; fetchOptions = options; return { status: () => 302, headers: () => ({ location }), dispose: async () => {} }; },
+      abort: async () => { aborted = true; }, fulfill: async () => { fulfilled = true; },
+    });
+    assert.ok(aborted && !fulfilled, location);
+    assert.equal(fetches, 1, 'never follow a redirect inside the API request');
+    assert.equal(fetchOptions.maxRedirects, 0);
+    assert.equal(blockedRedirects.size, 1);
+  }
+});
+
+test('local-network permission restoration is scoped to loopback main origins only', async () => {
+  for (const [raw, main, expected] of [['https://example.test/', true, 0], ['http://localhost:3000/', true, 1], ['http://127.0.0.1:3000/', false, 0]]) {
+    let handler, fulfilled = false, aborted = false;
+    const grants = [];
+    const frame = { page: () => ({ mainFrame: () => main ? frame : {} }) };
+    await installRequestGuards({
+      route: async (_pattern, fn) => { handler = fn; }, routeWebSocket: async () => {},
+      grantPermissions: async (permissions, options) => { grants.push({ permissions, options }); },
+    });
+    await handler({
+      request: () => ({ url: () => raw, method: () => 'GET', isNavigationRequest: () => true, frame: () => frame }),
+      fetch: async () => ({ status: () => 200, headers: () => ({}), dispose: async () => {} }),
+      fulfill: async () => { fulfilled = true; }, abort: async () => { aborted = true; },
+    });
+    assert.equal(grants.length, expected);
+    assert.ok(fulfilled && !aborted);
+    if (expected) assert.deepEqual(grants[0], { permissions: ['local-network-access'], options: { origin: new URL(raw).origin } });
+  }
 });
