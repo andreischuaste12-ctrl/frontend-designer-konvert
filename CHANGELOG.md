@@ -6,6 +6,7 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ### Added
 
+- Add an optional `coverage` matrix to the audit report (page or flow, task, state, viewport, optional stack, result `observed`/`not_observed`/`not_applicable`/`blocked`, evidence or reason, linked findings), validated and mirrored in a Markdown `## Cobertura` table. It stays proportional to the scope, keeps `schema_version: 2` reports without it valid, and lets the audit scorer split misses into `silentOmissions` and `declaredGaps`.
 - Add `create-frontend-from-zero-konvert` for planning, building and verifying a new frontend, with collaboration guidance and 24 unmeasured routing cases.
 - Expand `create-frontend-from-zero-konvert` with discovery and brief, stack choice, visual foundations with verified WCAG 2.2 limits, a component and state inventory that uses the auditor's knowledge units as acceptance criteria, content/SEO/performance and measurement rules (Core Web Vitals thresholds read from `web-vitals` source), a definition of done with a delivery-report template, and synthetic e-commerce brief and delivery-report examples. Repository validation now requires its sections and reference links, and every `UXK-…` ID cited in skills or docs must exist.
 - Add structured UX knowledge units, a coverage map, editorial and automated checks, journey/state guidance and a runnable synthetic React/Tailwind evaluation fixture. Sources and real agent performance remain unverified.
@@ -29,6 +30,7 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ### Changed
 
+- The report validator now also requires the Markdown to mirror each finding's `preserve` list and confidence, and the global `O que preservar` section, because the person approves from the Markdown while the executor reads the JSON.
 - CI now triggers on every file of `create-frontend-from-zero-konvert`, and repository validation requires every skill directory in the push and pull_request path filters.
 - The auditor's knowledge units no longer use HTTP status or indexing as acceptance criteria (UXK-ERR-051, UXK-ERR-401, UXK-ERR-501): technical SEO is outside the UX audit scope and stays in the creation skill's SEO reference.
 - The routing scorer documentation now says it fails when any skill in the run is below 90%.

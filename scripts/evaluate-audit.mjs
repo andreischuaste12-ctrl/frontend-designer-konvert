@@ -47,7 +47,7 @@ export function scoreAudit(data, runs) {
   const cases = new Map(data.cases.map((c) => [c.id, c]));
   if (!Array.isArray(runs) || !runs.length) throw new Error('At least one graded run is required.');
   const seen = new Set();
-  const totals = { runs: 0, valid: 0, critical: 0, criticalFound: 0, expected: 0, expectedFound: 0, correctFindings: 0, findings: 0, decoySlots: 0, decoysFlagged: 0, preserveSlots: 0, preserveCovered: 0, matches: 0, priorityAgreed: 0, unsupportedClaims: 0 };
+  const totals = { runs: 0, valid: 0, critical: 0, criticalFound: 0, expected: 0, expectedFound: 0, correctFindings: 0, findings: 0, decoySlots: 0, decoysFlagged: 0, preserveSlots: 0, preserveCovered: 0, matches: 0, priorityAgreed: 0, unsupportedClaims: 0, missed: 0, declaredGaps: 0 };
   const perCase = {};
   for (const run of runs) {
     const item = cases.get(run?.caseId);
@@ -76,6 +76,10 @@ export function scoreAudit(data, runs) {
     const preserveIds = new Set(item.preserve.map((x) => x.id));
     if (new Set(run.decoysFlagged).size !== run.decoysFlagged.length || run.decoysFlagged.some((id) => !decoyIds.has(id))) throw new Error('decoysFlagged must list known decoy IDs once.');
     if (new Set(run.preserveCovered).size !== run.preserveCovered.length || run.preserveCovered.some((id) => !preserveIds.has(id))) throw new Error('preserveCovered must list known preserve IDs once.');
+    // Optional: missed expected issues whose area and state the report's coverage marked not_observed or blocked.
+    // They are declared gaps, not silent omissions; the grader checks the coverage row before listing them.
+    const declaredGaps = run.declaredGaps ?? [];
+    if (!Array.isArray(declaredGaps) || new Set(declaredGaps).size !== declaredGaps.length || declaredGaps.some((id) => !expected.has(id) || usedExpected.has(id))) throw new Error('declaredGaps must list unmatched expected IDs once.');
 
     const critical = item.expected.filter((x) => CRITICAL.has(x.priority));
     const criticalFound = critical.filter((x) => usedExpected.has(x.id)).length;
@@ -84,6 +88,7 @@ export function scoreAudit(data, runs) {
       runs: 1, valid: run.reportValid ? 1 : 0, critical: critical.length, criticalFound, expected: item.expected.length, expectedFound: usedExpected.size,
       correctFindings: usedFindings.size, findings: run.findingsTotal, decoySlots: decoyIds.size, decoysFlagged: run.decoysFlagged.length,
       preserveSlots: preserveIds.size, preserveCovered: run.preserveCovered.length, matches: run.matches.length, priorityAgreed: agreed, unsupportedClaims: run.unsupportedClaims,
+      missed: item.expected.length - usedExpected.size, declaredGaps: declaredGaps.length,
     };
     const caseStats = perCase[item.id] ??= { ...Object.fromEntries(Object.keys(totals).map((k) => [k, 0])), detection: Object.fromEntries(item.expected.map((x) => [x.id, 0])) };
     for (const [k, v] of Object.entries(delta)) { totals[k] += v; caseStats[k] += v; }
@@ -102,6 +107,10 @@ export function scoreAudit(data, runs) {
     preserveCoverage: ratio(t.preserveCovered, t.preserveSlots),
     priorityAgreement: ratio(t.priorityAgreed, t.matches),
     unsupportedClaims: t.unsupportedClaims,
+    // Misses split by the report's own coverage: a silent omission is a detection failure;
+    // a declared gap is a coverage limit stated in the report. Reported, not gated, until a baseline exists.
+    silentOmissions: t.missed - t.declaredGaps,
+    declaredGaps: t.declaredGaps,
   });
   const overall = metrics(totals);
   const t = data.targets;

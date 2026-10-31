@@ -11,6 +11,10 @@ const PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
 const CONFIDENCE = ['high', 'medium', 'low'];
 const DEPENDENCY_STATUS = ['not_applicable', 'pending', 'resolved'];
 const ID_PATTERN = /^[A-Za-z][A-Za-z0-9]*-\d{3,}$/;
+// Coverage records what was actually inspected; states follow the knowledge units.
+export const COVERAGE_STATES = ['normal', 'carregando', 'erro', 'sucesso', 'vazio', 'recuperação'];
+export const COVERAGE_RESULTS = { observed: 'observado', not_observed: 'não observado', not_applicable: 'não se aplica', blocked: 'bloqueado' };
+const CONFIDENCE_LABELS = { high: 'alta', medium: 'média', low: 'baixa' };
 // Reports are shared; flag values that look like emails, credentials, or personal paths.
 // Paths are warnings because a route such as /home/... can be legitimate.
 const PRIVATE_PATTERNS = [
@@ -81,6 +85,34 @@ function validateFinding(finding, index, errors) {
   validateDependency(finding.external_dependency, where, errors);
 }
 
+/**
+ * Optional coverage matrix: one row per area, task, state and viewport actually in scope.
+ * It is proportional to the scope, never the whole catalogue; gaps stay explicit.
+ */
+function validateCoverage(coverage, findingIds, errors) {
+  if (coverage === undefined) return;
+  if (!Array.isArray(coverage) || !coverage.length) { errors.push('coverage must be a non-empty list when present'); return; }
+  const keys = new Set();
+  coverage.forEach((row, i) => {
+    const where = `coverage[${i}]`;
+    if (!row || typeof row !== 'object' || Array.isArray(row)) { errors.push(`${where} must be an object`); return; }
+    for (const field of ['area', 'task', 'viewport']) if (!isText(row[field])) errors.push(`${where}.${field} must be a non-empty string`);
+    if (!COVERAGE_STATES.includes(row.state)) errors.push(`${where}.state must be one of ${COVERAGE_STATES.join(', ')}`);
+    if (!Object.hasOwn(COVERAGE_RESULTS, row.result)) errors.push(`${where}.result must be one of ${Object.keys(COVERAGE_RESULTS).join(', ')}`);
+    if (row.stack !== undefined && !isText(row.stack)) errors.push(`${where}.stack must be a non-empty string when present`);
+    if (row.result === 'observed' && !isText(row.evidence)) errors.push(`${where}.evidence must say what was observed (capture, interaction or file) when result is observed`);
+    if (row.result && row.result !== 'observed' && !isText(row.reason)) errors.push(`${where}.reason must explain why it was ${row.result.replace('_', ' ')}`);
+    if (row.findings !== undefined) {
+      if (!isTextList(row.findings)) errors.push(`${where}.findings must be a list of finding IDs`);
+      else for (const id of row.findings) if (!findingIds.has(id)) errors.push(`${where}.findings cites unknown finding ${id}`);
+      if (row.result !== 'observed' && row.findings?.length) errors.push(`${where}.findings require result observed`);
+    }
+    const key = [row.area, row.task, row.state, row.viewport].map((v) => String(v ?? '').trim().toLowerCase()).join('|');
+    if (keys.has(key)) errors.push(`${where} repeats area, task, state and viewport of an earlier row`);
+    keys.add(key);
+  });
+}
+
 /** Returns { errors, warnings, report } where report is normalized to the current schema. */
 export function validateAuditReport(input) {
   const errors = [];
@@ -105,6 +137,7 @@ export function validateAuditReport(input) {
     const duplicates = [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
     if (duplicates.length) errors.push(`finding IDs must be unique: ${duplicates.join(', ')}`);
   }
+  validateCoverage(report.coverage, new Set((Array.isArray(report.findings) ? report.findings : []).map((f) => f?.id).filter(Boolean)), errors);
   const handoff = report.handoff;
   if (!handoff || typeof handoff !== 'object') errors.push('handoff must be an object');
   else {
@@ -123,7 +156,34 @@ export function implementableFindings(report) {
   return (normalized?.findings ?? []).filter((f) => f?.approved_for_implementation === true && ['not_applicable', 'resolved'].includes(f.external_dependency?.status));
 }
 
-/** Checks that the Markdown report renders exactly the JSON finding IDs as `### ID` headings. */
+const plain = (value) => String(value ?? '').replace(/\\([\\`*_{}\[\]()#+.!|>\-])/g, '$1').toLowerCase().replace(/[.;:]+(?=\s|$)/g, '').replace(/\s+/g, ' ').trim();
+const sectionOf = (markdown, heading) => {
+  const match = String(markdown).match(new RegExp(`^##\\s+${heading}\\s*$`, 'm'));
+  if (!match) return null;
+  const rest = String(markdown).slice(match.index + match[0].length);
+  return rest.split(/^##\s/m)[0];
+};
+
+/** Compares the coverage table of the Markdown with the JSON coverage rows. */
+function compareCoverage(report, markdown, errors) {
+  const section = sectionOf(markdown, 'Cobertura');
+  const rows = Array.isArray(report?.coverage) ? report.coverage : null;
+  if (!rows) { if (section !== null) errors.push('Markdown has a Cobertura section but the JSON has no coverage'); return; }
+  if (section === null) { errors.push('Markdown is missing the Cobertura section for the JSON coverage'); return; }
+  const labels = Object.fromEntries(Object.entries(COVERAGE_RESULTS).map(([key, label]) => [label, key]));
+  const tableRows = section.split('\n').filter((line) => line.trim().startsWith('|')).map((line) => line.trim().replace(/^\||\|$/g, '').split('|').map((cell) => cell.trim()));
+  const body = tableRows.filter((cells, i) => i > 0 && !cells.every((cell) => /^:?-{3,}:?$/.test(cell)));
+  const tuple = (area, task, state, viewport, result) => [area, task, state, viewport, result].map(plain).join('|');
+  const fromMarkdown = body.map((cells) => tuple(cells[0], cells[1], cells[2], cells[3], labels[plain(cells[5])] ?? cells[5]));
+  const fromJson = rows.map((row) => tuple(row.area, row.task, row.state, row.viewport, row.result));
+  for (const item of fromJson) if (!fromMarkdown.includes(item)) errors.push(`Markdown coverage is missing or differs for ${item.split('|').slice(0, 4).join(' / ')}`);
+  for (const item of fromMarkdown) if (!fromJson.includes(item)) errors.push(`Markdown coverage has a row not in the JSON: ${item.split('|').slice(0, 4).join(' / ')}`);
+}
+
+/**
+ * Checks that the Markdown report renders the JSON: finding IDs as `### ID` headings, their
+ * fields, preserve lists, confidence and the optional coverage table.
+ */
 export function compareMarkdownIds(report, markdown) {
   const errors = [];
   const jsonIds = new Set((report?.findings ?? []).map((f) => f?.id).filter(Boolean));
@@ -152,10 +212,20 @@ export function compareMarkdownIds(report, markdown) {
       const normalize = (value) => String(value ?? '').replace(/\\([\\`*_{}\[\]()#+.!|>\-])/g, '$1').replace(/\s+/g, ' ').trim();
       if (index < 0 || normalize(parts.join(' ')) !== normalize(finding[field])) errors.push(`Markdown ${field} differs or is missing for ${finding.id}`);
     }
+    // The executor reads the JSON while the person approves from the Markdown: preserve and confidence must agree.
+    const preserveLine = plain(section.match(/^\s*-\s+\*\*Preservar:\*\*\s*(.*)$/im)?.[1]);
+    for (const item of finding.preserve ?? []) if (!preserveLine.includes(plain(item))) errors.push(`Markdown preserve list differs or is missing "${item}" for ${finding.id}`);
+    const confidence = section.match(/^\s*-\s+\*\*Confiança:\*\*\s*(alta|média|baixa)\b\s*[—-]?\s*(.*)$/im);
+    if (confidence?.[1]?.toLowerCase() !== CONFIDENCE_LABELS[finding.confidence?.level]) errors.push(`Markdown confidence level differs or is missing for ${finding.id}`);
+    else if (!plain(confidence[2]).includes(plain(finding.confidence?.reason))) errors.push(`Markdown confidence reason differs for ${finding.id}`);
     const dependency = section.match(/^\s*-\s+\*\*Dependência externa:\*\*\s*(pendente|resolvida|não aplicável)\b/im)?.[1]?.toLowerCase();
     const expected = { pending: 'pendente', resolved: 'resolvida', not_applicable: 'não aplicável' }[finding.external_dependency?.status];
     if (dependency !== expected) errors.push(`Markdown dependency differs or is missing for ${finding.id}`);
   }
+  const globalPreserve = sectionOf(markdown, 'O que preservar');
+  if (globalPreserve === null) errors.push('Markdown is missing the "O que preservar" section');
+  else for (const item of report?.preserve ?? []) if (!plain(globalPreserve).includes(plain(item))) errors.push(`Markdown "O que preservar" is missing "${item}"`);
+  compareCoverage(report, markdown, errors);
   return errors;
 }
 

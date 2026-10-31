@@ -10,6 +10,20 @@
 - Escopo: comparar opções de produto e adicionar um item ao carrinho; revisão visual em mobile e desktop
 - Limites de evidência: apenas briefing sintético e exemplo renderizado; sem pesquisa com usuários representativos
 
+## Cobertura
+
+Somente o que estava no escopo. Lacunas ficam explícitas; o catálogo de conhecimento não é uma checklist obrigatória.
+
+| Página ou fluxo | Tarefa | Estado | Viewport | Stack | Resultado | Evidência ou motivo | Achados |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Página de produto | Comparar opções | normal | 375 px | HTML sintético | observado | Captura sintética route-01__375__light.png e leitura dos rótulos do seletor. | UX-002 |
+| Página de produto | Comparar opções | normal | 1440 px | HTML sintético | observado | Captura sintética route-01__1440__light.png. | UX-002 |
+| Página de produto | Comparar opções | vazio | todos | — | não se aplica | O produto sintético sempre tem opções; não existe estado sem opções. | — |
+| Página de produto | Adicionar ao carrinho | normal | 375 px | HTML sintético | observado | Captura sintética e percurso por teclado até o botão de compra. | UX-001, UX-003 |
+| Página de produto | Adicionar ao carrinho | sucesso | 375 px | HTML sintético | observado | Captura do carrinho com o item sintético adicionado. | — |
+| Página de produto | Adicionar ao carrinho | carregando | 375 px | — | não observado | A resposta sintética é instantânea; o estado de carregamento não aparece sem simular rede lenta, o que ficou fora deste exemplo. | — |
+| Página de produto | Adicionar ao carrinho | erro | 375 px | — | bloqueado | O exemplo não oferece forma autorizada de provocar falha ao adicionar ao carrinho. | — |
+
 ## Achados
 
 ### UX-001 — O custo de entrega só aparece depois do carrinho

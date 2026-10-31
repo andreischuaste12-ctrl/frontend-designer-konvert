@@ -57,6 +57,7 @@ The fixtures contain no hints, but the case file is the answer key. **The audite
    - list in `decoysFlagged` every decoy reported as a problem;
    - list in `preserveCovered` the preserve items present in the report;
    - count in `unsupportedClaims` statements of measurements, captures, or user research that did not happen.
+   - list in `declaredGaps` the unmatched expected issues whose page, task and state the report's `coverage` marked `not_observed` or `blocked`. Every other miss counts as a silent omission: the auditor said it looked, or said nothing, and missed it.
 5. Repeat at least three times per case (`minRepetitions`); model output varies between runs.
 
 ```json
@@ -69,7 +70,7 @@ The fixtures contain no hints, but the case file is the answer key. **The audite
   "runs": [{
     "caseId": "loja", "repetition": 1, "reportValid": true, "findingsTotal": 8,
     "matches": [{ "expected": "E1", "finding": "UX-001", "priority": "P1" }],
-    "validExtra": [], "decoysFlagged": [], "preserveCovered": ["P1"], "unsupportedClaims": 0
+    "validExtra": [], "decoysFlagged": [], "preserveCovered": ["P1"], "unsupportedClaims": 0, "declaredGaps": []
   }]
 }
 ```
@@ -78,7 +79,7 @@ The fixtures contain no hints, but the case file is the answer key. **The audite
 node scripts/evaluate-audit.mjs --results .audit/audit-quality-run.json
 ```
 
-The scorer micro-averages critical recall (P0–P1), overall recall, precision, decoy flag rate, preserve coverage, and priority agreement (within one level), reports per-issue detection rates, and exits 1 when any target in `cases.json` is missed. It exits 2 for inconsistent grading, such as a finding counted twice or fewer repetitions than required. The key covers what the fixtures were built to contain; an auditor can find other valid problems, which is why `validExtra` exists.
+The scorer micro-averages critical recall (P0–P1), overall recall, precision, decoy flag rate, preserve coverage, and priority agreement (within one level), reports per-issue detection rates and splits misses into `silentOmissions` and `declaredGaps` (reported only; no target until a baseline exists), and exits 1 when any target in `cases.json` is missed. It exits 2 for inconsistent grading, such as a finding counted twice or fewer repetitions than required. The key covers what the fixtures were built to contain; an auditor can find other valid problems, which is why `validExtra` exists.
 
 ## Handoff scope
 

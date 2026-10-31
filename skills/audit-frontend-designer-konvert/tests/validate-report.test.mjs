@@ -22,7 +22,8 @@ test('the synthetic example satisfies the current contract and its Markdown mirr
 });
 
 test('only approved findings without a pending dependency are implementable', async () => {
-  const example = await load();
+  // Coverage rows cite UX-001 and UX-002; these variants keep a single finding, so drop it.
+  const { coverage, ...example } = await load();
   assert.deepEqual(implementableFindings(example).map((f) => f.id), ['UX-003']);
   const variants = [
     [{ approved_for_implementation: true, external_dependency: { status: 'not_applicable' } }, true],
@@ -38,7 +39,7 @@ test('only approved findings without a pending dependency are implementable', as
 });
 
 test('dependency states require the right supporting text', async () => {
-  const example = await load();
+  const { coverage, ...example } = await load();
   const withDependency = (dep) => validateAuditReport({ ...example, findings: [{ ...example.findings[2], external_dependency: dep }] }).errors;
   assert.match(withDependency({ status: 'resolved', detail: 'brand approval' }).join('\n'), /resolution must record/);
   assert.match(withDependency({ status: 'pending' }).join('\n'), /detail must describe/);
@@ -148,4 +149,37 @@ test('optional stack metadata validates levels and retains compatibility with ex
     report.stack = stack;
     assert.ok(validateAuditReport(report).errors.some(error => error.includes('stack')));
   }
+});
+
+test('coverage is optional, proportional and explains every result that was not observed', async () => {
+  const example = await load();
+  const { coverage, ...withoutCoverage } = example;
+  assert.ok(coverage.length > 0);
+  assert.deepEqual(validateAuditReport(withoutCoverage).errors, [], 'reports without coverage stay valid under schema_version 2');
+  const check = (rows) => validateAuditReport({ ...example, coverage: rows }).errors;
+  const observed = { area: 'Checkout sintético', task: 'Pagar', state: 'normal', viewport: '1440 px', result: 'observed', evidence: 'Captura sintética.' };
+  assert.deepEqual(check([observed]), []);
+  assert.ok(check([]).some((e) => /non-empty list/.test(e)));
+  assert.ok(check([{ ...observed, evidence: undefined }]).some((e) => /evidence must say what was observed/.test(e)));
+  assert.ok(check([{ ...observed, result: 'not_observed' }]).some((e) => /reason must explain/.test(e)));
+  assert.deepEqual(check([{ ...observed, result: 'blocked', reason: 'Formulário sintético indisponível no ambiente.' }]), []);
+  assert.ok(check([{ ...observed, state: 'quebrado' }]).some((e) => /state must be one of/.test(e)));
+  assert.ok(check([{ ...observed, result: 'skipped' }]).some((e) => /result must be one of/.test(e)));
+  assert.ok(check([{ ...observed, findings: ['UX-999'] }]).some((e) => /unknown finding UX-999/.test(e)));
+  assert.ok(check([{ ...observed, result: 'not_applicable', reason: 'Sem pagamento.', findings: ['UX-001'] }]).some((e) => /require result observed/.test(e)));
+  assert.ok(check([observed, { ...observed, area: ' checkout sintético ' }]).some((e) => /repeats area/.test(e)));
+  assert.deepEqual(check([observed, { ...observed, viewport: '375 px', result: 'not_observed', reason: 'Mobile fora do tempo disponível.' }]), [], 'desktop observed and mobile not observed is an explicit gap, not an error');
+});
+
+test('Markdown must mirror coverage, preserve lists and confidence', async () => {
+  const example = await load();
+  const md = await fs.readFile(markdownUrl, 'utf8');
+  assert.deepEqual(compareMarkdownIds(example, md), []);
+  assert.match(compareMarkdownIds(example, md.replace('| bloqueado |', '| observado |')).join('\n'), /coverage is missing or differs for página de produto \/ adicionar ao carrinho \/ erro/);
+  assert.match(compareMarkdownIds(example, md.replace(/## Cobertura[\s\S]*?(?=## Achados)/, '')).join('\n'), /missing the Cobertura section/);
+  const { coverage, ...withoutCoverage } = example;
+  assert.match(compareMarkdownIds(withoutCoverage, md).join('\n'), /Cobertura section but the JSON has no coverage/);
+  assert.match(compareMarkdownIds(example, md.replace('Texto do botão, nome acessível', 'Texto do botão')).join('\n'), /preserve list differs or is missing "Nome acessível" for UX-003/);
+  assert.match(compareMarkdownIds(example, md.replace('**Confiança:** baixa', '**Confiança:** alta')).join('\n'), /confidence level differs or is missing for UX-002/);
+  assert.match(compareMarkdownIds(example, md.replace('- Cálculos existentes de preço e checkout.', '')).join('\n'), /"O que preservar" is missing/);
 });
