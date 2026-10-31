@@ -28,11 +28,14 @@ Confira os que o fluxo possui: padrão, hover, foco, ativo, desabilitado, carreg
 
 ## 4. Tamanhos de tela
 
-- Teste em 320, 375, 768, 1024 e 1440 px, e ao redor de cada ponto em que o layout muda.
+- Selecione o perfil de captura de acordo com o escopo: `rapido` (um componente/ajuste pontual), `tela` (até três telas) ou `completo` (site inteiro/réplica estrutural). As larguras e limites de cada perfil estão em [captura e inspeção](captura-e-inspecao.md).
+- Teste ao redor de cada breakpoint afetado. Use a matriz completa em 320, 375, 768, 1024 e 1440 px quando o escopo justificar, em vez de abrir todas as larguras para cada ajuste pequeno.
 - Procure rolagem horizontal inesperada (`horizontalOverflow` no índice de captura), texto cortado, alvos de toque pequenos e conteúdo escondido apenas para caber.
 - Verifique zoom de 200% e texto ampliado sem perda de conteúdo.
 - Escolha breakpoints a partir de onde o conteúdo real quebra e reaproveite os do projeto.
 - Se o produto tem modo escuro, repita as capturas com `--schemes light,dark`.
+- Tracking conhecido é bloqueado por padrão durante captura. Os números de laboratório podem diferir da experiência de produção com analytics, testes A/B e widgets ativos; registre o estado e não use as capturas como dado de conversão.
+- GET não significa ausência de efeitos colaterais: JavaScript da página executa. Endpoints de metadata, tracking conhecido e destinos privados literais são bloqueados por padrão, mas a checagem não valida o IP resolvido e não protege contra DNS rebinding. Use somente alvos autorizados.
 
 ## 5. Imagens e desempenho percebido
 
@@ -51,3 +54,18 @@ Confira os que o fluxo possui: padrão, hover, foco, ativo, desabilitado, carreg
 ## 7. Como relatar
 
 Escreva o que foi verificado, como (navegador, script de captura, medição, ferramenta) e o resultado, com o caminho das evidências. Liste o que ficou sem verificar e o motivo: rotas, larguras, estados, esquemas de cor e imagens não cobertos. Não use "conforme WCAG" sem uma avaliação que sustente a frase.
+
+## 8. Nota de fidelidade (opcional)
+
+Quando uma nota facilitar revisão, avalie cada dimensão separadamente de 0 a 10 e cite uma evidência observável. Não produza uma média geral se alguma dimensão estiver sem dados, e não trate a nota como medida de usabilidade real.
+
+| Dimensão | O que avaliar |
+|---|---|
+| Fidelidade visual | Correspondência dos papéis de composição, tipografia, cor e imagem ao nível combinado |
+| Layout | Hierarquia, proporções, alinhamento e espaçamento nas telas cobertas |
+| Responsividade | Comportamento nos viewports e breakpoints realmente verificados |
+| Acessibilidade | Critérios específicos verificados; nunca substituir a avaliação por uma nota |
+| Tokens e sistema | Coerência com tokens/componentes existentes e exceções documentadas |
+| Implementação | Funcionamento, manutenção e verificações técnicas concluídas |
+
+Use 0 para uma dimensão não atendida ou quebrada, 5 para atendimento parcial com desvios importantes, e 10 para atendimento consistente em todas as evidências previstas no escopo. Marque dimensões sem verificação como **N/V**, não como zero. Nota estética não demonstra preferência do usuário, acessibilidade integral nem resultado de negócio.

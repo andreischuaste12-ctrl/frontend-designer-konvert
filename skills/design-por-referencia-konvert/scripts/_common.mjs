@@ -1,8 +1,11 @@
 // Utilitários compartilhados pelos scripts de captura e inspeção.
-// Somente leitura em relação ao alvo: só navegação GET; nada é clicado, enviado ou instalado.
+// Os scripts navegam com GET e não clicam nem enviam formulários, mas executam JS da página.
 import { createRequire } from 'node:module';
+import { isIP } from 'node:net';
+import { realpathSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export function fail(msg, code = 1) {
   console.error(msg);
@@ -40,19 +43,104 @@ export async function launch(pw) {
   }
 }
 
-export function checkUrl(raw, { allowFile = false } = {}) {
+const TRACKER_HOSTS = [
+  'google-analytics.com', 'googletagmanager.com', 'doubleclick.net', 'googleadservices.com',
+  'connect.facebook.net', 'analytics.tiktok.com', 'clarity.ms', 'hotjar.com', 'bat.bing.com',
+  'segment.io', 'segment.com',
+];
+const METADATA_HOSTS = new Set(['metadata', 'metadata.google.internal', 'metadata.goog', '100.100.100.200']);
+
+function isTrackerUrl(u) {
+  const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (host === 'facebook.com' || host.endsWith('.facebook.com')) return u.pathname === '/tr' || u.pathname.startsWith('/tr/');
+  return TRACKER_HOSTS.some((domain) => host === domain || host.endsWith(`.${domain}`));
+}
+
+function isLoopback(host) {
+  const value = host.replace(/^\[|\]$/g, '').toLowerCase();
+  return value === 'localhost' || value.endsWith('.localhost') || value.startsWith('127.') ||
+    value === '::1' || value.startsWith('::ffff:127.');
+}
+
+function isPrivateIp(host) {
+  const unwrapped = host.replace(/^\[|\]$/g, '').toLowerCase();
+  const mapped = unwrapped.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  if (mapped) return isPrivateIp(mapped[1]);
+  if (isIP(unwrapped) === 4) {
+    const [a, b] = unwrapped.split('.').map(Number);
+    return a === 10 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) ||
+      (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) || a === 0;
+  }
+  if (isIP(unwrapped) === 6) {
+    if (unwrapped === '::1') return false;
+    return unwrapped.startsWith('fc') || unwrapped.startsWith('fd') || unwrapped.startsWith('fe8') ||
+      unwrapped.startsWith('fe9') || unwrapped.startsWith('fea') || unwrapped.startsWith('feb') ||
+      unwrapped.startsWith('::ffff:10.') || unwrapped.startsWith('::ffff:192.168.') ||
+      /^::ffff:172\.(1[6-9]|2\d|3[01])\./.test(unwrapped);
+  }
+  return false;
+}
+
+function isLinkLocalIp(host) {
+  const value = host.replace(/^\[|\]$/g, '').toLowerCase();
+  return value.startsWith('169.254.') || value.startsWith('fe8') || value.startsWith('fe9') ||
+    value.startsWith('fea') || value.startsWith('feb') || value.startsWith('::ffff:169.254.');
+}
+
+export function targetBlockReason(raw, { allowFile = false, allowPrivate = false, root = process.cwd() } = {}) {
+  let u;
+  try { u = new URL(raw); } catch { return 'invalid URL'; }
+  if (u.protocol === 'file:') {
+    if (!allowFile) return 'file URLs require --allow-file';
+    try {
+      const realRoot = realpathSync(root);
+      const realTarget = realpathSync(fileURLToPath(u));
+      const rel = path.relative(realRoot, realTarget);
+      if (rel === '..' || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel)) return 'file URL is outside the project root';
+    } catch { return 'file URL must resolve to an existing file inside the project root'; }
+    return null;
+  }
+  if (u.protocol === 'data:' || u.protocol === 'blob:' || u.protocol === 'about:') return null;
+  if (!['http:', 'https:'].includes(u.protocol)) return 'unsupported URL protocol';
+  const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (METADATA_HOSTS.has(host) || host.endsWith('.metadata.google.internal')) return 'cloud metadata endpoints are blocked';
+  if (isLinkLocalIp(host)) return 'link-local network targets are blocked';
+  if ((host === '169.254.169.254' || host === '100.100.100.200') || (isPrivateIp(host) && !isLoopback(host) && !allowPrivate)) {
+    return 'private network targets require --allow-private';
+  }
+  return null;
+}
+
+export async function installRequestGuards(context, { allowFile = false, allowPrivate = false, allowTracking = false, trackingBlocked = new Set(), blockedTargets = new Set() } = {}) {
+  await context.route('**/*', async (route) => {
+    const raw = route.request().url();
+    let u;
+    try { u = new URL(raw); } catch { await route.abort('blockedbyclient'); return; }
+    const tracker = isTrackerUrl(u);
+    if (tracker && !allowTracking) {
+      trackingBlocked.add(u.hostname.toLowerCase());
+      await route.abort('blockedbyclient');
+      return;
+    }
+    const reason = targetBlockReason(raw, { allowFile, allowPrivate });
+    if (reason) {
+      blockedTargets.add(u.hostname || u.protocol);
+      await route.abort('blockedbyclient');
+      return;
+    }
+    await route.continue();
+  });
+}
+
+export function checkUrl(raw, { allowFile = false, allowPrivate = false } = {}) {
   let u;
   try {
     u = new URL(raw);
   } catch {
     return fail('URL inválida. O valor informado foi omitido da mensagem por privacidade.');
   }
-  if (u.protocol === 'file:' && !allowFile) {
-    return fail('URLs file:// estão desativadas por padrão. Use --allow-file apenas para arquivos locais que você controla.');
-  }
-  if (!['http:', 'https:', 'file:'].includes(u.protocol)) {
-    return fail(`Protocolo não permitido: ${u.protocol} (use http ou https; file:// requer --allow-file)`);
-  }
+  const reason = targetBlockReason(u.href, { allowFile, allowPrivate });
+  if (reason) return fail(`URL recusada: ${reason}. O valor informado foi omitido por privacidade.`);
   return u;
 }
 
@@ -93,7 +181,9 @@ export function resolveRoutes(base, csv) {
 }
 
 export function routeSlug(u) {
-  const raw = (u.pathname + (u.search ? '-q' : '')).replace(/^\/+|\/+$/g, '');
+  const fileName = path.basename(u.pathname, path.extname(u.pathname));
+  const rawPath = u.protocol === 'file:' ? (fileName.toLowerCase() === 'index' ? 'home' : fileName) : u.pathname;
+  const raw = (rawPath + (u.search ? '-q' : '')).replace(/^\/+|\/+$/g, '');
   const s = raw.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
   return s ? s.slice(0, 60) : 'home';
 }

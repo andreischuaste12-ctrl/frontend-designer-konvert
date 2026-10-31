@@ -20,7 +20,9 @@ Nos comandos abaixo, `<skill>` é a pasta desta skill. Rode-os a partir da raiz 
 node <skill>/scripts/capture.mjs --url http://localhost:3000 --routes /,/produto,/carrinho
 ```
 
-Padrões: larguras 320, 375, 768, 1024 e 1440 px; saída em `.audit/screenshots/`; nomes `route-01__largura__estado.png` (`route-01` corresponde à primeira rota passada e evita gravar paths privados no nome). Use `--schemes light,dark` se o produto tiver modo escuro e `--help` para as demais opções.
+Saída em `.audit/screenshots/`; nomes `route-01__largura__estado.png` (`route-01` corresponde à primeira rota passada e evita gravar paths privados no nome). Use `--schemes light,dark` se o produto tiver modo escuro e `--help` para as demais opções.
+
+Escolha o perfil conforme o escopo: `rapido` para um componente ou ajuste pontual, `tela` para uma a três telas (padrão), `completo` para site inteiro ou réplica estrutural. `--widths`, `--control-widths`, `--max-tiles` e `--max-controls` substituem os valores do perfil quando necessário.
 
 Para cada rota e largura o script gera:
 
@@ -35,8 +37,8 @@ Estados que o script não cobre (menu aberto, modal, carrinho com itens, erro de
 
 ## 3. Ler as capturas
 
-1. Abra `capture-index.json` e anote status, overflow, erros e falhas antes de olhar imagens.
-2. Para cada largura, abra as fatias em ordem (`tile-01`, `tile-02`, …), da menor largura para a maior, em lotes de poucas imagens.
+1. Abra `capture-index.json` e anote status, overflow, erros, analytics bloqueados e subrecursos privados bloqueados antes de olhar imagens.
+2. Abra primeiro as larguras relevantes para a tarefa; use as demais quando o índice mostrar overflow, mudança de layout ou um estado que as exige. Não é necessário abrir todas as fatias de todas as larguras em uma alteração pontual.
 3. Depois de cada lote, registre em `.audit/notes/<rota>__<largura>.md`, por fatia: o que há (cabeçalho, herói, grade, rodapé), texto legível, cortes, sobreposições, elementos fora do lugar, imagens quebradas e o que não deu para ver.
 4. Use `full` só para a visão de conjunto; os detalhes vêm das fatias e dos recortes de controles.
 5. Confirme visualmente cada alerta do script antes de reportá-lo. Candidatos a overflow incluem elementos propositalmente fora da tela (menus off-canvas).
@@ -75,7 +77,9 @@ Siga [inventário de imagens](inventario-de-imagens.md).
 
 ## 8. Segurança e privacidade
 
-- Navegação GET apenas. Nada de clicar, enviar ou confirmar.
+- A navegação usa GET, não clica, envia formulários nem confirma ações, mas executa JavaScript do alvo; GET não garante ausência de efeitos colaterais. Inspecione somente alvos autorizados.
+- Endpoints de metadata, hosts de tracking conhecidos e endereços privados literais são bloqueados por padrão. `--allow-private` abre acesso a redes privadas (metadata e link-local continuam bloqueados); prefira loopback para desenvolvimento local. A checagem não valida o IP final após resolução DNS e não é uma proteção contra DNS rebinding ou uma sandbox para URLs não confiáveis.
+- `--allow-tracking` desativa o bloqueio dos provedores conhecidos. Use apenas em staging/testes; em produção, a captura padrão pode não mostrar conteúdo variante de A/B, analytics ou widgets.
 - Campos de texto mascarados por padrão (`--no-mask` só com dados fictícios).
 - Confirme que `.audit/` está ignorada pelo Git no projeto auditado; se não estiver, adicione a regra ao `.gitignore` local ou escreva fora do checkout. Capturas e relatórios podem conter texto pessoal e material de terceiros.
 - Campos de formulário mascarados não ocultam nomes, mensagens ou outros dados já renderizados. Prefira dados fictícios e revise todos os arquivos antes de compartilhar.

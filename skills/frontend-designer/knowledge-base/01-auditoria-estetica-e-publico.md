@@ -181,9 +181,24 @@ Observe escaneabilidade, densidade, nomenclatura, comparação temporal, filtros
 
 Observe descoberta, navegação entre tópicos, leitura longa, legibilidade, autoria, data, fontes, referências, acessibilidade de mídia e continuidade de leitura. Publicidade e recomendações não devem se confundir com conteúdo principal.
 
-## 6. Priorização sem falsa precisão
+## 6. Priorização e notas diagnósticas
 
-Não transforme impressões subjetivas em pontuação matemática sem dados. Para cada achado, atribua rótulos simples:
+Não transforme impressões subjetivas em métricas de preferência ou de resultado do negócio. Quando uma nota de 0 a 10 ajudar a comparar dimensões visuais, use-a como resumo diagnóstico, sempre acompanhada de evidência observável, escopo e itens não verificados. Não calcule média geral: ela pode esconder uma barreira séria atrás de dimensões fortes.
+
+Use esta âncora comum: **0** = ausente ou impede a tarefa; **2** = barreiras graves e recorrentes; **4** = funciona em parte, com fricção importante; **6** = utilizável, com falhas visíveis; **8** = forte, com problemas menores; **10** = consistente em todos os critérios cobertos no escopo. Marque **N/V** quando faltam evidências suficientes; não converta desconhecimento em nota baixa nem alta.
+
+Se for útil, avalie separadamente:
+
+| Dimensão | Evidências a considerar |
+|---|---|
+| Adequação à tarefa e ao público provável | Proposta, conteúdo, caminho principal e contexto de uso; identifique se o público é confirmado ou hipótese. |
+| Hierarquia e compreensão | Clareza da oferta, títulos, ordem, ação principal e possibilidade de varrer o conteúdo. |
+| Leitura e tipografia | Legibilidade, contraste, comprimento de linha, escala e consistência tipográfica nas telas verificadas. |
+| Composição e consistência | Alinhamento, espaçamento, padrões entre componentes, tokens e exceções. |
+| Confiança visual | Coerência entre promessa, conteúdo, identidade, prova e condições da decisão. |
+| Responsividade e acessibilidade visual | Só os viewports, estados e critérios efetivamente verificados; não use a nota como declaração de conformidade. |
+
+Para cada achado, atribua rótulos simples:
 
 - **Impacto:** alto, médio, baixo — qual parte da tarefa, compreensão, confiança ou acesso é afetada?
 - **Alcance:** central, frequente, ocasional — quantas rotas ou momentos parecem envolvidos?
@@ -191,7 +206,7 @@ Não transforme impressões subjetivas em pontuação matemática sem dados. Par
 - **Esforço/dependência:** pequeno, moderado, grande; há conteúdo, produto ou backend necessário?
 - **Urgência:** bloqueia tarefa/acesso, cria risco, degrada qualidade, oportunidade visual.
 
-Ordem sugerida: barreiras de acesso e falhas que bloqueiam a tarefa; clareza e confiança para decisões; problemas frequentes de navegação e conteúdo; consistência e refinamento estético; experimentações de baixo impacto. Revise a ordem conforme o contexto do produto e o risco real.
+Ordem sugerida: barreiras de acesso e falhas que bloqueiam a tarefa; clareza e confiança para decisões; problemas frequentes de navegação e conteúdo; consistência e refinamento estético; experimentações de baixo impacto. Revise a ordem conforme o contexto do produto e o risco real. Uma nota alta nunca deve rebaixar um bloqueio crítico.
 
 ## 7. Como registrar uma oportunidade
 

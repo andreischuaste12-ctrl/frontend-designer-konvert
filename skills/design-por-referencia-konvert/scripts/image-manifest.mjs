@@ -7,13 +7,16 @@
 import { parseArgs } from 'node:util';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { loadPlaywright, launch, checkUrl, ensureDir, metricsInit, preparePage, redactUrl, redactText, fail } from './_common.mjs';
+import { fileURLToPath } from 'node:url';
+import { loadPlaywright, launch, checkUrl, installRequestGuards, targetBlockReason, ensureDir, metricsInit, preparePage, redactUrl, redactText, fail } from './_common.mjs';
 
 const HELP = `Uso: node image-manifest.mjs [--root <dir>] [--url <url>] [opções]
 
   --root <dir>   Varre o projeto em busca de imagens e das suas referências.
   --url <url>    Mede as imagens no render.
   --allow-file   Permite uma URL file:// local explicitamente.
+  --allow-private Permite alvos/subrecursos em IPs privados (metadata continua bloqueado).
+  --allow-tracking Permite requests de analytics; bloqueados por padrão.
   --width <px>   Largura do viewport no modo --url (padrão: 1440). Rode também com 375.
   --out <dir>    Saída (padrão: .audit/images).
   --skip <lista> Pastas extras a ignorar, separadas por vírgula.
@@ -28,6 +31,8 @@ const { values: a } = parseArgs({
     root: { type: 'string' },
     url: { type: 'string' },
     'allow-file': { type: 'boolean', default: false },
+    'allow-private': { type: 'boolean', default: false },
+    'allow-tracking': { type: 'boolean', default: false },
     width: { type: 'string', default: '1440' },
     out: { type: 'string', default: '.audit/images' },
     skip: { type: 'string', default: '' },
@@ -145,10 +150,25 @@ async function scanStatic(rootArg) {
   }
 
   const TOKEN = /[A-Za-z0-9_@%.\/\\-]+\.(?:png|jpe?g|gif|webp|avif|svg|ico|bmp)(?![A-Za-z0-9])/gi;
-  const lookup = (token) => {
-    let base = token.split(/[\\/]/).pop();
-    try { base = decodeURIComponent(base); } catch { /* mantém */ }
-    return byBase.get(base.toLowerCase()) ?? [];
+  const lookup = (token, sourceFile) => {
+    let decoded = token.split(/[?#]/)[0];
+    try { decoded = decodeURIComponent(decoded); } catch { /* mantém o token original */ }
+    const base = path.basename(decoded).toLowerCase();
+    const candidates = byBase.get(base) ?? [];
+    if (candidates.length <= 1) return candidates;
+    const relative = decoded.replace(/^[/\\]+/, '');
+    const possible = new Set([
+      path.resolve(path.dirname(sourceFile), decoded),
+      path.resolve(root, decoded),
+      path.resolve(root, relative),
+      path.resolve(root, 'public', relative),
+      path.resolve(root, 'static', relative),
+      path.resolve(root, 'assets', relative),
+    ].map((p) => path.relative(root, p).split(path.sep).join('/').toLowerCase()));
+    const exact = candidates.filter((item) => possible.has(item.path.toLowerCase()));
+    if (exact.length === 1) return exact;
+    for (const item of candidates) if (!item.flags.includes('referência-ambígua')) item.flags.push('referência-ambígua');
+    return [];
   };
   for (const f of all.filter((x) => TEXT_EXT.has(path.extname(x).toLowerCase()))) {
     const st = await fs.stat(f);
@@ -162,7 +182,7 @@ async function scanStatic(rootArg) {
       return lo + 1;
     };
     for (const m of text.matchAll(TOKEN)) {
-      for (const item of lookup(m[0])) {
+      for (const item of lookup(m[0], f)) {
         if (item.refs.length < 6 && !item.refs.some((r) => r.file === rel(f) && r.line === lineOf(m.index))) {
           item.refs.push({ file: rel(f), line: lineOf(m.index) });
         }
@@ -174,7 +194,7 @@ async function scanStatic(rootArg) {
         const altM = tag[0].match(/\balt\s*=\s*("([^"]*)"|'([^']*)'|\{[^}]*\})/i);
         const alt = !altM ? 'ausente' : altM[1].startsWith('{') ? 'dinâmico' : (altM[2] ?? altM[3]) === '' ? 'vazio' : 'presente';
         for (const tok of tag[0].matchAll(TOKEN)) {
-          for (const item of lookup(tok[0])) {
+          for (const item of lookup(tok[0], f)) {
             if (item.alt.length < 6) item.alt.push({ file: rel(f), line: lineOf(tag.index), alt });
           }
         }
@@ -218,12 +238,18 @@ if (a.root) {
 
 // ---------------------------------------------------------------- renderizado
 if (a.url) {
-  const url = checkUrl(a.url, { allowFile: a['allow-file'] });
+  const url = checkUrl(a.url, { allowFile: a['allow-file'], allowPrivate: a['allow-private'] });
   const width = Number(a.width) || 1440;
   const timeout = Number(a.timeout) || 30000;
   const pw = loadPlaywright();
   const browser = await launch(pw);
   const ctx = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
+  const trackingBlocked = new Set();
+  const blockedTargets = new Set();
+  await installRequestGuards(ctx, {
+    allowFile: a['allow-file'], allowPrivate: a['allow-private'], allowTracking: a['allow-tracking'],
+    trackingBlocked, blockedTargets,
+  });
   await ctx.addInitScript(metricsInit);
   const page = await ctx.newPage();
 
@@ -248,6 +274,8 @@ if (a.url) {
 
   try {
     await preparePage(page, url.href, timeout);
+    const finalBlock = targetBlockReason(page.url(), { allowFile: a['allow-file'], allowPrivate: a['allow-private'] });
+    if (finalBlock) throw new Error(`Navegação final bloqueada: ${finalBlock}`);
   } catch (err) {
     await browser.close();
     fail(`Falha ao abrir ${redactUrl(url.href)}: ${redactText(String(err.message).split('\n')[0])}`, 3);
@@ -292,8 +320,17 @@ if (a.url) {
   await browser.close();
 
   const fmtOf = (n, src) => (n?.contentType?.split('/')[1] ?? src.split('?')[0].split('.').pop()).replace('svg+xml', 'svg').replace('jpeg', 'jpg').toLowerCase();
-  const items = dom.items.map((it) => {
-    const n = net.get(it.src) ?? null;
+  const items = await Promise.all(dom.items.map(async (it) => {
+    let n = net.get(it.src) ?? null;
+    if (!n && it.src.startsWith('file:') && a['allow-file'] && !targetBlockReason(it.src, { allowFile: true })) {
+      try {
+        const local = fileURLToPath(it.src);
+        const st = await fs.stat(local);
+        const ext = path.extname(local).toLowerCase();
+        const contentType = ({ '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.avif': 'image/avif', '.gif': 'image/gif', '.svg': 'image/svg+xml', '.bmp': 'image/bmp' })[ext] ?? 'application/octet-stream';
+        n = { status: 200, contentType, bytes: st.size, body: st.size <= 5 * 1024 * 1024 ? await fs.readFile(local) : null };
+      } catch { /* arquivo ausente ou inacessível: os dados ficam n/d */ }
+    }
     const format = fmtOf(n, it.src);
     const flags = [];
     const dataUri = it.src.startsWith('data:');
@@ -315,7 +352,7 @@ if (a.url) {
     if (it.kind === 'img' && !it.firstScreen && it.loading !== 'lazy' && it.y > dom.vh * 2) flags.push('abaixo da dobra sem lazy');
     if (it.kind === 'img' && (!it.widthAttr || !it.heightAttr) && !it.hidden) flags.push('sem width/height (risco de CLS, hipótese)');
     return { ...it, format, bytes: dataUri ? null : n?.bytes ?? null, status: n?.status ?? null, isLcp, dataUri, flags, _body: n?.body ?? null };
-  });
+  }));
 
   let saved = 0;
   if (a['save-images'] && !a['no-save']) {
@@ -343,13 +380,16 @@ if (a.url) {
   const clean = items.map(({ _body, ...rest }) => redactValues({ ...rest, src: redactUrl(rest.src) }));
   const safeLcp = dom.lcp ? { ...dom.lcp, url: dom.lcp.url ? redactUrl(dom.lcp.url) : null } : null;
   const safeUrl = redactUrl(url.href);
-  await fs.writeFile(path.join(outDir, 'images-rendered.json'), JSON.stringify({ url: safeUrl, width, lcp: safeLcp, cls: dom.cls, items: clean }, null, 2), 'utf8');
+  await fs.writeFile(path.join(outDir, 'images-rendered.json'), JSON.stringify({
+    url: safeUrl, width, lcp: safeLcp, cls: dom.cls, trackingAllowed: a['allow-tracking'],
+    trackingBlocked: [...trackingBlocked].sort(), blockedTargets: [...blockedTargets].sort(), items: clean,
+  }, null, 2), 'utf8');
   const rows = clean
     .map((i) => `| ${i.kind} | ${i.src.startsWith('data:') ? 'data-uri' : i.src.slice(0, 90)} | ${i.format} | ${i.natural ? i.natural.join('×') : '—'} | ${i.rendered.join('×')} | ${kb(i.bytes)} | ${i.kind === 'img' ? (i.alt === null ? 'AUSENTE' : i.alt === '' ? 'vazio' : 'ok') : '—'} | ${i.loading ?? '—'} | ${i.flags.join('; ') || '—'} |`)
     .join('\n');
   await fs.writeFile(
     path.join(outDir, 'images-rendered.md'),
-    `# Imagens no render\n\nMedido em ${safeUrl}, viewport ${width}px (DPR 1), ${new Date().toISOString()}. LCP: ${safeLcp ? `${safeLcp.time}ms ${safeLcp.tag} ${safeLcp.url ?? ''}` : 'n/d'} · CLS: ${dom.cls} (laboratório, indicativo).\n\n| Tipo | Origem | Formato | Natural | Renderizado | Peso | alt | loading | Alertas |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${rows}\n`,
+    `# Imagens no render\n\nMedido em ${safeUrl}, viewport ${width}px (DPR 1), ${new Date().toISOString()}. LCP: ${safeLcp ? `${safeLcp.time}ms ${safeLcp.tag} ${safeLcp.url ?? ''}` : 'n/d'} · CLS: ${dom.cls} (laboratório, indicativo).\nAnalytics bloqueados: ${[...trackingBlocked].sort().join(', ') || (a['allow-tracking'] ? 'bloqueio desativado pelo usuário' : 'nenhum observado')}. Alvos privados bloqueados: ${[...blockedTargets].sort().join(', ') || 'nenhum observado'}.\n\n| Tipo | Origem | Formato | Natural | Renderizado | Peso | alt | loading | Alertas |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n${rows}\n`,
     'utf8',
   );
   clean.forEach((i, n) =>

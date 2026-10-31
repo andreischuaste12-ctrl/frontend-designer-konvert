@@ -34,7 +34,7 @@ Marca, copy, tokens, componentes, rotas, contratos de dados e comportamentos que
 
 ## 5. Critério de pronto
 
-Como o usuário reconhecerá que ficou certo: telas conferidas, viewports, estados, contraste mínimo, comparação com captura. Se não estiver dito, proponha este critério curto e siga: rotas do escopo conferidas em 320, 375, 768, 1024 e 1440 px (claro e escuro se existirem), hover e foco dos controles principais, contraste e alvos de toque medidos, sem overflow horizontal nem erros novos no console, e comparação com a referência nas mesmas larguras.
+Como o usuário reconhecerá que ficou certo: telas conferidas, viewports, estados, contraste mínimo, comparação com captura. Se não estiver dito, escolha `rapido` para mudança pontual, `tela` para até três telas e `completo` para site inteiro ou réplica estrutural. Compare a implementação com a referência nas mesmas larguras selecionadas, confira foco/hover e contraste dos controles principais, overflow e erros novos no console. Use a matriz completa de larguras (320, 375, 768, 1024 e 1440 px) quando o escopo ou uma mudança de breakpoint justificar; claro e escuro quando ambos existirem.
 
 ## Perguntas mínimas
 

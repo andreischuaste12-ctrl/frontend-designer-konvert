@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Captura capturas de tela de rotas em várias larguras, fatiadas em tiles e com recortes de
-// controles em foco/hover. Somente navegação GET: não clica, não envia formulários, não aceita
-// banners de consentimento. Campos de texto são mascarados por padrão.
+// controles em foco/hover. Usa GET: não clica nem envia formulários ou confirma consentimento.
+// JavaScript da página executa; campos são mascarados nas capturas por padrão.
 import { parseArgs } from 'node:util';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -10,6 +10,8 @@ import {
   launch,
   checkUrl,
   resolveRoutes,
+  installRequestGuards,
+  targetBlockReason,
   ensureDir,
   intList,
   metricsInit,
@@ -23,14 +25,17 @@ const HELP = `Uso: node capture.mjs --url <url> [opções]
 
   --url <url>              Página ou base do site (http ou https). Obrigatório.
   --allow-file             Permite uma URL file:// local explicitamente.
+  --allow-private          Permite alvos/subrecursos em IPs privados (metadata continua bloqueado).
+  --allow-tracking         Permite requests de analytics; bloqueados por padrão.
+  --profile <nome>         rapido | tela (padrão) | completo.
   --routes </a,/b>         Rotas relativas à URL (padrão: só a URL).
   --out <dir>              Saída (padrão: .audit/screenshots). Mantenha fora do Git.
-  --widths <lista>         Larguras em px (padrão: 320,375,768,1024,1440).
+  --widths <lista>         Sobrescreve as larguras do perfil selecionado.
   --schemes <lista>        light,dark (padrão: light).
   --tile-height <px>       Altura de cada fatia (padrão: 900; sobreposição de 100).
-  --max-tiles <n>          Máximo de fatias por rota/largura (padrão: 12).
-  --max-controls <n>       Controles (CTAs) para foco/hover (padrão: 6).
-  --control-widths <lista> Larguras que recebem recortes de controles (padrão: 375,1440).
+  --max-tiles <n>          Sobrescreve o limite de fatias do perfil.
+  --max-controls <n>       Sobrescreve o limite de controles do perfil.
+  --control-widths <lista> Sobrescreve as larguras de recorte do perfil.
   --no-mask                Não mascarar campos de texto (use só com dados fictícios).
   --timeout <ms>           Timeout de navegação (padrão: 30000).
 
@@ -40,14 +45,17 @@ const { values: a } = parseArgs({
   options: {
     url: { type: 'string' },
     'allow-file': { type: 'boolean', default: false },
+    'allow-private': { type: 'boolean', default: false },
+    'allow-tracking': { type: 'boolean', default: false },
     routes: { type: 'string', default: '' },
     out: { type: 'string', default: '.audit/screenshots' },
-    widths: { type: 'string', default: '320,375,768,1024,1440' },
+    widths: { type: 'string' },
+    profile: { type: 'string', default: 'tela' },
     schemes: { type: 'string', default: 'light' },
     'tile-height': { type: 'string', default: '900' },
-    'max-tiles': { type: 'string', default: '12' },
-    'max-controls': { type: 'string', default: '6' },
-    'control-widths': { type: 'string', default: '375,1440' },
+    'max-tiles': { type: 'string' },
+    'max-controls': { type: 'string' },
+    'control-widths': { type: 'string' },
     'no-mask': { type: 'boolean', default: false },
     timeout: { type: 'string', default: '30000' },
     help: { type: 'boolean', default: false },
@@ -59,14 +67,21 @@ if (a.help || !a.url) {
   process.exit(a.help ? 0 : 1);
 }
 
-const base = checkUrl(a.url, { allowFile: a['allow-file'] });
+const profileDefaults = {
+  rapido: { widths: '375,1440', controlWidths: '375', maxTiles: '5', maxControls: '2' },
+  tela: { widths: '320,375,768,1440', controlWidths: '375,1440', maxTiles: '8', maxControls: '4' },
+  completo: { widths: '320,375,768,1024,1440', controlWidths: '375,1440', maxTiles: '12', maxControls: '6' },
+};
+if (!profileDefaults[a.profile]) fail('--profile deve ser rapido, tela ou completo.');
+const profile = profileDefaults[a.profile];
+const base = checkUrl(a.url, { allowFile: a['allow-file'], allowPrivate: a['allow-private'] });
 const routes = resolveRoutes(base, a.routes);
-const widths = intList(a.widths, { min: 200, max: 4000 });
+const widths = intList(a.widths ?? profile.widths, { min: 200, max: 4000 });
 const schemes = String(a.schemes).split(',').map((s) => s.trim()).filter((s) => s === 'light' || s === 'dark');
-const controlWidths = intList(a['control-widths'], { min: 200, max: 4000 });
+const controlWidths = intList(a['control-widths'] ?? profile.controlWidths, { min: 200, max: 4000 });
 const tileHeight = Math.max(300, Number(a['tile-height']) || 900);
-const maxTiles = Math.max(1, Number(a['max-tiles']) || 12);
-const maxControls = Math.max(0, Number(a['max-controls']) || 0);
+const maxTiles = Math.max(1, Number(a['max-tiles'] ?? profile.maxTiles) || 1);
+const maxControls = Math.max(0, Number(a['max-controls'] ?? profile.maxControls) || 0);
 const timeout = Number(a.timeout) || 30000;
 if (!widths.length || !schemes.length) fail('--widths ou --schemes sem valores válidos.');
 
@@ -78,6 +93,8 @@ const MASK_SEL =
 const outDir = await ensureDir(path.resolve(a.out));
 const pw = loadPlaywright();
 const browser = await launch(pw);
+const trackingBlocked = new Set();
+const blockedTargets = new Set();
 
 const index = {
   tool: 'capture.mjs',
@@ -85,6 +102,10 @@ const index = {
   base: redactUrl(base.href),
   widths,
   schemes,
+  profile: a.profile,
+  trackingAllowed: a['allow-tracking'],
+  trackingBlocked: [],
+  blockedTargets: [],
   notes: [
     'CSS tenta congelar animações sem ignorar CSP; rolagem completa feita antes da captura (lazy loading).',
     'Banners de consentimento não são clicados: se cobrirem a página, aparecem nas capturas.',
@@ -119,16 +140,19 @@ async function captureRoute(ctx, route, width, scheme, routeIndex) {
   const consoleErrors = [];
   const failedRequests = [];
   page.on('console', (m) => {
-    if (m.type() === 'error') consoleErrors.push(redactText(m.text()));
+    if (m.type() === 'error' && !m.text().includes('ERR_BLOCKED_BY_CLIENT')) consoleErrors.push(redactText(m.text()));
   });
   page.on('pageerror', (e) => consoleErrors.push(`pageerror: ${redactText(e.message)}`));
-  page.on('requestfailed', (r) =>
-    failedRequests.push({ url: redactUrl(r.url()), reason: redactText(r.failure()?.errorText ?? '', 120) }),
-  );
+  page.on('requestfailed', (r) => {
+    const reason = r.failure()?.errorText ?? '';
+    if (!reason.includes('ERR_BLOCKED_BY_CLIENT')) failedRequests.push({ url: redactUrl(r.url()), reason: redactText(reason, 120) });
+  });
 
   const info = { route: redactUrl(route.href), slug, width, scheme };
   try {
     const resp = await preparePage(page, route.href, timeout);
+    const finalBlock = targetBlockReason(page.url(), { allowFile: a['allow-file'], allowPrivate: a['allow-private'] });
+    if (finalBlock) throw new Error(`Navegação final bloqueada: ${finalBlock}`);
     info.status = resp ? resp.status() : null;
     info.finalUrl = redactUrl(page.url());
     const m = await page.evaluate(() => ({
@@ -262,6 +286,10 @@ for (const scheme of schemes) {
       colorScheme: scheme,
       reducedMotion: 'reduce',
     });
+    await installRequestGuards(ctx, {
+      allowFile: a['allow-file'], allowPrivate: a['allow-private'], allowTracking: a['allow-tracking'],
+      trackingBlocked, blockedTargets,
+    });
     await ctx.addInitScript(metricsInit);
     for (const [routeIndex, route] of routes.entries()) {
       const info = await captureRoute(ctx, route, width, scheme, routeIndex + 1);
@@ -278,6 +306,8 @@ for (const scheme of schemes) {
 await browser.close();
 
 index.finishedAt = new Date().toISOString();
+index.trackingBlocked = [...trackingBlocked].sort();
+index.blockedTargets = [...blockedTargets].sort();
 await fs.writeFile(path.join(outDir, 'capture-index.json'), JSON.stringify(index, null, 2), 'utf8');
 console.log(`\n${index.files.length} arquivos de captura + capture-index.json em ${outDir}`);
 console.log('Lembrete: mantenha esta pasta fora do Git (ex.: .audit/ no .gitignore) e não publique as capturas.');

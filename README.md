@@ -54,6 +54,8 @@ npm run check
 npm test
 ```
 
+For a focused change, start with `--profile rapido`; use `tela` for up to three pages and `completo` for a site-wide pass. The capture defaults to blocking known analytics and tracking hosts to avoid adding synthetic visits to production data. Prefer localhost or staging. `--allow-private` opens access to private-network targets, `--allow-tracking` permits known trackers, and `--no-mask` reveals form fields in screenshots; use these only when the target and test data are safe. Reports and screenshots can include rendered page content even when URLs and form values are redacted.
+
 The smoke test uses a synthetic page on loopback and the installed Playwright Chromium. GitHub Actions runs syntax and unit checks on Node 20, 22, and 24, and runs the browser smoke test on Node 22.
 
 ## Repository layout
@@ -72,7 +74,10 @@ skills/
 
 .github/workflows/skill-tools.yml
 CHANGELOG.md
+docs/
 ```
+
+The research notes that informed the front-end design knowledge base are in [`docs/pesquisa-designer-front-end-moderno.md`](docs/pesquisa-designer-front-end-moderno.md).
 
 ## Author and license
 

@@ -1,29 +1,29 @@
 # design-por-referencia-konvert
 
-Skill para agentes de código que converte uma referência visual (DESIGN.md, URL, captura ou estilo descrito) em interface implementada no projeto, com decisões rastreáveis e fidelidade verificada na interface renderizada: capturas fatiadas em várias larguras, valores medidos e inventário de imagens.
+A coding-agent skill for adapting a visual reference (a `DESIGN.md`, URL, screenshot, or written direction) into a working interface. Decisions stay traceable, and fidelity is checked in the rendered result with viewport captures, measured styles, and an image inventory.
 
-## Estrutura
+## Contents
 
-| Arquivo | Conteúdo |
+| File | Purpose |
 | --- | --- |
-| `SKILL.md` | Precedência, fluxo em sete passos, evidência visual e limites. |
-| `references/contrato-de-entrada.md` | Fonte, nível de fidelidade, escopo, itens intocáveis e critério de pronto. |
-| `references/papeis-e-tokens.md` | Papéis a extrair (inclui imagens e responsividade), origem de cada valor (extraído, medido, inferido, decidido, ausente) e mapeamento ao projeto. |
-| `references/captura-e-inspecao.md` | Como renderizar, capturar, ler as capturas em fatias e medir estilos. |
-| `references/inventario-de-imagens.md` | Manifesto de imagens, alertas e roteiro de revisão visual. |
-| `references/validacao.md` | Checklist de fidelidade, acessibilidade (WCAG 2.2), estados, tamanhos de tela, imagens e integração. |
-| `references/modelo-design-md.md` | Modelo opcional de DESIGN.md. |
-| `scripts/capture.mjs` | Capturas por rota, largura e esquema de cor, em fatias, com recortes de foco e hover. |
-| `scripts/extract-styles.mjs` | Estilos computados, variáveis CSS, fontes, escala tipográfica, contraste e alvos de toque. |
-| `scripts/image-manifest.mjs` | Inventário de imagens do projeto e do render, e roteiro de revisão. |
-| `scripts/_common.mjs` | Utilitários compartilhados pelos scripts. |
-| `evals/evals-visao.proposta.json` | Proposta de cenários para avaliação manual da skill; não é uma suíte executável. |
-| `tests/` | Testes unitários e smoke test local dos três scripts. |
-| `package.json` e `package-lock.json` | Runtime mínimo, Playwright fixado e comandos reproduzíveis de validação. |
+| `SKILL.md` | Precedence, seven-step workflow, visual evidence, and limitations. |
+| `references/contrato-de-entrada.md` | Reference source, fidelity level, scope, protected elements, and acceptance criteria. |
+| `references/papeis-e-tokens.md` | Visual roles, evidence labels, and mapping to the target project. |
+| `references/captura-e-inspecao.md` | Rendering, screenshots, inspection, and style measurement. |
+| `references/inventario-de-imagens.md` | Image manifest, findings, and visual-review guide. |
+| `references/validacao.md` | Fidelity, accessibility, responsive, state, image, and integration checklist. |
+| `references/modelo-design-md.md` | Optional `DESIGN.md` template. |
+| `scripts/capture.mjs` | Route, viewport, and color-scheme screenshots, including tiles and focus/hover crops. |
+| `scripts/extract-styles.mjs` | Computed styles, CSS variables, fonts, type scale, estimated contrast, and target sizes. |
+| `scripts/image-manifest.mjs` | Static and rendered image inventory plus a visual-review guide. |
+| `scripts/_common.mjs` | Shared script utilities. |
+| `evals/evals-visao.proposta.json` | Proposed manual evaluation scenarios; not an executable test suite. |
+| `tests/` | Unit tests and local smoke tests for the three scripts. |
+| `package.json` and `package-lock.json` | Minimal runtime, pinned Playwright dependency, and reproducible checks. |
 
-## Requisitos dos scripts
+## Requirements and validation
 
-Node 20 ou superior e Chromium do Playwright. As dependências estão fixadas no lockfile; instale e valide a partir desta pasta:
+Node.js 20 or later and Playwright Chromium are required. Dependencies are pinned in the lockfile. Run these commands from this folder:
 
 ```bash
 npm ci
@@ -32,40 +32,44 @@ npm run check
 npm test
 ```
 
-Os scripts não instalam dependências nem clicam ou enviam formulários. Eles carregam a página em Chromium, que executa o JavaScript do site. Use apenas URLs de projetos que você está autorizado a inspecionar e prefira dados fictícios. Credenciais, parâmetros de consulta e fragmentos são removidos dos URLs gravados nos relatórios; mensagens de erro também passam por sanitização. As saídas ficam em `.audit/`, ignorada pelo `.gitignore` raiz.
+The scripts do not install dependencies, click, or submit forms. Chromium does execute the target site's JavaScript, so use only authorized targets and prefer synthetic data. Credentials, query strings, and URL fragments are removed from reported URLs; error messages are also sanitized. Output is written under `.audit/`, which the repository root `.gitignore` excludes.
 
-O inventário de imagens não copia arquivos por padrão. Use `--save-images` apenas quando precisar revisar cópias locais; não versione nem redistribua imagens sem conferir os direitos. Capturas podem revelar texto e informações presentes na tela, portanto revise os arquivos antes de compartilhar.
+Use `capture.mjs --profile rapido|tela|completo` to size the capture to the task. Individual flags such as `--widths` and `--max-controls` override profile defaults. Known metadata endpoints, tracker hosts, and literal private-network targets are blocked by default. `--allow-tracking` permits known trackers; `--allow-private` permits private-network targets; and `--no-mask` reveals form fields in screenshots. Prefer localhost or staging and synthetic data. The network guard does not validate the final IP after DNS resolution and is not a sandbox for untrusted URLs.
 
-Exemplos, a partir da raiz do projeto (`<skill>` é a pasta da skill):
+Images are not copied by default. Use `--save-images` only when local review copies are needed; do not commit or redistribute them without checking their rights. Screenshots and reports can contain rendered page content, so review them before sharing.
+
+## Examples
+
+Run commands from the target project's root; `<skill>` is the path to this skill folder:
 
 ```bash
-node <skill>/scripts/capture.mjs --url http://localhost:3000 --routes /,/produto
+node <skill>/scripts/capture.mjs --url http://localhost:3000 --profile rapido --routes /,/product
 node <skill>/scripts/extract-styles.mjs --url http://localhost:3000 --width 1440
 node <skill>/scripts/image-manifest.mjs --root . --url http://localhost:3000
-# Para copiar imagens do render explicitamente, acrescente: --save-images
+# Add --save-images to explicitly create local review copies.
 ```
 
-## Instalação
+## Installation
 
-Copie a pasta inteira (incluindo `references/`, `scripts/`, `tests/` e `examples/`) para o diretório de skills da ferramenta. O arquivo `evals-visao.proposta.json` é uma proposta de cenários, não um runner.
+Copy this folder, including `references/`, `scripts/`, `tests/`, and `examples/`, to your agent's skills directory. `evals-visao.proposta.json` is a proposal, not a runner.
 
-| Ferramenta | Projeto | Usuário |
+| Tool | Project-level path | User-level path |
 | --- | --- | --- |
 | Claude Code | `.claude/skills/design-por-referencia-konvert/` | `~/.claude/skills/design-por-referencia-konvert/` |
 | Codex | `.agents/skills/design-por-referencia-konvert/` | `~/.agents/skills/design-por-referencia-konvert/` |
 
-Reinicie ou atualize o agente se a skill não for detectada. Se a instalação for feita em outro projeto, proteja `.audit/` no `.gitignore` desse projeto antes de executar os scripts.
+Refresh or restart the agent if it does not detect the skill. When installing it in another project, add `.audit/` to that project's `.gitignore` before running the scripts.
 
-## Quando usar
+## When to use
 
-Exemplos de pedidos que devem ativá-la:
+Use this skill for requests such as:
 
-- "Aplique o DESIGN.md desta pasta na página de produto."
-- "Deixe o checkout no estilo deste site: <URL>."
-- "Replique a hierarquia e o clima desta captura, respeitando nossos tokens."
+- “Apply this folder's `DESIGN.md` to the product page.”
+- “Make the checkout feel like this site: <URL>.”
+- “Recreate the hierarchy and mood of this screenshot while preserving our tokens.”
 
-Não use para revisão sem edição, para animação como objetivo central nem para corrigir apenas overflow ou responsividade sem referência.
+Use `frontend-designer` for an audit without a visual reference. This skill is not intended for animation as the primary goal or for fixing responsive issues without a reference.
 
-## Licença
+## License
 
-MIT. Veja o arquivo `LICENSE`.
+MIT. See the repository's `LICENSE` file.
