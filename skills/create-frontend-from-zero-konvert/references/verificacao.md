@@ -7,3 +7,5 @@ Escolha verificações proporcionais ao pedido e registre o resultado, não apen
 3. **Acessibilidade:** verifique semântica, rótulos, nomes, teclado, foco, contraste e movimento reduzido quando aplicáveis. Resultados automáticos são amostrais e não provam conformidade.
 4. **Integrações:** diferencie funcionalidades implementadas de dados sintéticos ou demonstrações. Não envie formulários reais nem gere transações ou eventos em produção para testar.
 5. **Evidências:** se os scripts da skill de referência estiverem instalados, use captura e estilos com saída autorizada, Git-ignored e perfil adequado. Compare somente versões e estados reais, com correspondência confirmada. Sem browser ou ferramenta, declare a lacuna e nunca afirme inspeção visual realizada.
+
+Use o inventário de [estados e componentes](estados-e-componentes.md) como checklist da etapa 2 e registre os resultados no formato da [definição de pronto e entrega](entrega.md).

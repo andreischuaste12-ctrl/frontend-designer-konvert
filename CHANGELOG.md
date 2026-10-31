@@ -7,6 +7,7 @@ Notable changes to the repository are recorded here. The automation package vers
 ### Added
 
 - Add `create-frontend-from-zero-konvert` for planning, building and verifying a new frontend, with collaboration guidance and 24 unmeasured routing cases.
+- Expand `create-frontend-from-zero-konvert` with discovery and brief, stack choice, visual foundations with verified WCAG 2.2 limits, a component and state inventory that uses the auditor's knowledge units as acceptance criteria, content/SEO/performance and measurement rules (Core Web Vitals thresholds read from `web-vitals` source), a definition of done with a delivery-report template, and synthetic e-commerce brief and delivery-report examples. Repository validation now requires its sections and reference links, and every `UXK-…` ID cited in skills or docs must exist.
 - Add structured UX knowledge units, a coverage map, editorial and automated checks, journey/state guidance and a runnable synthetic React/Tailwind evaluation fixture. Sources and real agent performance remain unverified.
 - Add stack-specific inspection guidance and optional report stack metadata; require project inspection before editing platform-specific files.
 
@@ -27,6 +28,10 @@ Notable changes to the repository are recorded here. The automation package vers
 - DNS resolution failures and timeouts now block requests by default; `--allow-unresolved-dns` explicitly restores the weaker proxy-compatible behavior.
 
 ### Changed
+
+- Update CI actions to `actions/checkout` v7.0.1 and `actions/setup-node` v7.1.0 (pinned by SHA), removing the Node.js 20 runtime deprecation warning.
+- Update the React/Tailwind fixture to React and React DOM 19.3.1, Vite 8.3.5 and Autoprefixer 10.6.2; Tailwind stays on v3 because a major upgrade changes rendered defaults and the audit answer key.
+- Dependabot groups `react`/`react-dom` and build tooling, ignores Tailwind majors in the fixture, checks the fixture monthly and groups action updates.
 
 - Allow an explicitly requested private source map only in a new Git-ignored file outside report output; anonymized reports remain the default.
 - Clarify comparison mapping, normalize Markdown fields and label report eligibility without implying user authorization.
