@@ -1,52 +1,77 @@
 {
   "schema_version": 1,
   "report_id": "SYNTH-001",
-  "project": "fictional product detail page",
+  "project": "página de produto fictícia",
   "scope": {
-    "tasks": ["compare product options", "add one item to cart"],
-    "viewports": ["mobile", "desktop"],
-    "dimensions": ["UX", "visual hierarchy", "responsive behavior"]
+    "tasks": [
+      "comparar opções de produto",
+      "adicionar um item ao carrinho"
+    ],
+    "viewports": [
+      "mobile",
+      "desktop"
+    ],
+    "dimensions": [
+      "UX",
+      "hierarquia visual",
+      "comportamento responsivo"
+    ]
   },
   "evidence_limits": [
-    "Synthetic product brief and rendered example only.",
-    "No representative user research was used."
+    "Apenas briefing sintético e exemplo renderizado.",
+    "Nenhuma pesquisa com usuários representativos foi usada."
   ],
   "preserve": [
-    "Current product data and selection behavior.",
-    "Existing price and checkout calculations.",
-    "Purchase control and its accessible name."
+    "Dados atuais do produto e comportamento de seleção.",
+    "Cálculos existentes de preço e checkout.",
+    "Controle de compra e seu nome acessível."
   ],
   "findings": [
     {
       "id": "UX-001",
       "priority": "P1",
-      "location": "fictional product detail page, price and purchase panel",
-      "evidence_observed": "In the synthetic flow, delivery cost appears only after adding the item to the cart.",
-      "probable_impact": "Shoppers may postpone a decision or encounter an unexpected cost; this effect is a hypothesis, not a measured outcome.",
-      "confidence": { "level": "medium", "reason": "The sequence is visible in the supplied synthetic flow; user impact is a hypothesis." },
-      "preserve": ["Shipping rules", "Total-price calculation", "Checkout contract", "Purchase action"],
-      "next_step": "Ask the product owner for approved shipping-estimate rules, then show an estimate near the price if authorized.",
-      "acceptance_criteria": "The product page states how delivery cost is determined before cart, using approved shipping rules; keyboard and mobile checks pass.",
-      "requires_external_data_or_approval": "Product owner must confirm shipping rules.",
+      "location": "página de produto fictícia, painel de preço e compra",
+      "evidence_observed": "No fluxo sintético, o custo de entrega só aparece depois de adicionar o item ao carrinho.",
+      "probable_impact": "Compradores podem adiar a decisão ou se surpreender com um custo inesperado; este efeito é uma hipótese, não um resultado medido.",
+      "confidence": {
+        "level": "medium",
+        "reason": "A sequência é visível no fluxo sintético fornecido; o impacto no usuário é hipótese."
+      },
+      "preserve": [
+        "Regras de frete",
+        "Cálculo do preço total",
+        "Contrato do checkout",
+        "Ação de compra"
+      ],
+      "next_step": "Pedir ao responsável pelo produto as regras aprovadas de estimativa de frete e, se autorizado, mostrar uma estimativa perto do preço.",
+      "acceptance_criteria": "A página de produto informa como o custo de entrega é determinado antes do carrinho, usando as regras de frete aprovadas; as verificações de teclado e mobile passam.",
+      "requires_external_data_or_approval": "O responsável pelo produto precisa confirmar as regras de frete.",
       "approved_for_implementation": false
     },
     {
       "id": "UX-002",
       "priority": "P2",
-      "location": "fictional product detail page, option selector",
-      "evidence_observed": "The option labels contain internal paper codes without an explanation in the synthetic brief.",
-      "probable_impact": "First-time shoppers may not compare options confidently; comprehension is untested.",
-      "confidence": { "level": "low", "reason": "Code labels are observed, but shopper comprehension was not tested." },
-      "preserve": ["Available options", "Product data values", "Selection behavior"],
-      "next_step": "Request approved plain-language attributes and validate comprehension with representative shoppers.",
-      "acceptance_criteria": "Every option exposes an approved, understandable attribute without changing the underlying product value.",
-      "requires_external_data_or_approval": "Approved attribute names and user validation are required.",
+      "location": "página de produto fictícia, seletor de opções",
+      "evidence_observed": "Os rótulos das opções contêm códigos internos de papel, sem explicação no briefing sintético.",
+      "probable_impact": "Compradores de primeira viagem podem não comparar as opções com confiança; a compreensão não foi testada.",
+      "confidence": {
+        "level": "low",
+        "reason": "Os rótulos com código foram observados, mas a compreensão dos compradores não foi testada."
+      },
+      "preserve": [
+        "Opções disponíveis",
+        "Valores dos dados do produto",
+        "Comportamento de seleção"
+      ],
+      "next_step": "Solicitar atributos aprovados em linguagem simples e validar a compreensão com compradores representativos.",
+      "acceptance_criteria": "Cada opção expõe um atributo aprovado e compreensível, sem alterar o valor de produto subjacente.",
+      "requires_external_data_or_approval": "São necessários nomes de atributos aprovados e validação com usuários.",
       "approved_for_implementation": false
     }
   ],
   "handoff": {
     "proposed_skill": "design-por-referencia-konvert",
-    "summary": "After the user approves individual findings and any required external inputs are available, implement only approved findings and verify their acceptance criteria.",
+    "summary": "Depois que o usuário aprovar achados individuais e as entradas externas necessárias estiverem disponíveis, implementar apenas os achados aprovados e verificar seus critérios de aceite.",
     "implementation_performed": false
   }
 }

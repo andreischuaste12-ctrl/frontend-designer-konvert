@@ -53,7 +53,7 @@ async function walk(dir) {
       if (!description || description.length > 1024) errors.push(`${relative}: description must contain 1–1024 characters`);
       if (text.split('\n').length > 500) errors.push(`${relative}: exceeds 500 lines`);
       if (name === 'audit-frontend-designer-konvert') {
-        for (const section of ['Workflow', 'Design principles', 'Reference catalog', 'Report format']) {
+        for (const section of ['Fluxo', 'Princípios de design', 'Catálogo de referências', 'Formato do relatório']) {
           if (!text.includes(`## ${section}`)) errors.push(`${relative}: missing ${section} section`);
         }
         for (const module of await fs.readdir(path.join(dir, 'knowledge-base'))) {

@@ -1,44 +1,44 @@
-# Audit report contract
+# Contrato de relatório de auditoria
 
-Every completed UX/UI design audit produces a Markdown report and a JSON report with matching finding IDs and equivalent content. Cover audience needs, journeys, visual design, interaction, and design psychology. The Markdown is for review; JSON is the structured handoff input for `design-por-referencia-konvert`.
+Toda auditoria de design UX/UI concluída produz um relatório em Markdown e outro em JSON, com IDs de achados iguais e conteúdo equivalente. Cubra necessidades do público, jornadas, design visual, interação e psicologia do design. O Markdown serve à revisão; o JSON é a entrada estruturada do handoff para `design-por-referencia-konvert`. As chaves do JSON permanecem em inglês (esquema estável); os valores seguem o idioma do relatório.
 
-## Required report fields
+## Campos obrigatórios do relatório
 
-The top-level report contains:
+O nível superior contém:
 
-- `schema_version`: integer schema version (`1` for this contract).
-- `report_id`: stable, non-identifying report ID.
-- `project`: short project label; do not include private URLs, personal paths, account IDs, or customer data.
-- `scope`: routes, tasks, viewports, states, and audit dimensions covered.
-- `evidence_limits`: unavailable tools, data, or checks and their effect on confidence.
-- `preserve`: project-wide strengths and contracts to keep intact.
-- `findings`: array of findings with the fields below.
-- `handoff`: proposed next skill and a concise summary; this does not authorize unapproved changes.
+- `schema_version`: versão inteira do esquema (`1` neste contrato).
+- `report_id`: ID estável e não identificável do relatório.
+- `project`: rótulo curto do projeto; não inclua URLs privadas, caminhos pessoais, IDs de conta nem dados de clientes.
+- `scope`: rotas, tarefas, viewports, estados e dimensões da auditoria cobertos.
+- `evidence_limits`: ferramentas, dados ou verificações indisponíveis e seu efeito na confiança.
+- `preserve`: pontos fortes e contratos do projeto inteiro que devem ficar intactos.
+- `findings`: lista de achados com os campos abaixo.
+- `handoff`: próxima skill proposta e um resumo conciso; isso não autoriza mudanças não aprovadas.
 
-## Required finding fields
+## Campos obrigatórios de cada achado
 
-Each finding must contain:
+Cada achado deve conter:
 
-| Field | Required value |
+| Campo | Valor obrigatório |
 | --- | --- |
-| `id` | Stable, unique identifier within the report, such as `UX-001`. |
-| `priority` | One of `P0`, `P1`, `P2`, `P3`. |
-| `location` | Route/component/element/viewport or relative source path; say `unknown` if unavailable. |
-| `evidence_observed` | Direct evidence and its source. Label inference or hypothesis clearly. |
-| `probable_impact` | Likely effect on a user's understanding, perception, confidence, effort, or ability to complete a task. Mark untested psychological effects as hypotheses. |
-| `confidence` | `high`, `medium`, or `low`, with a short reason. |
-| `preserve` | Behavior, content, component, brand, integration, or contract not to change for this finding. |
-| `next_step` | Concrete proposed action. A recommendation alone is not approval. |
-| `acceptance_criteria` | Observable condition for a successful change. |
-| `requires_external_data_or_approval` | `false` or a description of the required input/approval and its owner. |
-| `approved_for_implementation` | Boolean. Defaults to `false`; set `true` only when the user explicitly approves this finding or its exact change. |
+| `id` | Identificador estável e único no relatório, como `UX-001`. |
+| `priority` | Um entre `P0`, `P1`, `P2`, `P3`. |
+| `location` | Rota/componente/elemento/viewport ou caminho relativo no código; use `unknown` se indisponível. |
+| `evidence_observed` | Evidência direta e sua fonte. Rotule claramente inferência ou hipótese. |
+| `probable_impact` | Efeito provável na compreensão, percepção, confiança, esforço ou capacidade de concluir uma tarefa. Marque como hipótese os efeitos psicológicos não testados. |
+| `confidence` | Objeto com `level` (`high`, `medium` ou `low`) e `reason` curto. |
+| `preserve` | Comportamento, conteúdo, componente, marca, integração ou contrato que não deve mudar neste achado. |
+| `next_step` | Ação concreta proposta. Uma recomendação não é aprovação. |
+| `acceptance_criteria` | Condição observável de uma mudança bem-sucedida. |
+| `requires_external_data_or_approval` | `false` ou a descrição do dado/aprovação necessária e de quem é. |
+| `approved_for_implementation` | Booleano. Padrão `false`; só `true` quando o usuário aprova explicitamente este achado ou a mudança exata. |
 
-The P0–P3 meanings and evidence rules are defined in [report and handoff guidance](../knowledge-base/03-relatorio-e-handoff.md). An external dependency must be resolved before implementation even if approval is otherwise recorded.
+O significado de P0–P3 e as regras de evidência estão na [orientação de relatório e handoff](../knowledge-base/03-relatorio-e-handoff.md). Uma dependência externa deve ser resolvida antes da implementação, mesmo que a aprovação esteja registrada.
 
-## Markdown rendering
+## Renderização em Markdown
 
-Include report context and evidence limits, then a section per finding with all required fields, followed by project-wide preserve items and the proposed handoff. Keep Markdown IDs and values aligned with JSON. Keep findings strictly about UX/UI and design psychology. Do not include source code edits or describe recommendations as completed work.
+Inclua o contexto do relatório e os limites de evidência, depois uma seção por achado com todos os campos obrigatórios, seguida dos itens a preservar do projeto inteiro e do handoff proposto. Mantenha IDs e valores do Markdown alinhados ao JSON. Mantenha os achados estritamente sobre UX/UI e psicologia do design. Não inclua edições de código-fonte nem descreva recomendações como trabalho concluído.
 
-## Example
+## Exemplo
 
-See the synthetic [Markdown report](../examples/audit-report.example.md) and its matching [JSON report](../examples/audit-report.example.json). Both use fictional product details and contain no real research or measured user outcomes.
+Veja o [relatório em Markdown](../examples/audit-report.example.md) sintético e o [relatório em JSON](../examples/audit-report.example.json) correspondente. Ambos usam detalhes de produto fictícios e não contêm pesquisa real nem resultados de usuário medidos.

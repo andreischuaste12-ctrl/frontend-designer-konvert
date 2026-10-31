@@ -1,5 +1,5 @@
 {
-  "_nota": "Proposta de casos novos. O evals.json original não foi visto durante a otimização: adapte estes casos ao esquema dele antes de mesclar.",
+  "_nota": "Cenários de avaliação manual propostos, com comportamento esperado por prompt. Não são executados por nenhum runner e nenhum resultado foi registrado; o roteamento mensurável fica em evaluations/routing-cases.json.",
   "evals": [
     {
       "id": "visao-01-url-viva",

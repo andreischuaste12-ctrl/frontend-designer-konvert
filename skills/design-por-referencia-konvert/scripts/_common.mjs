@@ -46,7 +46,7 @@ export async function launch(pw) {
   } catch (err) {
     return fail(
       `Não foi possível iniciar o Chromium: ${redactText(String(err.message).split('\n')[0])}\n` +
-        'Rode `npx playwright install chromium` (este script não instala nada).',
+        'Rode `npx playwright install chromium` (este script não instala nada) ou aponte PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH para um Chromium já instalado.',
       2,
     );
   }

@@ -52,15 +52,16 @@ The browser tools are maintained as a package inside the reference-driven skill,
 ```bash
 cd skills/design-por-referencia-konvert
 npm ci
+npm run setup:browser   # downloads the pinned Playwright Chromium
 npm run check
 npm test
 ```
 
-From the repository root, run `node scripts/validate-repository.mjs` to check JavaScript/JSON syntax, minimum example shapes, skill metadata, knowledge-module links, relative Markdown links, and manifest/lockfile consistency. Run `node --test scripts/evaluate-routing.test.mjs` to check the routing scorer. The [routing evaluation guide](evaluations/README.md) explains how to score observed agent decisions; no activation accuracy has yet been measured.
+From the repository root, run `node scripts/validate-repository.mjs` to check JavaScript/JSON syntax, minimum example shapes, skill metadata, knowledge-module links, relative Markdown links, and manifest/lockfile consistency. Run `node --test scripts/*.test.mjs` to check the routing scorer, the repository contract, and the install verifier. After copying the skills into a project, `node scripts/verify-install.mjs <skills-dir>` confirms that both skills are structurally discoverable. The [routing evaluation guide](evaluations/README.md) explains how to score observed agent decisions; no activation accuracy has yet been measured.
 
 For a focused change, start with `--profile rapido`; use `tela` for up to three pages and `completo` for a site-wide pass. The capture defaults to blocking known analytics and tracking hosts to avoid adding synthetic visits to production data. Prefer localhost or staging. `--allow-private` opens access to private-network targets, `--allow-tracking` permits known trackers, and `--no-mask` reveals form fields in screenshots; use these only when the target and test data are safe. Use `--block-writes` to optionally reject methods other than GET/HEAD and all WebSockets; it can block first-party telemetry and POST-based reads, so inspect the resulting capture. Reports and screenshots can include rendered page content even when URLs and form values are redacted.
 
-The smoke test uses a synthetic page on loopback and the installed Playwright Chromium. GitHub Actions is configured for syntax and unit checks on Node 20, 22, and 24 on Linux and Windows, and browser smoke tests on Node 22 on both systems. Inspect the actual workflow results before relying on platform compatibility.
+`npm test` includes browser smoke tests and fails without a Chromium that matches the pinned Playwright version. If you cannot download one, point `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` at an installed Chromium; results may differ slightly from the pinned build. The smoke test uses a synthetic page on loopback and the installed Playwright Chromium. GitHub Actions is configured for syntax and unit checks on Node 20, 22, and 24 on Linux and Windows, and browser smoke tests on Node 22 on both systems. Inspect the actual workflow results before relying on platform compatibility.
 
 Use `node skills/design-por-referencia-konvert/scripts/compare.mjs --before .audit/before --after .audit/after --pixels` to produce style and pixel-difference reports from compatible captures. See [architecture and limitations](docs/architecture.md), [contributing](CONTRIBUTING.md), and [security and captured data](SECURITY.md).
 

@@ -40,7 +40,7 @@ jobs:
         with:
           node-version: 22
       - run: node scripts/validate-repository.mjs
-      - run: node --test scripts/evaluate-routing.test.mjs
+      - run: node --test scripts/*.test.mjs
 
   validate:
     runs-on: ${{ matrix.os }}
@@ -82,5 +82,5 @@ jobs:
           cache: npm
           cache-dependency-path: skills/design-por-referencia-konvert/package-lock.json
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npm run setup:browser -- --with-deps
       - run: npm run test:smoke

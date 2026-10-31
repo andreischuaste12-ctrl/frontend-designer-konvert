@@ -6,9 +6,10 @@ Keep changes focused on a reproducible user problem. Explain the affected skill,
 
 ```bash
 node scripts/validate-repository.mjs
+node --test scripts/*.test.mjs
 cd skills/design-por-referencia-konvert
 npm ci
-npx playwright install chromium
+npm run setup:browser
 npm run check
 npm test
 ```
@@ -19,7 +20,7 @@ Add regression tests for changed detector, comparison, or privacy behavior. Docu
 
 The frontmatter name must match the directory. Descriptions must fit within 1,024 characters; keep each SKILL.md under 500 lines and move detail to linked modules. Keep relative links valid. State what was measured, inferred, assumed, and not verified. Do not claim a model activation accuracy without actual recorded evaluation decisions.
 
-Keep the README files in English. The knowledge modules may remain in Portuguese. Avoid breaking installed skill names or moving scripts without a migration path.
+Language convention: repository-level files (README, docs, CHANGELOG, CONTRIBUTING) and each skill's frontmatter `description` are in English, which keeps discovery metadata uniform. Everything the agent reads while running a skill (SKILL.md body, `knowledge-base/`, `references/`, `examples/`) is in Portuguese. JSON report keys stay in English because they form the schema. Avoid breaking installed skill names or moving scripts without a migration path.
 
 ## Release checks
 

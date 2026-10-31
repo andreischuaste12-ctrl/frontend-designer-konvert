@@ -4,6 +4,10 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+- Add `scripts/verify-install.mjs` and tests to check that installed skills are structurally discoverable; CI now runs every root test.
+- Add `npm run setup:browser`, document the Chromium prerequisite for `npm test`, and mention `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` in the launch error.
+- Unify skill-facing language: the audit skill body, report contract and synthetic example are now in Portuguese like the rest of the skill content; descriptions and repository docs stay in English.
+- Clarify that `evals-visao.proposta.json` is an unexecuted proposal.
 - Narrow the audit skill to UX/UI and evidence-informed design psychology, with findings limited to experience and interface design.
 - Rename the read-only audit skill to `audit-frontend-designer-konvert` and define an approval-gated report handoff to the reference implementation executor.
 - Add a Markdown and JSON audit report contract with synthetic examples, clarify before/after capture and style comparison, and validate that every skill directory ends in `-konvert` with matching metadata.
