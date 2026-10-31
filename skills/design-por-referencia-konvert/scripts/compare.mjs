@@ -7,13 +7,14 @@ import { ensureDir, fail, launch, loadPlaywright, redactText } from './_common.m
 
 const FIELDS = ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'color', 'background', 'padding', 'borderRadius', 'boxShadow', 'rect.x', 'rect.y', 'rect.w', 'rect.h'];
 class ComparisonError extends Error {}
-export function compareStyles(before, after) {
+export function compareStyles(before, after, { confirmPageMapping = false } = {}) {
   for (const sample of [before, after]) {
     if (!Number.isInteger(sample.meta?.width) || sample.meta.width <= 0 || !['light', 'dark'].includes(sample.meta?.scheme) || !Array.isArray(sample.elements)) throw new ComparisonError('Invalid measured-style capture.');
   }
   if (before.meta?.width !== after.meta?.width || before.meta?.scheme !== after.meta?.scheme) {
     throw new ComparisonError('Style captures must use the same viewport width and color scheme.');
   }
+  if (before.meta?.url && after.meta?.url && before.meta.url !== after.meta.url && !confirmPageMapping) throw new ComparisonError('Different page URLs require an explicitly confirmed page mapping.');
   const key = (item) => `${item.category}:${item.selector}`;
   const index = (items) => {
     const map = new Map();
@@ -39,7 +40,7 @@ export function compareStyles(before, after) {
     }) : [];
     entries.push({ element: id, status: !a ? 'added' : !b ? 'removed' : changes.length ? 'changed' : 'unchanged', changes });
   }
-  return { width: before.meta?.width, scheme: before.meta?.scheme, entries };
+  return { width: before.meta?.width, scheme: before.meta?.scheme, pageMapping: confirmPageMapping ? 'operator-confirmed' : 'unverified', entries };
 }
 
 async function locate(dir, file, subdir) {
@@ -118,21 +119,23 @@ async function comparePixels(leftFile, rightFile, out, threshold) {
 async function main() {
   const { values: a } = parseArgs({ options: {
     before: { type: 'string' }, after: { type: 'string' }, out: { type: 'string', default: '.audit/comparison' },
-    pixels: { type: 'boolean', default: false }, threshold: { type: 'string', default: '24' }, help: { type: 'boolean', default: false },
+    pixels: { type: 'boolean', default: false }, 'confirm-page-mapping': { type: 'boolean', default: false }, threshold: { type: 'string', default: '24' }, help: { type: 'boolean', default: false },
   } });
   if (a.help || !a.before || !a.after) {
-    console.log('Usage: node compare.mjs --before <audit-dir> --after <audit-dir> [--pixels] [--threshold 0..255] [--out .audit/comparison]');
+    console.log('Usage: node compare.mjs --before <audit-dir> --after <audit-dir> --confirm-page-mapping [--pixels] [--threshold 0..255] [--out .audit/comparison]');
     process.exitCode = a.help ? 0 : 1; return;
   }
+  if (!a['confirm-page-mapping']) throw new ComparisonError('Confirm that the route order and pages correspond using --confirm-page-mapping.');
   const threshold = Number(a.threshold);
   if (!Number.isInteger(threshold) || threshold < 0 || threshold > 255) throw new ComparisonError('Threshold must be an integer from 0 to 255.');
   const report = { schemaVersion: 1, styles: null, pixels: null, limitations: [
+    'Page and route correspondence is operator-confirmed, not automatically verified; redacted URLs and ordinal routes cannot prove identity.',
     'Style matching uses category and selector, not semantic role inference. Unmatched elements need human review.',
     'Pixel differences reflect rendering conditions, not UX quality or accessibility compliance.',
   ] };
   const left = await locate(a.before, 'computed-styles.json', 'styles'), right = await locate(a.after, 'computed-styles.json', 'styles');
   if (!!left !== !!right) throw new ComparisonError('Style data must exist on both sides.');
-  if (left) report.styles = compareStyles(await readJson(left), await readJson(right));
+  if (left) report.styles = compareStyles(await readJson(left), await readJson(right), { confirmPageMapping: true });
   const out = await ensureDir(path.resolve(a.out));
   if (a.pixels) {
     const x = await locate(a.before, 'capture-index.json', 'screenshots'), y = await locate(a.after, 'capture-index.json', 'screenshots');

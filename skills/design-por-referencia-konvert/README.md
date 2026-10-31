@@ -55,7 +55,7 @@ Run commands from the target project's root; `<skill>` is the path to this skill
 node <skill>/scripts/capture.mjs --url http://localhost:3000 --profile rapido --routes /,/product
 node <skill>/scripts/extract-styles.mjs --url http://localhost:3000 --width 1440
 node <skill>/scripts/image-manifest.mjs --root . --url http://localhost:3000
-node <skill>/scripts/compare.mjs --before .audit/before --after .audit/after --pixels
+node <skill>/scripts/compare.mjs --before .audit/before --after .audit/after --confirm-page-mapping --pixels
 # Add --save-images to explicitly create local review copies.
 ```
 
@@ -72,7 +72,7 @@ Refresh or restart the agent if it does not detect the skill. When installing it
 
 ## When to use
 
-This skill is the **executor**. For an audit report from `audit-frontend-designer-konvert`, implement only findings marked `approved_for_implementation: true` whose `external_dependency.status` is not `pending` (the auditor's `validate-report.mjs --implementable` lists them). Treat each P0–P3 finding as approved scope only when both conditions hold; preserve the report's `preserve` items. Capture and extract styles before changes, repeat both after changes with the same route, viewport, and state, then use `compare.mjs` to record before/after differences. The report format is documented in the auditor's [handoff contract](../audit-frontend-designer-konvert/references/contrato-de-relatorio.md).
+This skill is the **executor**. For an audit report from `audit-frontend-designer-konvert`, implement only findings marked `approved_for_implementation: true` whose `external_dependency.status` is not `pending` (the auditor's `validate-report.mjs --implementable --approved-ids <ids>` lists the intersection with IDs independently authorized by the user). Treat each P0–P3 finding as approved scope only when both conditions hold; preserve the report's `preserve` items. Capture and extract styles before changes, repeat both after changes with the same route, viewport, and state, then use `compare.mjs` to record before/after differences. The report format is documented in the auditor's [handoff contract](../audit-frontend-designer-konvert/references/contrato-de-relatorio.md).
 
 Use this skill for requests such as:
 

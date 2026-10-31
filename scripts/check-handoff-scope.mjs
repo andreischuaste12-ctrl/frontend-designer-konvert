@@ -47,7 +47,8 @@ export async function hashTree(dir, base = dir, out = new Map()) {
     if (SKIP.has(entry.name)) continue;
     const file = path.join(dir, entry.name);
     if (entry.isDirectory()) await hashTree(file, base, out);
-    else if (entry.isFile()) out.set(toPosix(path.relative(base, file)), createHash('sha256').update(await fs.readFile(file)).digest('hex'));
+    else if (entry.isSymbolicLink()) out.set(toPosix(path.relative(base, file)), `symlink:${createHash('sha256').update(await fs.readlink(file)).digest('hex')}`);
+    else if (entry.isFile()) out.set(toPosix(path.relative(base, file)), `file:${createHash('sha256').update(await fs.readFile(file)).digest('hex')}`);
   }
   return out;
 }

@@ -78,15 +78,16 @@ describe('browser CLI regression scenarios', { concurrency: false, timeout: 1200
     revised = false;
     await run('capture', ['--url', url, '--widths', '375,1440', '--max-controls', '0', '--max-tiles', '1', '--out', a]);
     await run('extract-styles', ['--url', url, '--out', path.join(out, 'compare-styles')]);
-    await run('compare', ['--before', path.join(out, 'compare-styles'), '--after', path.join(out, 'compare-styles'), '--out', path.join(out, 'same-styles')]);
+    await assert.rejects(run('compare', ['--before', a, '--after', a, '--pixels', '--out', path.join(out, 'no-mapping')]), (error) => error.code === 1 && /confirm-page-mapping/.test(error.stderr));
+    await run('compare', ['--confirm-page-mapping', '--before', path.join(out, 'compare-styles'), '--after', path.join(out, 'compare-styles'), '--out', path.join(out, 'same-styles')]);
     const styles = await json(path.join(out, 'same-styles/comparison.json'));
     assert.ok(styles.styles.entries.length > 0 && styles.styles.entries.every((e) => e.status === 'unchanged'));
-    await run('compare', ['--before', a, '--after', a, '--pixels', '--out', path.join(out, 'same')]);
+    await run('compare', ['--confirm-page-mapping', '--before', a, '--after', a, '--pixels', '--out', path.join(out, 'same')]);
     const same = await json(path.join(out, 'same/comparison.json'));
     assert.ok(same.pixels.length > 0 && same.pixels.every((p) => p.status === 'compared' && p.differentPercent === 0));
     revised = true;
     await run('capture', ['--url', url, '--widths', '375', '--max-controls', '0', '--max-tiles', '1', '--out', b]);
-    await run('compare', ['--before', a, '--after', b, '--pixels', '--out', path.join(out, 'diff')]);
+    await run('compare', ['--confirm-page-mapping', '--before', a, '--after', b, '--pixels', '--out', path.join(out, 'diff')]);
     const diff = await json(path.join(out, 'diff/comparison.json'));
     assert.ok(diff.pixels.some((p) => p.differentPercent > 0 && p.diffFile));
     assert.ok(diff.pixels.some((p) => p.status === 'missing'));
@@ -94,7 +95,7 @@ describe('browser CLI regression scenarios', { concurrency: false, timeout: 1200
     await writeFile(path.join(out, 'mismatch/pixel.png'), pixel);
     const full = (await json(path.join(a, 'capture-index.json'))).files.find((f) => f.state === 'full' && f.width === 375);
     await writeFile(path.join(out, 'mismatch/capture-index.json'), JSON.stringify({ files: [{ ...full, file: 'pixel.png' }] }));
-    await run('compare', ['--before', a, '--after', path.join(out, 'mismatch'), '--pixels', '--out', path.join(out, 'mismatch-result')]);
+    await run('compare', ['--confirm-page-mapping', '--before', a, '--after', path.join(out, 'mismatch'), '--pixels', '--out', path.join(out, 'mismatch-result')]);
     const mismatch = await json(path.join(out, 'mismatch-result/comparison.json'));
     assert.ok(mismatch.pixels.some((p) => p.status === 'dimension-mismatch' && p.differentPercent === undefined));
     revised = false;
@@ -107,7 +108,9 @@ describe('browser CLI regression scenarios', { concurrency: false, timeout: 1200
     await run('image-manifest', ['--root', project, '--out', path.join(out, 'static')]);
     const report = await json(path.join(out, 'static/images-static.json'));
     assert.equal(report.root, '[project-root-redacted]');
-    assert.equal(report.images.find((i) => i.path === 'assets/a/hero.png').refs.length, 1);
+    assert.equal(report.images.filter((i) => i.refs.length === 1).length, 1);
+    assert.ok(report.images.every((i) => /^image-\d{4}\.png$/.test(i.path)));
+    assert.doesNotMatch(JSON.stringify(report), /assets\/|hero\.png/);
     assert.ok(report.images.every((i) => i.flags.includes('referência-ambígua')));
   });
 

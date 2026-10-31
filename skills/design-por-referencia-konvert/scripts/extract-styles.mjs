@@ -21,7 +21,7 @@ const HELP = `Uso: node extract-styles.mjs --url <url> [opções]
   --selectors <css>  Seletores extras, separados por vírgula (categoria "custom").
   --timeout <ms>     Timeout de navegação (padrão: 30000).
 
-Aviso: IPs resolvidos por DNS não são validados/fixados pelo guard; não é uma sandbox de rede.
+Aviso: IPs resolvidos são verificados quando a consulta tem sucesso, mas não são fixados; falhas de DNS não bloqueiam. Não é uma sandbox de rede.
 Saída: computed-styles.json, styles-summary.md, aria-snapshot.yml (quando suportado).`;
 
 const { values: a } = parseArgs({

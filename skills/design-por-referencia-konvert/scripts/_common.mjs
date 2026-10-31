@@ -91,11 +91,19 @@ export function targetBlockReason(raw, { allowFile = false, allowPrivate = false
 // static names that point at internal ranges (for example wildcard DNS services), but
 // the browser resolves the name again, so a TTL-0 rebinding race remains possible.
 // A failed lookup is not a block: proxies may resolve names this host cannot.
-export async function resolvedBlockReason(hostname, { allowPrivate = false, lookup = dnsLookup } = {}) {
+export async function resolvedBlockReason(hostname, { allowPrivate = false, lookup = dnsLookup, timeout = 2000, onFailure = () => {} } = {}) {
   const host = networkHost(hostname);
   if (!host || isIP(host)) return null;
   let addresses;
-  try { addresses = await lookup(host, { all: true, verbatim: true }); } catch { return null; }
+  let timer;
+  try {
+    addresses = await Promise.race([
+      lookup(host, { all: true, verbatim: true }),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('DNS timeout')), timeout); }),
+    ]);
+    if (!Array.isArray(addresses) || !addresses.length) { onFailure(); return null; }
+  } catch { onFailure(); return null; }
+  finally { clearTimeout(timer); }
   for (const entry of Array.isArray(addresses) ? addresses : []) {
     const raw = String(entry?.address ?? '').split('%')[0];
     const family = isIP(raw);
@@ -121,7 +129,14 @@ export async function installRequestGuards(context, { allowFile = false, allowPr
   const resolvedReason = (u) => {
     if (!['http:', 'https:'].includes(u.protocol)) return Promise.resolve(null);
     const host = networkHost(u.hostname);
-    if (!resolvedReasons.has(host)) resolvedReasons.set(host, resolvedBlockReason(host, { allowPrivate, lookup }));
+    if (!resolvedReasons.has(host)) {
+      let failed = false;
+      const pending = resolvedBlockReason(host, { allowPrivate, lookup, onFailure: () => { failed = true; } }).then((reason) => {
+        if (failed) resolvedReasons.delete(host);
+        return reason;
+      });
+      resolvedReasons.set(host, pending);
+    }
     return resolvedReasons.get(host);
   };
   await context.route('**/*', async (route) => {
@@ -186,14 +201,20 @@ export async function installRequestGuards(context, { allowFile = false, allowPr
     }
   });
   await context.routeWebSocket('**/*', async (socket) => {
-    const u = new URL(socket.url());
+    let u;
+    try { u = new URL(socket.url()); }
+    catch { await socket.close({ code: 1008, reason: 'Audit network guard' }); return; }
     u.protocol = u.protocol === 'wss:' ? 'https:' : 'http:';
     const tracker = isTrackerUrl(u);
-    const reason = targetBlockReason(u.href, { allowFile, allowPrivate }) || await resolvedReason(u);
     if (tracker && !allowTracking) trackingBlocked.add(u.hostname.toLowerCase());
-    if (reason) blockedTargets.add(u.hostname || u.protocol);
     if (blockWrites) blockedWriteMethods.add('WEBSOCKET');
-    if (reason || (tracker && !allowTracking) || blockWrites) {
+    if ((tracker && !allowTracking) || blockWrites) {
+      await socket.close({ code: 1008, reason: 'Audit network guard' });
+      return;
+    }
+    const reason = targetBlockReason(u.href, { allowFile, allowPrivate }) || await resolvedReason(u);
+    if (reason) blockedTargets.add(u.hostname || u.protocol);
+    if (reason) {
       await socket.close({ code: 1008, reason: 'Audit network guard' });
       return;
     }
@@ -242,7 +263,9 @@ export function redactText(raw, limit = 300) {
     .replace(/(?<!\d)(?:\d{3}\.\d{3}\.\d{3}-\d{2}|\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}|\d{14}|\d{11})(?!\d)/g, '[personal-id-or-phone redacted]')
     .replace(/(?<!\w)(?:\+?55[\s.-]*)?(?:\(\d{2}\)|\d{2})[\s.-]*9?\d{4}[\s.-]\d{4}(?!\d)/g, '[phone redacted]')
     .replace(/(?<!\w)\+?55\d{10,11}(?!\d)/g, '[phone redacted]')
-    .replace(/(?<!\d)\d{4,5}-\d{4}(?!\d)/g, '[phone redacted]')
+    // A local telephone, an order code, and a year range can share this shape.
+    // Keep the strict privacy default without claiming every match is a phone.
+    .replace(/(?<!\d)\d{4,5}-\d{4}(?!\d)/g, '[ambiguous number redacted]')
     .replace(/\b(email|e-?mail|full[_-]?name|name|username|user[_-]?id|customer[_-]?id|account[_-]?id|session(?:[_-]?id)?|token|access[_-]?key|api[_-]?key|secret|password|signature)\s*[:=]\s*(?:"[^"\r\n]*"|'[^'\r\n]*'|[^\s,;&]+)/gi, '$1=[redacted]')
     .slice(0, limit);
 }

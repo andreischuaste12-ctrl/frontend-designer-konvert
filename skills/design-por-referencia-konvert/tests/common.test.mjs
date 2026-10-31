@@ -49,6 +49,12 @@ test('redactText hides Windows/WSL paths and Brazilian identifiers/phones', () =
   }
 });
 
+test('ambiguous order and year-like numbers stay private without claiming they are phones', () => {
+  assert.equal(redactText('Coleção 2024-2025'), 'Coleção [ambiguous number redacted]');
+  assert.equal(redactText('Frete 1234-5678'), 'Frete [ambiguous number redacted]');
+  assert.equal(redactText('Pedido 12345678901'), 'Pedido [personal-id-or-phone redacted]');
+});
+
 test('WebSocket diagnostics redact URL credentials, paths, and query values', () => {
   const value = redactText('wss://synthetic-user:synthetic-password@example.test/private?token=synthetic-token');
   assert.doesNotMatch(value, /synthetic|private|token=/);
@@ -155,7 +161,7 @@ test('WebSocket guards apply target and tracker policy before connecting', async
   async function inspect(url, options = {}) {
     let handler, result;
     const blockedTargets = new Set(), trackingBlocked = new Set(), blockedWriteMethods = new Set();
-    await installRequestGuards({ route: async () => {}, routeWebSocket: async (_pattern, fn) => { handler = fn; } }, { ...options, blockedTargets, trackingBlocked, blockedWriteMethods });
+    await installRequestGuards({ route: async () => {}, routeWebSocket: async (_pattern, fn) => { handler = fn; } }, { lookup: async () => [{ address: '93.184.216.34', family: 4 }], ...options, blockedTargets, trackingBlocked, blockedWriteMethods });
     await handler({ url: () => url, close: async () => { result = 'blocked'; }, connectToServer: () => { result = 'connected'; } });
     return { result, blockedTargets, trackingBlocked, blockedWriteMethods };
   }
@@ -170,6 +176,20 @@ test('WebSocket guards apply target and tracker policy before connecting', async
   }
   const writes = await inspect('ws://localhost:3000/socket', { blockWrites: true });
   assert.equal(writes.result, 'blocked'); assert.ok(writes.blockedWriteMethods.has('WEBSOCKET'));
+});
+
+test('tracker and invalid WebSockets close without DNS and a failed DNS lookup is retried', async () => {
+  let socketHandler, routeHandler, calls = 0, closed = 0, fetched = 0;
+  const lookup = async () => { calls++; if (calls === 1) throw new Error('synthetic failure'); return [{ address: '10.0.0.5', family: 4 }]; };
+  await installRequestGuards({ route: async (_, f) => { routeHandler = f; }, routeWebSocket: async (_, f) => { socketHandler = f; } }, { lookup });
+  for (const url of ['not a URL', 'wss://www.google-analytics.com/socket']) await socketHandler({ url: () => url, close: async () => { closed++; }, connectToServer: () => assert.fail('must close') });
+  assert.equal(closed, 2); assert.equal(calls, 0);
+  const route = () => ({ request: () => ({ url: () => 'https://fixture.example.invalid/', method: () => 'GET', isNavigationRequest: () => false }), fetch: async () => { fetched++; return { headers: () => ({}), status: () => 200, dispose: async () => {} }; }, fulfill: async () => {}, abort: async () => {} });
+  await routeHandler(route()); await routeHandler(route());
+  assert.equal(calls, 2); assert.equal(fetched, 1);
+  let failed = false;
+  assert.equal(await resolvedBlockReason('timeout.example.invalid', { lookup: () => new Promise(() => {}), timeout: 10, onFailure: () => { failed = true; } }), null);
+  assert.equal(failed, true);
 });
 
 test('redirect destinations are checked before being sent to the browser', async () => {

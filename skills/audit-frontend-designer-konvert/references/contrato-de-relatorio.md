@@ -41,7 +41,7 @@ Cada achado deve conter:
 | `pending` | Falta um dado ou uma decisão de outra pessoa. | `detail`: o que falta e de quem é |
 | `resolved` | A dependência foi atendida. | `detail` e `resolution`: a decisão tomada e quem decidiu |
 
-Um achado só é implementável quando `approved_for_implementation` é `true` **e** `external_dependency.status` não é `pending`. Aprovação não resolve dependência, e dependência resolvida não equivale a aprovação. Só registre `resolved` com a decisão vinda do usuário ou do responsável indicado; não deduza a resolução.
+Um achado só é implementável quando `approved_for_implementation` é `true`, `external_dependency.status` não é `pending` **e** o ID corresponde à autorização independente do usuário. Aprovação não resolve dependência, e dependência resolvida não equivale a aprovação. Só registre `resolved` com a decisão vinda do usuário ou do responsável indicado; não deduza a resolução.
 
 O significado de P0–P3 e as regras de evidência estão na [orientação de relatório e handoff](../knowledge-base/03-relatorio-e-handoff.md).
 
@@ -53,7 +53,7 @@ Antes de entregar, valide os dois arquivos:
 node .agents/skills/audit-frontend-designer-konvert/scripts/validate-report.mjs .audit/audit-report.json --markdown .audit/audit-report.md
 ```
 
-Execute na raiz do projeto auditado, trocando `.agents/skills` pela pasta onde a skill foi instalada (por exemplo `.claude/skills`). O script só lê arquivos e não precisa de dependências além do Node.js 20+. O validador confere campos, estados de dependência, IDs únicos, o espelhamento dos IDs no Markdown e sinais de dados privados (emails, tokens e parâmetros sensíveis bloqueiam; caminhos pessoais geram aviso). `--implementable` lista em JSON os achados que a executora pode implementar e o motivo de cada bloqueio. Ele não julga a qualidade do conteúdo; isso continua exigindo revisão.
+Execute na raiz do projeto auditado, trocando `.agents/skills` pela pasta onde a skill foi instalada (por exemplo `.claude/skills`). O script só lê arquivos e não precisa de dependências além do Node.js 20+. O validador confere campos, estados de dependência, IDs únicos, o espelhamento dos IDs no Markdown e sinais de dados privados (emails, tokens e parâmetros sensíveis bloqueiam; caminhos pessoais geram aviso). `--implementable --approved-ids UX-001,UX-002` lista a interseção entre achados elegíveis e IDs autorizados diretamente pelo usuário; sem IDs independentes, nenhum achado é liberado. A ferramenta não autentica a autorização, que deve ser confirmada na conversa. Ele não julga a qualidade do conteúdo; isso continua exigindo revisão.
 
 ## Renderização em Markdown
 
@@ -62,3 +62,5 @@ Inclua o contexto do relatório e os limites de evidência, depois uma seção p
 ## Exemplo
 
 Veja o [relatório em Markdown](../examples/audit-report.example.md) sintético e o [relatório em JSON](../examples/audit-report.example.json) correspondente. Ambos usam detalhes de produto fictícios e não contêm pesquisa real nem resultados de usuário medidos.
+
+O Markdown e o JSON são verificados por ID, prioridade, aprovação, dependência e campos textuais principais; listas de preservação e equivalência semântica ainda exigem revisão humana. A checagem de privacidade é melhor esforço, não garantia.

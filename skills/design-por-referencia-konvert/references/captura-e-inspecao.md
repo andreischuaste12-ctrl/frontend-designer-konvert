@@ -61,7 +61,7 @@ Siga [inventário de imagens](inventario-de-imagens.md).
 ## 6. Comparar com a referência
 
 ```bash
-node <skill>/scripts/compare.mjs --before .audit/before --after .audit/after --pixels
+node <skill>/scripts/compare.mjs --before .audit/before --after .audit/after --confirm-page-mapping --pixels
 ```
 
 Cada diretório deve conter `styles/computed-styles.json` e, com `--pixels`, `screenshots/capture-index.json` e seus PNGs. Também é possível passar diretamente as pastas de estilos ou screenshots. A saída padrão é `.audit/comparison/comparison.json` e `.md`, com PNGs de diferenças quando houver. `--threshold 24` é a tolerância por canal (0 a 255), não um limite de percentual aprovado. A ferramenta relata diferenças; a aceitação depende do escopo combinado.

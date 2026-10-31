@@ -59,6 +59,16 @@ test('an approved finding left untouched is reported as not implemented', async 
   assert.equal(result.passed, false);
 });
 
+test('detects added or changed symbolic links without following them', async (t) => {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'handoff-links-'));
+  t.after(() => fs.rm(dir, { recursive: true, force: true }));
+  const before = path.join(dir, 'before'), after = path.join(dir, 'after');
+  await fs.mkdir(before); await fs.mkdir(after);
+  try { await fs.symlink('synthetic-target', path.join(after, 'link')); }
+  catch (error) { if (['EPERM', 'EACCES', 'ENOSYS'].includes(error.code)) { t.skip('symbolic links unavailable'); return; } throw error; }
+  assert.deepEqual(changedFiles(await hashTree(before), await hashTree(after)), ['link']);
+});
+
 test('case validation rejects overlapping paths and a drifted implementable list', async () => {
   const { handoff, rawReport } = await loadCase();
   const overlapping = { ...handoff, findingPaths: { ...handoff.findingPaths, 'LOJA-004': ['css/product.css'] } };

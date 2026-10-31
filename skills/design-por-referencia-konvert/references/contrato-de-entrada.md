@@ -8,7 +8,7 @@ O relatório de `audit-frontend-designer-konvert` também pode ser a fonte princ
 
 | Tipo | Como tratar |
 | --- | --- |
-| Relatório de auditoria Markdown + JSON | Valide e filtre com `validate-report.mjs --markdown <md> --implementable` da auditora; sem o script, aplique a mesma regra lendo o JSON. Confira o Markdown e mantenha IDs, evidências, critérios de aceite e itens a preservar. Relatório inválido ou sem achados implementáveis não autoriza edição. |
+| Relatório de auditoria Markdown + JSON | Valide e filtre com `validate-report.mjs --markdown <md> --implementable --approved-ids <ids>` da auditora; os IDs devem vir da autorização explícita do usuário, não do relatório; sem o script, aplique a mesma regra lendo o JSON e verificando a autorização na conversa. Confira o Markdown e mantenha IDs, evidências, critérios de aceite e itens a preservar. Relatório inválido ou sem achados implementáveis não autoriza edição. |
 | Arquivo ou texto de design (DESIGN.md, guia de estilo) | Fonte principal; leia inteiro antes de extrair. |
 | URL pública ou site em execução | Capture e meça conforme [captura e inspeção](captura-e-inspecao.md): estilos computados e CSS viram valores **medidos**; capturas viram leitura visual. Registre a data da consulta. Não leia só o HTML. |
 | Captura de tela | Extraia o que é visível; tipografia e valores exatos ficam **inferidos**. |

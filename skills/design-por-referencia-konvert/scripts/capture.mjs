@@ -41,7 +41,7 @@ const HELP = `Uso: node capture.mjs --url <url> [opções]
   --no-mask                Não mascarar campos de texto (use só com dados fictícios).
   --timeout <ms>           Timeout de navegação (padrão: 30000).
 
-Aviso: IPs resolvidos por DNS não são validados/fixados pelo guard; não é uma sandbox de rede.
+Aviso: IPs resolvidos são verificados quando a consulta tem sucesso, mas não são fixados; falhas de DNS não bloqueiam. Não é uma sandbox de rede.
 Saída: route-NN__largura__estado.png + capture-index.json (metadados sanitizados e evidências).`;
 
 const { values: a } = parseArgs({

@@ -7,7 +7,7 @@ description: Execute approved frontend design work from an audit report or visua
 
 Converta uma referência visual em interface implementada no projeto, com cada decisão rastreável e a fidelidade verificada, não presumida.
 
-Esta é a **executora** do fluxo. Se receber um relatório de `audit-frontend-designer-konvert`, implemente somente achados com `approved_for_implementation: true` e `external_dependency.status` diferente de `pending`. Quando a auditora estiver instalada, obtenha essa lista com `node <pasta-das-skills>/audit-frontend-designer-konvert/scripts/validate-report.mjs <relatorio.json> --implementable`; um relatório inválido não autoriza edição. Prioridades P0–P3 definem o escopo aprovado; itens em `preserve` são intocáveis. Se não houver achados aprovados, não altere o projeto. Para “audite e corrija” sem relatório, encaminhe primeiro para auditoria somente leitura e proponha o handoff antes de editar.
+Esta é a **executora** do fluxo. Se receber um relatório de `audit-frontend-designer-konvert`, implemente somente achados com `approved_for_implementation: true` e `external_dependency.status` diferente de `pending`. Quando a auditora estiver instalada, obtenha essa lista com `node <pasta-das-skills>/audit-frontend-designer-konvert/scripts/validate-report.mjs <relatorio.json> --implementable --approved-ids <ids-aprovados>`; um relatório inválido não autoriza edição. Os IDs devem vir de autorização explícita já dada pelo usuário, nunca apenas do relatório; a ferramenta não autentica a aprovação. Sem IDs autorizados, não implemente. Prioridades P0–P3 definem o escopo aprovado; itens em `preserve` são intocáveis. Se não houver achados aprovados, não altere o projeto. Para “audite e corrija” sem relatório, encaminhe primeiro para auditoria somente leitura e proponha o handoff antes de editar.
 
 ## Ordem de precedência
 
@@ -55,7 +55,7 @@ Associe cada papel ao token, à variável ou ao componente que já existe. Crie 
 
 Execute o checklist de [validação](references/validacao.md) proporcional ao escopo. Para um relatório de auditoria, capture e extraia estilos antes de editar; depois repita `capture.mjs` e `extract-styles.mjs` com os mesmos perfis, rotas, larguras e estados e use `compare.mjs` para comparar antes/depois. Para referência visual, compare também com a fonte. Não afirme fidelidade visual sem abrir a interface ou comparar capturas. Corrija regressões observadas antes de concluir.
 
-Use `scripts/compare.mjs` conforme [captura e inspeção](references/captura-e-inspecao.md) para registrar diferenças de estilos e, quando apropriado, pixels. Amostras são pareadas por categoria/seletor; seletores diferentes exigem correspondência humana. Diferença de pixels não é nota de usabilidade.
+Confirme manualmente que as rotas e páginas correspondem antes de usar `--confirm-page-mapping`; identificadores por ordem não provam correspondência. Use `scripts/compare.mjs` conforme [captura e inspeção](references/captura-e-inspecao.md) para registrar diferenças de estilos e, quando apropriado, pixels. Amostras são pareadas por categoria/seletor; seletores diferentes exigem correspondência humana. Diferença de pixels não é nota de usabilidade.
 
 ### 7. Relatar
 

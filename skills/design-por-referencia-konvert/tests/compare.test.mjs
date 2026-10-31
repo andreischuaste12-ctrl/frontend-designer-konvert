@@ -22,3 +22,10 @@ test('numeric measurements include a signed delta without inventing color deltas
   assert.deepEqual(result.entries[0].changes.find((c) => c.field === 'fontSize').delta, { amount: 8, unit: 'px' });
   assert.deepEqual(result.entries[0].changes.find((c) => c.field === 'rect.w').delta, { amount: 20, unit: 'px' });
 });
+test('different page URLs require explicit mapping confirmation', () => {
+  const a = { ...sample([heading]), meta: { width: 375, scheme: 'light', url: 'https://example.invalid/a' } };
+  const b = { ...sample([heading]), meta: { width: 375, scheme: 'light', url: 'https://example.invalid/b' } };
+  assert.throws(() => compareStyles(a, b), /confirmed page mapping/);
+  assert.equal(compareStyles(a, b, { confirmPageMapping: true }).pageMapping, 'operator-confirmed');
+  assert.equal(compareStyles(a, a).pageMapping, 'unverified');
+});

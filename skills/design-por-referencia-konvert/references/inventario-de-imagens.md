@@ -53,3 +53,5 @@ Rode o render em 375 e 1440 px: `srcset` e `sizes` podem escolher arquivos difer
 - Tabela curta: imagem, papel, fatos medidos relevantes, achado visual, correção sugerida.
 - Separe **fato** (medido ou visto) de **hipótese** (por exemplo, "provável ganho de LCP").
 - Informe a cobertura: quantas imagens o inventário listou, quantas foram abertas, quantas ficaram sem revisão.
+
+No inventário estático, nomes e caminhos são substituídos por IDs locais (`image-0001`, `source-0001`) para evitar expor dados em nomes de arquivos. Não há mapa reverso salvo; localize a origem manualmente quando necessário. Outros conteúdos e pixels ainda podem conter dados pessoais e exigem revisão antes de compartilhar.

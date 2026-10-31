@@ -4,6 +4,13 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+## 0.1.0 — 2026-10-31
+
+- Label ambiguous local-number patterns as redacted ambiguous numbers instead of asserting they are phone numbers; the conservative privacy default may still hide order codes or year ranges.
+- Pseudonymize all static image and source paths; do not persist a reverse mapping. Screenshot pixels and unstructured text still require manual privacy review.
+- Check report Markdown for private-data signals, duplicate IDs, and matching critical fields; require independently supplied approved IDs for CLI handoff.
+- Detect symlink changes in file-level handoff checks, require explicit page mapping for comparisons, retry failed DNS lookups, and reject blocked WebSockets before DNS.
+
 - Expand the visual reference catalog and add a provisional index of 20 user-supplied UX/UI studies and a reference selection guide; original sources require verification.
 
 - **Breaking (report schema 2):** replace `requires_external_data_or_approval` with `external_dependency` (`not_applicable`, `pending`, or `resolved`, with `detail` and `resolution`). A finding is implementable only when approved and not pending. Version 1 reports are still read, with any described dependency treated as pending.

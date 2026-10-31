@@ -25,7 +25,7 @@ const HELP = `Uso: node image-manifest.mjs [--root <dir>] [--url <url>] [opçõe
   --no-save      Mantido por compatibilidade; imagens não são copiadas por padrão.
   --timeout <ms> Timeout de navegação (padrão: 30000).
 
-Aviso: IPs resolvidos por DNS não são validados/fixados pelo guard; não é uma sandbox de rede.
+Aviso: IPs resolvidos são verificados quando a consulta tem sucesso, mas não são fixados; falhas de DNS não bloqueiam. Não é uma sandbox de rede.
 Saída: images-static.json/.md e/ou images-rendered.json/.md, e imagens-revisao.md (roteiro de revisão visual).`;
 
 const { values: a } = parseArgs({
@@ -219,7 +219,20 @@ async function scanStatic(rootArg) {
 }
 
 if (a.root) {
-  const res = await scanStatic(a.root);
+  const raw = await scanStatic(a.root);
+  // File and directory names can contain arbitrary personal data or credentials.
+  // Do not persist the reverse mapping; output only stable identifiers per scan.
+  const sources = new Map();
+  const sourceId = (file) => {
+    if (!sources.has(file)) sources.set(file, `source-${String(sources.size + 1).padStart(4, '0')}`);
+    return sources.get(file);
+  };
+  const res = { ...raw, images: raw.images.map((item, index) => ({
+    ...item,
+    path: `image-${String(index + 1).padStart(4, '0')}.${item.format}`,
+    refs: item.refs.map((ref) => ({ ...ref, file: sourceId(ref.file) })),
+    alt: item.alt.map((ref) => ({ ...ref, file: sourceId(ref.file) })),
+  })) };
   await fs.writeFile(path.join(outDir, 'images-static.json'), JSON.stringify(res, null, 2), 'utf8');
   const rows = res.images
     .map((i) => `| ${i.path} | ${i.format} | ${i.width ?? '?'}×${i.height ?? '?'} | ${kb(i.bytes)} | ${i.refs.map((r) => `${r.file}:${r.line}`).slice(0, 3).join('<br>') || '—'} | ${[...new Set(i.alt.map((x) => x.alt))].join(', ') || '—'} | ${i.flags.join('; ') || '—'} |`)

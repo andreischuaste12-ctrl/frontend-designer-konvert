@@ -52,7 +52,10 @@ function scanPrivate(value, where, errors, warnings) {
       if (pattern.test(value)) (severity === 'error' ? errors : warnings).push(`${where}: possible ${label}; redact before sharing`);
     }
   } else if (Array.isArray(value)) value.forEach((item, i) => scanPrivate(item, `${where}[${i}]`, errors, warnings));
-  else if (value && typeof value === 'object') for (const [key, item] of Object.entries(value)) scanPrivate(item, `${where}.${key}`, errors, warnings);
+  else if (value && typeof value === 'object') for (const [key, item] of Object.entries(value)) {
+    scanPrivate(key, `${where}.[key]`, errors, warnings);
+    scanPrivate(item, `${where}.[field]`, errors, warnings);
+  }
 }
 
 function validateDependency(dep, where, errors) {
@@ -111,24 +114,44 @@ export function validateAuditReport(input) {
 
 /** A finding is implementable only when explicitly approved and not blocked by a pending dependency. */
 export function implementableFindings(report) {
+  if (validateAuditReport(report).errors.length) return [];
   const normalized = normalizeReport(report);
-  return (normalized?.findings ?? []).filter((f) => f?.approved_for_implementation === true && f.external_dependency?.status !== 'pending');
+  return (normalized?.findings ?? []).filter((f) => f?.approved_for_implementation === true && ['not_applicable', 'resolved'].includes(f.external_dependency?.status));
 }
 
 /** Checks that the Markdown report renders exactly the JSON finding IDs as `### ID` headings. */
 export function compareMarkdownIds(report, markdown) {
   const errors = [];
   const jsonIds = new Set((report?.findings ?? []).map((f) => f?.id).filter(Boolean));
-  const mdIds = new Set([...String(markdown).matchAll(/^###\s+([A-Za-z][A-Za-z0-9]*-\d{3,})\b/gm)].map((m) => m[1]));
+  const headings = [...String(markdown).matchAll(/^###\s+([A-Za-z][A-Za-z0-9]*-\d{3,})\b[^\n]*\n?/gm)];
+  const mdIds = new Set(headings.map((m) => m[1]));
+  if (mdIds.size !== headings.length) errors.push('Markdown contains duplicate finding IDs');
   for (const id of jsonIds) if (!mdIds.has(id)) errors.push(`Markdown is missing finding ${id}`);
   for (const id of mdIds) if (!jsonIds.has(id)) errors.push(`Markdown has finding ${id} that is not in the JSON`);
+  for (let i = 0; i < headings.length; i++) {
+    const finding = report?.findings?.find((f) => f?.id === headings[i][1]);
+    if (!finding) continue;
+    const section = String(markdown).slice(headings[i].index, headings[i + 1]?.index ?? undefined).split(/^##\s/m)[0];
+    const priority = section.match(/\*\*Prioridade:\*\*\s*(P[0-3])/i)?.[1];
+    const approval = section.match(/\*\*Aprovado para implementação:\*\*\s*(true|false)/i)?.[1]?.toLowerCase();
+    if (priority !== finding.priority) errors.push(`Markdown priority differs or is missing for ${finding.id}`);
+    if (approval !== String(finding.approved_for_implementation)) errors.push(`Markdown approval differs or is missing for ${finding.id}`);
+    for (const [label, field] of [['Local', 'location'], ['Evidência observada', 'evidence_observed'], ['Impacto provável', 'probable_impact'], ['Próximo passo', 'next_step'], ['Critério de aceite', 'acceptance_criteria']]) {
+      const line = section.split('\n').find((v) => v.startsWith(`- **${label}:**`));
+      const value = line?.slice(`- **${label}:**`.length).trim();
+      if (value !== finding[field]) errors.push(`Markdown ${field} differs or is missing for ${finding.id}`);
+    }
+    const dependency = section.match(/\*\*Dependência externa:\*\*\s*(pendente|resolvida|não aplicável)/i)?.[1]?.toLowerCase();
+    const expected = { pending: 'pendente', resolved: 'resolvida', not_applicable: 'não aplicável' }[finding.external_dependency?.status];
+    if (dependency !== expected) errors.push(`Markdown dependency differs or is missing for ${finding.id}`);
+  }
   return errors;
 }
 
 async function main() {
-  const { values, positionals } = parseArgs({ allowPositionals: true, options: { markdown: { type: 'string' }, implementable: { type: 'boolean' }, help: { type: 'boolean' } } });
+  const { values, positionals } = parseArgs({ allowPositionals: true, options: { markdown: { type: 'string' }, implementable: { type: 'boolean' }, 'approved-ids': { type: 'string' }, help: { type: 'boolean' } } });
   if (values.help || positionals.length !== 1) {
-    console.log('Usage: node validate-report.mjs <audit-report.json> [--markdown audit-report.md] [--implementable]');
+    console.log('Usage: node validate-report.mjs <audit-report.json> [--markdown audit-report.md] [--implementable --approved-ids UX-001,UX-002]');
     process.exitCode = values.help ? 0 : 2;
     return;
   }
@@ -137,20 +160,28 @@ async function main() {
   catch { console.error('Could not read the report as JSON. The path and content were omitted.'); process.exitCode = 2; return; }
   const { errors, warnings, report } = validateAuditReport(input);
   if (values.markdown) {
-    try { errors.push(...compareMarkdownIds(report, await fs.readFile(values.markdown, 'utf8'))); }
+    try {
+      const markdown = await fs.readFile(values.markdown, 'utf8');
+      errors.push(...compareMarkdownIds(report, markdown));
+      scanPrivate(markdown, 'markdown', errors, warnings);
+    }
     catch { errors.push('Could not read the Markdown report.'); }
   }
   for (const warning of warnings) console.error(`warning: ${warning}`);
   if (errors.length) { console.error(errors.join('\n')); process.exitCode = 1; return; }
-  const ready = implementableFindings(report);
+  const eligible = implementableFindings(report);
+  const approvals = new Set((values['approved-ids'] ?? '').split(',').map((v) => v.trim()).filter(Boolean));
+  if ([...approvals].some((id) => !report.findings.some((f) => f.id === id))) { console.error('Unknown finding ID in approved-ids.'); process.exitCode = 1; return; }
+  const ready = values.implementable ? eligible.filter((f) => approvals.has(f.id)) : eligible;
   if (values.implementable) {
     console.log(JSON.stringify({
       report_id: report.report_id,
+      approval_note: 'Approved IDs are supplied by the operator and must be verified against the user request; this tool does not authenticate approval.',
       preserve: report.preserve,
       implementable: ready.map(({ id, priority, location, next_step, acceptance_criteria, preserve, external_dependency }) => ({ id, priority, location, next_step, acceptance_criteria, preserve, external_dependency })),
       blocked: report.findings.filter((f) => !ready.includes(f)).map((f) => ({
         id: f.id,
-        reasons: [!f.approved_for_implementation && 'not approved', f.external_dependency?.status === 'pending' && 'external dependency pending'].filter(Boolean),
+        reasons: [!f.approved_for_implementation && 'not approved in report', !approvals.has(f.id) && 'no independently supplied approval', f.external_dependency?.status === 'pending' && 'external dependency pending'].filter(Boolean),
       })),
     }, null, 2));
   } else {

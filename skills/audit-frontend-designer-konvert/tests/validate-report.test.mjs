@@ -90,22 +90,39 @@ test('likely private data is flagged before a report is shared', async () => {
   assert.ok(errors.some((e) => /email address/.test(e)));
   assert.ok(errors.some((e) => /secret-like parameter/.test(e)));
   assert.ok(warnings.some((w) => /personal path/.test(w)), 'paths warn because routes can look similar');
+  const keyed = validateAuditReport({ ...example, scope: { 'synthetic@example.invalid': 'synthetic' } });
+  assert.ok(keyed.errors.some((e) => /email address/.test(e)));
+  assert.ok(keyed.errors.every((e) => !e.includes('synthetic@example.invalid')));
 });
 
 test('Markdown and JSON must contain the same finding IDs', async () => {
   const example = await load();
-  assert.deepEqual(compareMarkdownIds(example, '### UX-001 — a\n### UX-002 — b\n### UX-009 — extra\n'), ['Markdown is missing finding UX-003', 'Markdown has finding UX-009 that is not in the JSON']);
+  const errors = compareMarkdownIds(example, '### UX-001 — a\n### UX-002 — b\n### UX-009 — extra\n');
+  assert.ok(errors.includes('Markdown is missing finding UX-003'));
+  assert.ok(errors.includes('Markdown has finding UX-009 that is not in the JSON'));
+  const md = await fs.readFile(markdownUrl, 'utf8');
+  assert.match(compareMarkdownIds(example, md.replace('**Prioridade:** P1', '**Prioridade:** P3')).join('\n'), /priority differs/);
+  assert.match(compareMarkdownIds(example, md + '\n### UX-001 — duplicado\n').join('\n'), /duplicate/);
+  assert.deepEqual(implementableFindings({ findings: [{ id: 'UX-001', approved_for_implementation: true }] }), []);
 });
 
 test('the CLI exits 0 for valid input, 1 for contract violations, and 2 for unreadable input', async (t) => {
   const run = promisify(execFile);
-  const ok = await run(process.execPath, [script, fileURLToPath(exampleUrl), '--implementable']);
+  const withoutApproval = await run(process.execPath, [script, fileURLToPath(exampleUrl), '--implementable']);
+  assert.deepEqual(JSON.parse(withoutApproval.stdout).implementable, []);
+  const blocked = await run(process.execPath, [script, fileURLToPath(exampleUrl), '--implementable', '--approved-ids', 'UX-001']);
+  assert.deepEqual(JSON.parse(blocked.stdout).implementable, []);
+  await assert.rejects(run(process.execPath, [script, fileURLToPath(exampleUrl), '--implementable', '--approved-ids', 'UX-999']), (err) => err.code === 1);
+  const ok = await run(process.execPath, [script, fileURLToPath(exampleUrl), '--implementable', '--approved-ids', 'UX-003']);
   const parsed = JSON.parse(ok.stdout);
   assert.deepEqual(parsed.implementable.map((f) => f.id), ['UX-003']);
-  assert.deepEqual(parsed.blocked, [{ id: 'UX-001', reasons: ['not approved', 'external dependency pending'] }, { id: 'UX-002', reasons: ['not approved', 'external dependency pending'] }]);
+  assert.deepEqual(parsed.blocked.map((f) => f.id), ['UX-001', 'UX-002']);
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'audit-report-'));
   t.after(() => fs.rm(dir, { recursive: true, force: true }));
   const bad = path.join(dir, 'bad.json');
+  const leakyMd = path.join(dir, 'leaky.md');
+  await fs.writeFile(leakyMd, (await fs.readFile(markdownUrl, 'utf8')) + '\nsynthetic@example.invalid\n');
+  await assert.rejects(run(process.execPath, [script, fileURLToPath(exampleUrl), '--markdown', leakyMd]), (err) => err.code === 1 && !err.stderr.includes('synthetic@example.invalid'));
   await fs.writeFile(bad, JSON.stringify({ schema_version: 2 }));
   await assert.rejects(run(process.execPath, [script, bad]), (err) => err.code === 1);
   await fs.writeFile(bad, '{not json');

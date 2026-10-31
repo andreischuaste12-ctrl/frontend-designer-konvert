@@ -18,21 +18,32 @@ Use this skill directly when a visual reference must be reproduced. For “audit
 
 The auditor uses the executor's browser scripts for rendered evidence, so install both skills together; without them the auditor still works read-only but reports the missing evidence.
 
+## First audit
+
+1. Install both skills using the commands below; Node.js 20+ is required for validation and the browser tools.
+2. In the project to inspect, ensure `.audit/` is ignored by Git or select a separate authorized output directory. Use synthetic data.
+3. The installation commands verify the installed copies. Install browser dependencies as described in the installation guide.
+4. Ask: “Use audit-frontend-designer-konvert to audit this interface without editing the project.” Review the Markdown, JSON and captures in the authorized output directory before sharing. The verification command checks structure, not agent activation.
+
 ## Install both skills
+
+The commands below install the `v0.1.0` release. To inspect unreleased work, use the `main` branch explicitly.
 
 From the root of the project where you want to install the skills, run:
 
 ```bash
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
-git clone --depth 1 --filter=blob:none --sparse \
+git clone --depth 1 --branch v0.1.0 --filter=blob:none --sparse \
   https://github.com/andreischuaste12-ctrl/frontend-designer-konvert.git \
   "$tmp_dir/repo"
 git -C "$tmp_dir/repo" sparse-checkout set \
   skills/audit-frontend-designer-konvert \
-  skills/design-por-referencia-konvert
+  skills/design-por-referencia-konvert \
+  scripts
 mkdir -p .agents/skills
 cp -R "$tmp_dir/repo"/skills/* .agents/skills/
+node "$tmp_dir/repo/scripts/verify-install.mjs" .agents/skills
 ```
 
 The expected result is `.agents/skills/audit-frontend-designer-konvert/SKILL.md` and `.agents/skills/design-por-referencia-konvert/SKILL.md`, each with its supporting knowledge base, references, and scripts. If your agent uses a different skills directory, copy the `skills` folders there. Refresh the agent if it does not detect the skills automatically.
@@ -69,9 +80,9 @@ For a focused change, start with `--profile rapido`; use `tela` for up to three 
 
 `npm test` includes browser smoke tests and fails without a Chromium that matches the pinned Playwright version. If you cannot download one, point `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` at an installed Chromium; results may differ slightly from the pinned build. The smoke test uses a synthetic page on loopback and the installed Playwright Chromium. GitHub Actions is configured for repository validation and root/auditor tests on Node 22, syntax and unit checks on Node 20, 22, and 24, and browser smoke tests on Node 22, each on Linux and Windows. Inspect the actual workflow results before relying on platform compatibility.
 
-Use `node skills/design-por-referencia-konvert/scripts/compare.mjs --before .audit/before --after .audit/after --pixels` to produce style and pixel-difference reports from compatible captures. See [architecture and limitations](docs/architecture.md), [contributing](CONTRIBUTING.md), and [security and captured data](SECURITY.md).
+Use `node skills/design-por-referencia-konvert/scripts/compare.mjs --before .audit/before --after .audit/after --confirm-page-mapping --pixels` to produce style and pixel-difference reports after manually confirming page and route correspondence; ordinal route IDs cannot verify that correspondence. See [architecture and limitations](docs/architecture.md), [contributing](CONTRIBUTING.md), and [security and captured data](SECURITY.md).
 
-Known limits: hostnames are resolved and checked before each request but not pinned, so a short-TTL DNS rebinding race remains possible; a failed local lookup does not block; redirected subresources are blocked; HTTP mediation changes timing; and text redaction is best effort. Screenshots can expose visible page content. Treat missing resources as incomplete evidence and review artifacts before sharing.
+Known limits: hostnames are resolved and checked on first encounter per context but not pinned; failed lookups are retried, so a short-TTL DNS rebinding race remains possible; a failed local lookup does not block; redirected subresources are blocked; HTTP mediation changes timing; and text redaction is best effort. Screenshots can expose visible page content. Treat missing resources as incomplete evidence and review artifacts before sharing.
 
 ## Repository layout
 

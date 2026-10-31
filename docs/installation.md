@@ -9,10 +9,11 @@ From the target project's root, clone to a temporary directory and copy the two 
 ```bash
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
-git clone --depth 1 https://github.com/andreischuaste12-ctrl/frontend-designer-konvert.git "$tmp_dir/repo"
+git clone --depth 1 --branch v0.1.0 https://github.com/andreischuaste12-ctrl/frontend-designer-konvert.git "$tmp_dir/repo"
 mkdir -p .agents/skills
 cp -R "$tmp_dir/repo/skills/audit-frontend-designer-konvert" .agents/skills/
 cp -R "$tmp_dir/repo/skills/design-por-referencia-konvert" .agents/skills/
+node "$tmp_dir/repo/scripts/verify-install.mjs" .agents/skills
 ```
 
 ## PowerShell
@@ -22,18 +23,20 @@ From the target project's root:
 ```powershell
 $skillSource = Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
 try {
-  git clone --depth 1 https://github.com/andreischuaste12-ctrl/frontend-designer-konvert.git $skillSource
+  git clone --depth 1 --branch v0.1.0 https://github.com/andreischuaste12-ctrl/frontend-designer-konvert.git $skillSource
   if ($LASTEXITCODE -ne 0) { throw 'Clone failed' }
   $skillsTarget = '.agents/skills' # Claude Code: '.claude/skills'
   New-Item -ItemType Directory -Force $skillsTarget | Out-Null
   Copy-Item -Recurse (Join-Path $skillSource 'skills/audit-frontend-designer-konvert') $skillsTarget
   Copy-Item -Recurse (Join-Path $skillSource 'skills/design-por-referencia-konvert') $skillsTarget
+  node (Join-Path $skillSource 'scripts/verify-install.mjs') $skillsTarget
+  if ($LASTEXITCODE -ne 0) { throw 'Installation verification failed' }
 } finally {
   if (Test-Path $skillSource) { Remove-Item -Recurse -Force $skillSource }
 }
 ```
 
-Use these commands for a fresh installation. Before updating an existing copy, back up any local modifications, remove only the two installed skill directories, and repeat installation from the desired commit or release. Record the source commit so later audits are reproducible. A clone without a tag follows the latest default branch.
+Use these commands for a fresh installation. Before updating an existing copy, back up any local modifications, remove only the two installed skill directories, and repeat installation from the desired commit or release. Record the source commit so later audits are reproducible. The examples pin the v0.1.0 tag; substitute an explicitly chosen later release or main when updating. A clone without a tag follows the latest default branch.
 
 ## Verify
 
