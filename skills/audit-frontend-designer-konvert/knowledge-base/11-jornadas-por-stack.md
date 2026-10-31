@@ -235,20 +235,20 @@ Estas unidades complementam as unidades gerais quando a stack muda **onde** o pr
 - **Métrica a monitorar:** navegações abandonadas logo após a transição.
 - **Fonte:** Next.js — github.com/vercel/next.js@fac5fc8, `docs/03-architecture/accessibility.mdx` (Route Announcements) · verificado em 2026-10-31 · revisão: agente de IA, pendente de revisão humana
 
-### UXK-ERR-401 — Next.js: error.js com nova tentativa e status do not-found
+### UXK-ERR-401 — Next.js: error.js com nova tentativa por segmento
 - **Contexto:** erros · App Router · React/Next.js
 - **Estados:** erro, recuperação
-- **Quando se aplica:** app Next.js com App Router.
+- **Quando se aplica:** app Next.js com App Router e segmentos que carregam dados remotos.
 - **Exceções:** projetos com Pages Router, que usam outras convenções.
-- **Evidência a coletar:** arquivos `error.js` e `not-found.js` por segmento; presença de ação de nova tentativa com `retry()`; status HTTP de uma rota inexistente registrado pela captura.
+- **Evidência a coletar:** arquivos `error.js` por segmento; presença de ação de nova tentativa com `retry()`; captura do estado de erro com a falha de um segmento simulada em ambiente de teste.
 - **Método:** inspeção
 - **Prioridade padrão:** P2
-- **Recomendação:** Criar `error.js` nos segmentos com dados remotos, oferecendo nova tentativa, e conferir o status do `not-found`, que é 404 só antes do streaming começar.
-- **Critério de aceite:** Segmentos com dados remotos têm `error.js` com ação de nova tentativa, e uma rota inexistente auditada retorna 404 ou, se o streaming já começou, tem `noindex` registrado.
+- **Recomendação:** Criar `error.js` nos segmentos com dados remotos, com mensagem compreensível e ação de nova tentativa, para que a falha de um segmento não derrube a página inteira.
+- **Critério de aceite:** Com a falha simulada de um segmento, a interface mostra a mensagem do `error.js` daquele segmento, mantém visível o layout acima dele e oferece nova tentativa.
 - **Preservar:** `global-error.js` e o layout raiz.
 - **Dependência externa:** não aplicável
 - **Métrica a monitorar:** erros de renderização registrados por segmento.
-- **Fonte:** Next.js — github.com/vercel/next.js@fac5fc8, `docs/01-app/03-api-reference/03-file-conventions/error.mdx` e `not-found.mdx` · verificado em 2026-10-31 · revisão: agente de IA, pendente de revisão humana
+- **Fonte:** Next.js — github.com/vercel/next.js@fac5fc8, `docs/01-app/03-api-reference/03-file-conventions/error.mdx` (o `error.js` envolve o segmento e não o layout acima dele; `retry()` tenta renderizar de novo) · verificado em 2026-10-31 · revisão: agente de IA, pendente de revisão humana
 
 ### UXK-DSH-401 — Next.js: loading.js por segmento do painel
 - **Contexto:** dashboards · carregamento · React/Next.js
@@ -297,16 +297,16 @@ Estas unidades complementam as unidades gerais quando a stack muda **onde** o pr
 - **Métrica a monitorar:** navegação entre páginas do site estático.
 - **Fonte:** WCAG 2.2 SC 3.2.3 Consistent Navigation — github.com/w3c/wcag@9b94e18, guidelines/sc/20/consistent-navigation.html · verificado em 2026-10-31 · revisão: agente de IA, pendente de revisão humana
 
-### UXK-ERR-501 — HTML: página 404 depende da configuração do servidor
+### UXK-ERR-501 — HTML: página de endereço não encontrado própria do site
 - **Contexto:** erros · hospedagem estática · HTML
 - **Estados:** erro
 - **Quando se aplica:** site estático publicado em servidor ou serviço de hospedagem.
-- **Exceções:** sites servidos por aplicação que gera as próprias respostas de erro.
-- **Evidência a coletar:** existência de `404.html` no projeto; status HTTP e conteúdo de uma rota inexistente no ambiente publicado ou de preview.
+- **Exceções:** sites servidos por aplicação que gera as próprias páginas de erro.
+- **Evidência a coletar:** existência de `404.html` no projeto; captura de uma rota inexistente no preview ou no ambiente publicado autorizado.
 - **Método:** inspeção
 - **Prioridade padrão:** P3
-- **Recomendação:** Criar `404.html` com busca ou links principais e confirmar na documentação da hospedagem como a página é servida.
-- **Critério de aceite:** Uma rota inexistente no ambiente auditado mostra a página 404 do site com status 404.
+- **Recomendação:** Criar `404.html` com o cabeçalho do site, mensagem clara e links ou busca, e confirmar com quem mantém a hospedagem como essa página é servida.
+- **Critério de aceite:** Uma rota inexistente no ambiente auditado mostra a página do próprio site, com mensagem em texto e links para continuar, em vez da página genérica do servidor.
 - **Preservar:** configuração de hospedagem e redirecionamentos.
 - **Dependência externa:** pendente — a configuração do servidor pertence a quem mantém a hospedagem.
 - **Métrica a monitorar:** saídas a partir de links quebrados.

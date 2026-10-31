@@ -29,6 +29,10 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ### Changed
 
+- CI now triggers on every file of `create-frontend-from-zero-konvert`, and repository validation requires every skill directory in the push and pull_request path filters.
+- The auditor's knowledge units no longer use HTTP status or indexing as acceptance criteria (UXK-ERR-051, UXK-ERR-401, UXK-ERR-501): technical SEO is outside the UX audit scope and stays in the creation skill's SEO reference.
+- The routing scorer documentation now says it fails when any skill in the run is below 90%.
+
 - Update CI actions to `actions/checkout` v7.0.1 and `actions/setup-node` v7.1.0 (pinned by SHA), removing the Node.js 20 runtime deprecation warning.
 - Update the React/Tailwind fixture to React and React DOM 19.3.1, Vite 8.3.5 and Autoprefixer 10.6.2; Tailwind stays on v3 because a major upgrade changes rendered defaults and the audit answer key.
 - Dependabot groups `react`/`react-dom` and build tooling, ignores Tailwind majors in the fixture, checks the fixture monthly and groups action updates.
