@@ -113,6 +113,57 @@ Estas fontes complementam a análise de UX e dos aspectos de acessibilidade perc
 - [Material Design](https://m3.material.io/) — sistema de design e padrões de interface do Google.
 - [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/) — orientação de design para plataformas Apple.
 
+## I. Novas galerias sugeridas para pesquisa visual
+
+Seleção fornecida pelo usuário; disponibilidade, conteúdo e eventuais restrições de acesso não foram verificados nesta atualização. Classificação inicial baseada na lista recebida. Não trate uma galeria como evidência de usabilidade.
+
+Comece, conforme o contexto, por Ecomm.Design, Land-book, Lapa Ninja, SaaSFrame ou Mobbin. Os três já existentes permanecem nas seções anteriores. Recent Design e Godly são mantidos como fontes distintas: uma possível mudança de nome não foi verificada.
+
+### E-commerce
+
+- [Ecomm.Design](https://ecomm.design/) — fonte sugerida para explorar e-commerce; conteúdo e acesso a confirmar.
+- [Commerce.design](https://commerce.design/) — fonte sugerida para explorar e-commerce; conteúdo e acesso a confirmar.
+- [Ecomm Gallery](https://ecomm.gallery/) — fonte sugerida para explorar e-commerce; conteúdo e acesso a confirmar.
+- [Shops.Gallery](https://shops.gallery/) — fonte sugerida para explorar e-commerce; conteúdo e acesso a confirmar.
+- [GoodCart](https://www.goodcart.design/) — fonte sugerida para explorar e-commerce; conteúdo e acesso a confirmar.
+- [Website Motive](https://websitemotive.com/) — fonte sugerida para explorar e-commerce; conteúdo e acesso a confirmar.
+- [Stores.gallery](https://stores.gallery/stores) — fonte sugerida para explorar e-commerce; conteúdo e acesso a confirmar.
+- [Webflow — E-commerce](https://webflow.com/made-in-webflow/collections/ecommerce) — fonte sugerida para explorar e-commerce; conteúdo e acesso a confirmar.
+
+### SaaS, dashboards e aplicativos
+
+- [SaaSFrame](https://saasframe.io/) — fonte sugerida para explorar saas, dashboards e aplicativos; conteúdo e acesso a confirmar.
+- [SaaS Interface](https://saasinterface.com/) — fonte sugerida para explorar saas, dashboards e aplicativos; conteúdo e acesso a confirmar.
+- [SaaSUI](https://www.saasui.design/) — fonte sugerida para explorar saas, dashboards e aplicativos; conteúdo e acesso a confirmar.
+- [SaaS Pages](https://saaspages.xyz/) — fonte sugerida para explorar saas, dashboards e aplicativos; conteúdo e acesso a confirmar.
+- [SaaS Landing Page](https://saaslandingpage.com/) — fonte sugerida para explorar saas, dashboards e aplicativos; conteúdo e acesso a confirmar.
+- [SaaS Websites](https://saaswebsites.com/) — fonte sugerida para explorar saas, dashboards e aplicativos; conteúdo e acesso a confirmar.
+- [Best SaaS Web Designs](https://bestsaaswebdesigns.com/) — fonte sugerida para explorar saas, dashboards e aplicativos; conteúdo e acesso a confirmar.
+- [Nicelydone](https://nicelydone.club/) — fonte sugerida para explorar saas, dashboards e aplicativos; conteúdo e acesso a confirmar.
+- [WebInspoo](https://webinspoo.com/) — fonte sugerida para explorar saas, dashboards e aplicativos; conteúdo e acesso a confirmar.
+
+### Landing pages, serviços e sites institucionais
+
+- [Landing Love](https://www.landing.love/) — fonte sugerida para explorar landing pages, serviços e sites institucionais; conteúdo e acesso a confirmar.
+- [Landdding](https://landdding.com/) — fonte sugerida para explorar landing pages, serviços e sites institucionais; conteúdo e acesso a confirmar.
+- [Recent Design](https://recent.design/) — fonte sugerida para explorar landing pages, serviços e sites institucionais; conteúdo e acesso a confirmar.
+- [A1 Gallery](https://www.a1.gallery/) — fonte sugerida para explorar landing pages, serviços e sites institucionais; conteúdo e acesso a confirmar.
+- [Collected](https://collected.li/) — fonte sugerida para explorar landing pages, serviços e sites institucionais; conteúdo e acesso a confirmar.
+- [SEESAW](https://seesaw.website/) — fonte sugerida para explorar landing pages, serviços e sites institucionais; conteúdo e acesso a confirmar.
+- [MaxiBestOf](https://maxibestof.one/) — fonte sugerida para explorar landing pages, serviços e sites institucionais; conteúdo e acesso a confirmar.
+
+### Componentes e seções de UI
+
+- [Footer Design](https://footer.design/) — fonte sugerida para explorar componentes e seções de ui; conteúdo e acesso a confirmar.
+- [Supahero](https://supahero.io/) — fonte sugerida para explorar componentes e seções de ui; conteúdo e acesso a confirmar.
+- [CTA.gallery](https://www.cta.gallery/) — fonte sugerida para explorar componentes e seções de ui; conteúdo e acesso a confirmar.
+- [Unsection](https://www.unsection.com/) — fonte sugerida para explorar componentes e seções de ui; conteúdo e acesso a confirmar.
+- [SectionMaster](https://www.sectionmaster.com/) — fonte sugerida para explorar componentes e seções de ui; conteúdo e acesso a confirmar.
+- [UI Sections](https://uisections.com/) — fonte sugerida para explorar componentes e seções de ui; conteúdo e acesso a confirmar.
+- [BentoGrids](https://bentogrids.com/) — fonte sugerida para explorar componentes e seções de ui; conteúdo e acesso a confirmar.
+- [H1 Gallery](https://h1gallery.com/) — fonte sugerida para explorar componentes e seções de ui; conteúdo e acesso a confirmar.
+- [OGimage.gallery](https://www.ogimage.gallery/) — fonte sugerida para explorar componentes e seções de ui; conteúdo e acesso a confirmar.
+
 ## Protocolo para registrar uma referência
 
 ```text

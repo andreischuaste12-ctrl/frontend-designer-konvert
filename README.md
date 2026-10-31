@@ -37,6 +37,8 @@ cp -R "$tmp_dir/repo"/skills/* .agents/skills/
 
 The expected result is `.agents/skills/audit-frontend-designer-konvert/SKILL.md` and `.agents/skills/design-por-referencia-konvert/SKILL.md`, each with its supporting knowledge base, references, and scripts. If your agent uses a different skills directory, copy the `skills` folders there. Refresh the agent if it does not detect the skills automatically.
 
+The auditor includes a categorized [visual reference catalog](skills/audit-frontend-designer-konvert/knowledge-base/02-catalogo-de-referencias.md) and [UX/UI research index](skills/audit-frontend-designer-konvert/knowledge-base/05-estudos-ux-ui-psicologia.md). The executor has a [reference selection guide](skills/design-por-referencia-konvert/references/guia-de-referencias.md). The newly supplied sources and research summaries have not yet been independently verified.
+
 See the [installation guide](docs/installation.md) for PowerShell, Claude Code paths, activation checks, updates, removal, and troubleshooting. Start with “Use audit-frontend-designer-konvert to audit this page without editing it” or “Use design-por-referencia-konvert to implement this approved audit report.”
 
 ## Privacy and safe use

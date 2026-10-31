@@ -26,6 +26,8 @@ Defina fonte, nível de fidelidade, escopo e o que é intocável. A entrada pode
 
 ### 2. Ler a referência
 
+Para selecionar fontes e adaptar padrões ao público e à tarefa, use o [guia de referências](references/guia-de-referencias.md).
+
 - Use primeiro o que já está no contexto (arquivo, anexo, URL, captura).
 - Registre a origem de cada informação. Leia apenas o que de fato abriu.
 - Para URL, site em execução ou o próprio app do projeto, não leia só o HTML: escolha `--profile` conforme o escopo e siga [captura e inspeção](references/captura-e-inspecao.md) para obter capturas fatiadas, estilos computados e o [inventário de imagens](references/inventario-de-imagens.md). Leia primeiro `capture-index.json`; abra as larguras e fatias relevantes e anote o que viu. Nada visto, nada afirmado.

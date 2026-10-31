@@ -4,6 +4,8 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+- Expand the visual reference catalog and add a provisional index of 20 user-supplied UX/UI studies and a reference selection guide; original sources require verification.
+
 - **Breaking (report schema 2):** replace `requires_external_data_or_approval` with `external_dependency` (`not_applicable`, `pending`, or `resolved`, with `detail` and `resolution`). A finding is implementable only when approved and not pending. Version 1 reports are still read, with any described dependency treated as pending.
 - Add `audit-frontend-designer-konvert/scripts/validate-report.mjs` (zero dependencies) and tests: contract checks, unique IDs, Markdown/JSON ID mirroring, private-data signals, and `--implementable` output for the executor. Repository validation and `verify-install.mjs` now use it.
 - Clarify the auditor's write rule: only the report and capture evidence, only in the authorized ignored output directory.
