@@ -16,7 +16,7 @@ The weekly `Reference availability` workflow checks public catalog and study lin
 
 ## Routing
 
-`routing-cases.json` contains 24 cases per skill: 12 in English and 12 in Brazilian Portuguese, balanced between positive and negative examples, including nearby requests that belong to the other skill. They test **lead skill selection**, not helper use during a handoff.
+`routing-cases.json` contains 72 cases, 24 per skill: 12 in English and 12 in Brazilian Portuguese, balanced between positive and negative examples, including nearby requests that belong to the other skill. They test **lead skill selection**, not helper use during a handoff.
 
 Start a clean context per case, present the prompt without its expected label, and record whether the candidate skill became the lead. Do not derive `triggered` from the labels. The input JSON must contain exactly one boolean observation for every case ID:
 
@@ -49,7 +49,7 @@ The scorer writes `routing-score.json`, counts false positives and false negativ
 The fixtures contain no hints, but the case file is the answer key. **The audited agent must never see `evaluations/`.**
 
 1. Copy one fixture to an empty directory outside this repository and initialize Git there with `.audit/` ignored.
-2. Install both skills in that directory, start a clean agent context, and send only the case `brief`. Serve the fixture on loopback (for example `python3 -m http.server 8000 --bind 127.0.0.1`) if rendered evidence is wanted.
+2. Install all three current skills in that directory, start a clean agent context, and send only the case `brief`. Serve the fixture on loopback (for example `python3 -m http.server 8000 --bind 127.0.0.1`) if rendered evidence is wanted.
 3. Collect `audit-report.json` and `audit-report.md`, then run the auditor's `validate-report.mjs` with `--markdown`; record whether it passed.
 4. Grade against the case file, deciding each match before reading the next finding:
    - match a finding to an expected issue only if it identifies the same problem in the same place (one finding per issue);
@@ -84,7 +84,7 @@ The scorer micro-averages critical recall (P0–P1), overall recall, precision, 
 
 `handoff/loja.json` pairs the `loja` fixture with `handoff/loja-report.json`, a report whose findings cover every state: approved without a dependency, approved with a resolved dependency, approved but blocked by a pending dependency, and not approved. Each finding is mapped to disjoint files, and `js/cart.js` (tracking and checkout) is protected.
 
-1. Copy the fixture to an empty directory outside the repository, initialize Git with `.audit/` ignored, copy `handoff/loja-report.json` to `.audit/audit-report.json` there, install both skills, and give the agent only the case `brief`.
+1. Copy the fixture to an empty directory outside the repository, initialize Git with `.audit/` ignored, copy `handoff/loja-report.json` to `.audit/audit-report.json` there, install all three current skills, and give the agent only the case `brief`.
 2. After the executor finishes, run:
 
 ```bash

@@ -43,3 +43,18 @@ test('routes direct visual reproduction straight to the executor', () => {
     assert.deepEqual(item.expectedFlow, ['design-por-referencia-konvert']);
   }
 });
+
+test('routes new builds and reference-driven work on existing pages to their respective lead skills', () => {
+  const entries = JSON.parse(fs.readFileSync(new URL('../evaluations/routing-cases.json', import.meta.url), 'utf8'));
+  for (const id of ['create-03', 'create-pt-03']) {
+    const item = entries.find(entry => entry.id === id);
+    assert.equal(item.skill, 'create-frontend-from-zero-konvert');
+    assert.equal(item.shouldTrigger, true);
+    assert.deepEqual(item.expectedFlow, ['create-frontend-from-zero-konvert']);
+  }
+  for (const id of ['create-07', 'create-pt-07', 'create-08', 'create-pt-08', 'create-09', 'create-pt-09']) {
+    const item = entries.find(entry => entry.id === id);
+    assert.equal(item.shouldTrigger, false);
+    assert.notEqual(item.expectedFlow[0], 'create-frontend-from-zero-konvert');
+  }
+});

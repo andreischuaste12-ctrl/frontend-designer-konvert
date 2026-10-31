@@ -1,6 +1,6 @@
 # Frontend Design Skills
 
-This repository contains two complementary skills for coding agents. It is a skills-and-tools repository, not a web application.
+This repository contains three complementary skills for coding agents. It is a skills-and-tools repository, not a web application.
 
 ## Skills
 
@@ -18,6 +18,30 @@ Use this skill directly when a visual reference must be reproduced. For “audit
 
 The auditor uses the executor's browser scripts for rendered evidence, so install both skills together; without them the auditor still works read-only but reports the missing evidence.
 
+### `create-frontend-from-zero-konvert`
+
+Use it to plan, implement, and verify a new frontend from a product brief, including when visual references inform an original build. It reuses the auditor's knowledge and the executor's browser tools when available. An existing interface requested as a visual reproduction or approved audit implementation remains the reference executor's responsibility. Creation quality and agent routing are not yet measured.
+
+## Install all three from main
+
+The third skill is **unreleased** and is not included in the `v0.1.0` installation below. For a fresh installation of the current development version, run the following from the target project root. Review and back up existing copies before updating them.
+
+```bash
+tmp_dir="$(mktemp -d)"
+trap 'rm -rf "$tmp_dir"' EXIT
+git clone --depth 1 --branch main --filter=blob:none --sparse \
+  https://github.com/andreischuaste12-ctrl/frontend-designer-konvert.git "$tmp_dir/repo"
+git -C "$tmp_dir/repo" sparse-checkout set skills scripts
+mkdir -p .agents/skills
+for name in audit-frontend-designer-konvert design-por-referencia-konvert create-frontend-from-zero-konvert; do
+  if [ -e ".agents/skills/$name" ]; then echo "Existing skill: $name; back it up before updating."; exit 1; fi
+done
+cp -R "$tmp_dir/repo"/skills/* .agents/skills/
+node "$tmp_dir/repo/scripts/verify-install.mjs" .agents/skills
+```
+
+The verifier checks the installed structure, not agent activation. Node.js 20+ is required for the tooling. See the [installation guide](docs/installation.md) for platform-specific instructions and browser setup.
+
 ## First audit
 
 1. Install both skills using the commands below; Node.js 20+ is required for validation and the browser tools.
@@ -25,7 +49,7 @@ The auditor uses the executor's browser scripts for rendered evidence, so instal
 3. The installation commands verify the installed copies. Install browser dependencies as described in the installation guide.
 4. Ask: “Use audit-frontend-designer-konvert to audit this interface without editing the project.” Review the Markdown, JSON and captures in the authorized output directory before sharing. The verification command checks structure, not agent activation.
 
-## Install both skills
+## Install the two released skills (v0.1.0)
 
 The commands below install the `v0.1.0` release. To inspect unreleased work, use the `main` branch explicitly.
 
@@ -72,9 +96,9 @@ npm run check
 npm test
 ```
 
-From the repository root, run `node scripts/validate-repository.mjs` to check JavaScript/JSON syntax, the audit report contract on the synthetic example, evaluation cases, skill metadata, knowledge-module links, relative Markdown links, and manifest/lockfile consistency. Run `node --test "scripts/*.test.mjs" "skills/audit-frontend-designer-konvert/tests/*.test.mjs"` for the scorers, the handoff scope checker, the repository contract, the install verifier, and the report validator. After copying the skills into a project, `node scripts/verify-install.mjs <skills-dir>` confirms that both skills are structurally discoverable.
+From the repository root, run `node scripts/validate-repository.mjs` to check JavaScript/JSON syntax, the audit report contract on the synthetic example, evaluation cases, skill metadata, knowledge-module links, relative Markdown links, and manifest/lockfile consistency. Run `node --test "scripts/*.test.mjs" "skills/audit-frontend-designer-konvert/tests/*.test.mjs"` for the scorers, the handoff scope checker, the repository contract, the install verifier, and the report validator. After copying all three current skills into a project, `node scripts/verify-install.mjs <skills-dir>` checks their structure. The v0.1.0 verifier checks its two released skills.
 
-The [evaluation guide](evaluations/README.md) covers routing, audit quality on three synthetic projects (with planted issues, legitimate decoys, and preserve items), and a deterministic handoff scope check. The scorers are tested; no agent run has been recorded, so routing accuracy, audit quality, and handoff compliance remain unmeasured.
+The [evaluation guide](evaluations/README.md) covers routing, audit quality on synthetic projects (with planted issues, legitimate decoys, and preserve items), and a deterministic handoff scope check. The scorers are tested; no agent run has been recorded, so routing accuracy, audit quality, and handoff compliance remain unmeasured.
 
 For a focused change, start with `--profile rapido`; use `tela` for up to three pages and `completo` for a site-wide pass. The capture defaults to blocking known analytics and tracking hosts to avoid adding synthetic visits to production data. Prefer localhost or staging. `--allow-private` opens access to private-network targets, `--allow-tracking` permits known trackers, and `--no-mask` reveals form fields in screenshots; use these only when the target and test data are safe. Use `--block-writes` to optionally reject methods other than GET/HEAD and all WebSockets; it can block first-party telemetry and POST-based reads, so inspect the resulting capture. Reports and screenshots can include rendered page content even when URLs and form values are redacted.
 
@@ -95,12 +119,16 @@ skills/
 │   ├── references/
 │   ├── scripts/        # validate-report.mjs
 │   └── tests/
-└── design-por-referencia-konvert/
+├── design-por-referencia-konvert/
     ├── SKILL.md
     ├── examples/
     ├── references/
     ├── scripts/
     └── tests/
+└── create-frontend-from-zero-konvert/
+    ├── SKILL.md
+    ├── examples/
+    └── references/
 
 .github/workflows/skill-tools.yml
 CHANGELOG.md

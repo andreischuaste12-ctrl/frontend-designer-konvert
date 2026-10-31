@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const REQUIRED_SKILLS = ['audit-frontend-designer-konvert', 'design-por-referencia-konvert'];
+export const REQUIRED_SKILLS = ['audit-frontend-designer-konvert', 'design-por-referencia-konvert', 'create-frontend-from-zero-konvert'];
 const TOOLING_FILES = [
   'package.json',
   'package-lock.json',
@@ -74,5 +74,5 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   }
   const errors = await verifyInstall(path.resolve(target));
   if (errors.length) { console.error(errors.join('\n')); process.exitCode = 1; }
-  else console.log(`Both skills are structurally valid in ${path.basename(path.resolve(target))}. This does not prove agent activation.`);
+  else console.log(`All three skills are structurally valid in ${path.basename(path.resolve(target))}. This does not prove agent activation.`);
 }

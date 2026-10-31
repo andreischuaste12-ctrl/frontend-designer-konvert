@@ -48,3 +48,11 @@ test('reports a missing audit report validator', async () => {
     assert.ok((await verifyInstall(dir)).includes('audit-frontend-designer-konvert: missing scripts/validate-report.mjs'));
   } finally { await fs.rm(dir, { recursive: true, force: true }); }
 });
+
+test('reports a missing creation skill', async () => {
+  const dir = await installCopy();
+  try {
+    await fs.rm(path.join(dir, 'create-frontend-from-zero-konvert'), { recursive: true });
+    assert.ok((await verifyInstall(dir)).includes('create-frontend-from-zero-konvert: SKILL.md not found'));
+  } finally { await fs.rm(dir, { recursive: true, force: true }); }
+});

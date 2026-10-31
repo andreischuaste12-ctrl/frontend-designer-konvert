@@ -6,6 +6,7 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ### Added
 
+- Add `create-frontend-from-zero-konvert` for planning, building and verifying a new frontend, with collaboration guidance and 24 unmeasured routing cases.
 - Add structured UX knowledge units, a coverage map, editorial and automated checks, journey/state guidance and a runnable synthetic React/Tailwind evaluation fixture. Sources and real agent performance remain unverified.
 - Add stack-specific inspection guidance and optional report stack metadata; require project inspection before editing platform-specific files.
 

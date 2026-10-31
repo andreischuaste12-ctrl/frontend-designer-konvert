@@ -2,7 +2,11 @@
 
 Requires Git. The scripts additionally require Node.js 20+ and Playwright Chromium. Agent skill discovery depends on the installed agent version; refresh its skills after installation.
 
-## Bash
+## Current development version: all three skills
+
+The third skill, `create-frontend-from-zero-konvert`, is not in the `v0.1.0` release. For a fresh installation from `main`, use the three-skill Bash command in the [README](../README.md#install-all-three-from-main). For PowerShell, use the released instructions below with `--branch main` and add a third `Copy-Item` for `skills/create-frontend-from-zero-konvert` before running the verifier. The verifier from current `main` requires all three skills; the verifier in the pinned `v0.1.0` release requires only its two skills. Back up local changes before updating installed folders.
+
+## Bash — released v0.1.0
 
 From the target project's root, clone to a temporary directory and copy the two skills. For Codex use `.agents/skills`; for Claude Code replace that path with `.claude/skills`.
 
@@ -16,7 +20,7 @@ cp -R "$tmp_dir/repo/skills/design-por-referencia-konvert" .agents/skills/
 node "$tmp_dir/repo/scripts/verify-install.mjs" .agents/skills
 ```
 
-## PowerShell
+## PowerShell — released v0.1.0
 
 From the target project's root:
 
@@ -40,9 +44,9 @@ Use these commands for a fresh installation. Before updating an existing copy, b
 
 ## Verify
 
-Run `node scripts/verify-install.mjs <skills-dir>` from a clone of this repository (for example `.agents/skills` or `.claude/skills` in the target project). It checks that both skills exist with valid frontmatter, that every relative link resolves, and that the browser scripts, lockfile, and audit report validator are present. It proves structure, not that your agent activates the skill. Then confirm the behavior below.
+Run `node scripts/verify-install.mjs <skills-dir>` from a matching clone of this repository (for example `.agents/skills` or `.claude/skills` in the target project). The current development verifier checks all three skills exist with valid frontmatter; the v0.1.0 verifier checks the two released skills. It also checks relative links, browser scripts, the lockfile, and the audit report validator. It proves structure, not that your agent activates the skill. Then confirm the behavior below.
 
-Confirm that both installed folders contain SKILL.md and supporting files. Ask the agent: “Use audit-frontend-designer-konvert to audit this page without editing it.” It should inspect the product, audience, journeys, and interface read-only; preserve strengths; distinguish observations from hypotheses; and produce Markdown and JSON reports. For “audit and fix,” it should finish the audit, validate the report with `audit-frontend-designer-konvert/scripts/validate-report.mjs`, and propose a handoff before implementation. The executor only implements findings the user approves whose external dependency is not pending.
+Confirm that the installed folders contain SKILL.md and supporting files. Ask the agent: “Use audit-frontend-designer-konvert to audit this page without editing it.” It should inspect the product, audience, journeys, and interface read-only; preserve strengths; distinguish observations from hypotheses; and produce Markdown and JSON reports. For “audit and fix,” it should finish the audit, validate the report with `audit-frontend-designer-konvert/scripts/validate-report.mjs`, and propose a handoff before implementation. The executor only implements findings the user approves whose external dependency is not pending.
 
 Then try a synthetic reference request: “Use design-por-referencia-konvert to apply this DESIGN.md to the sample page.” It should establish scope, respect project tokens, implement the reference, and report actual visual checks. These manual checks are useful examples, not measured activation accuracy.
 
@@ -56,4 +60,4 @@ Add `.audit/` to the target project's `.gitignore`. Install the optional browser
 - URL blocked: prefer loopback or staging; review network flags in the skill before changing access.
 - Comparison rejected: use identical viewports and schemes, and selectors that identify samples uniquely.
 
-To uninstall, delete only `audit-frontend-designer-konvert` and `design-por-referencia-konvert` from the agent's skills directory. Review or remove local `.audit/` output separately; it may contain private content.
+To uninstall, delete only the installed skill folders (`audit-frontend-designer-konvert`, `design-por-referencia-konvert`, and, if present, `create-frontend-from-zero-konvert`) from the agent's skills directory. Review or remove local `.audit/` output separately; it may contain private content.

@@ -350,5 +350,197 @@
     "prompt": "Crie um esquema de banco de dados para o estoque de produtos.",
     "shouldTrigger": false,
     "language": "pt-BR"
+  },
+  {
+    "id": "create-01",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Build a new responsive landing page from scratch for a ceramics studio.",
+    "shouldTrigger": true,
+    "language": "en"
+  },
+  {
+    "id": "create-02",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Create an original SaaS dashboard interface in this empty project.",
+    "shouldTrigger": true,
+    "language": "en"
+  },
+  {
+    "id": "create-03",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Build a new storefront frontend from this brief and use the supplied website as inspiration.",
+    "shouldTrigger": true,
+    "language": "en",
+    "expectedFlow": [
+      "create-frontend-from-zero-konvert"
+    ]
+  },
+  {
+    "id": "create-04",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Implement a new application UI for a project that has no frontend yet.",
+    "shouldTrigger": true,
+    "language": "en"
+  },
+  {
+    "id": "create-05",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Design and code a new marketing site; choose an appropriate stack for an empty repository.",
+    "shouldTrigger": true,
+    "language": "en"
+  },
+  {
+    "id": "create-06",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Create a new isolated frontend area in this existing project, leaving its current pages intact.",
+    "shouldTrigger": true,
+    "language": "en"
+  },
+  {
+    "id": "create-07",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Audit this existing checkout without changing any files.",
+    "shouldTrigger": false,
+    "language": "en",
+    "expectedFlow": [
+      "audit-frontend-designer-konvert"
+    ]
+  },
+  {
+    "id": "create-08",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Apply this approved audit report to the existing product page.",
+    "shouldTrigger": false,
+    "language": "en",
+    "expectedFlow": [
+      "design-por-referencia-konvert"
+    ]
+  },
+  {
+    "id": "create-09",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Reproduce this screenshot in the current website.",
+    "shouldTrigger": false,
+    "language": "en",
+    "expectedFlow": [
+      "design-por-referencia-konvert"
+    ]
+  },
+  {
+    "id": "create-10",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Fix an existing database migration.",
+    "shouldTrigger": false,
+    "language": "en"
+  },
+  {
+    "id": "create-11",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Summarize the design research without implementing anything.",
+    "shouldTrigger": false,
+    "language": "en"
+  },
+  {
+    "id": "create-12",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Change the color of the existing navigation bar.",
+    "shouldTrigger": false,
+    "language": "en"
+  },
+  {
+    "id": "create-pt-01",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Crie uma landing page responsiva do zero para uma oficina de cerâmica.",
+    "shouldTrigger": true,
+    "language": "pt-BR"
+  },
+  {
+    "id": "create-pt-02",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Construa uma interface original de dashboard SaaS neste projeto vazio.",
+    "shouldTrigger": true,
+    "language": "pt-BR"
+  },
+  {
+    "id": "create-pt-03",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Crie uma loja virtual nova a partir deste briefing usando o site fornecido como inspiração.",
+    "shouldTrigger": true,
+    "language": "pt-BR",
+    "expectedFlow": [
+      "create-frontend-from-zero-konvert"
+    ]
+  },
+  {
+    "id": "create-pt-04",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Implemente uma nova interface de aplicativo em um projeto que ainda não tem frontend.",
+    "shouldTrigger": true,
+    "language": "pt-BR"
+  },
+  {
+    "id": "create-pt-05",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Projete e programe um site institucional novo escolhendo uma stack adequada para o repositório vazio.",
+    "shouldTrigger": true,
+    "language": "pt-BR"
+  },
+  {
+    "id": "create-pt-06",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Crie uma área nova e isolada neste projeto preservando as páginas existentes.",
+    "shouldTrigger": true,
+    "language": "pt-BR"
+  },
+  {
+    "id": "create-pt-07",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Audite o checkout existente sem editar arquivos.",
+    "shouldTrigger": false,
+    "language": "pt-BR",
+    "expectedFlow": [
+      "audit-frontend-designer-konvert"
+    ]
+  },
+  {
+    "id": "create-pt-08",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Implemente neste produto existente os achados aprovados deste relatório.",
+    "shouldTrigger": false,
+    "language": "pt-BR",
+    "expectedFlow": [
+      "design-por-referencia-konvert"
+    ]
+  },
+  {
+    "id": "create-pt-09",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Reproduza este print no site atual.",
+    "shouldTrigger": false,
+    "language": "pt-BR",
+    "expectedFlow": [
+      "design-por-referencia-konvert"
+    ]
+  },
+  {
+    "id": "create-pt-10",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Corrija uma migração de banco de dados existente.",
+    "shouldTrigger": false,
+    "language": "pt-BR"
+  },
+  {
+    "id": "create-pt-11",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Resuma a pesquisa de design sem implementar nada.",
+    "shouldTrigger": false,
+    "language": "pt-BR"
+  },
+  {
+    "id": "create-pt-12",
+    "skill": "create-frontend-from-zero-konvert",
+    "prompt": "Altere a cor da navegação existente.",
+    "shouldTrigger": false,
+    "language": "pt-BR"
   }
 ]
