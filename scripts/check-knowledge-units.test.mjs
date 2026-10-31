@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkUnits, checkCoverageMap, checkSpecificity, isVerifiedSource, REQUIRED } from './check-knowledge-units.mjs';
+import { checkUnits, checkCoverageMap, checkSpecificity, checkUnitReferences, isVerifiedSource, REQUIRED } from './check-knowledge-units.mjs';
 
 const values = {
   Contexto: 'interface web · todas as stacks',
@@ -76,4 +76,10 @@ test('stack cells need a unit for that stack, state cells need the state, verifi
   const unverified = checkUnits(unit()).units;
   assert.ok(checkCoverageMap(stateHeader + '| Checkout and payment | verificação: UXK-CHK-001 | — |', unverified).some((e) => /source is not verified/.test(e)));
   assert.deepEqual(checkCoverageMap(stateHeader + '| Checkout and payment | orientação: UXK-CHK-001 | — |', unverified), []);
+});
+
+test('unit IDs cited in skills and docs must exist', () => {
+  const known = new Set(['UXK-CHK-001']);
+  assert.deepEqual(checkUnitReferences([['skill.md', 'Use UXK-CHK-001 como critério.']], known), []);
+  assert.deepEqual(checkUnitReferences([['skill.md', 'Use UXK-DSH-052.']], known), ['skill.md: cites unknown unit UXK-DSH-052']);
 });

@@ -106,6 +106,29 @@ export function checkCoverageMap(markdown, known) {
   return errors;
 }
 
+/** Unit IDs cited outside the knowledge base (skills, docs) must exist, so guidance never points at a removed unit. */
+export function checkUnitReferences(texts, known) {
+  const errors = [];
+  for (const [file, text] of texts) {
+    for (const id of new Set(String(text).match(idPattern) ?? [])) if (!known.has(id)) errors.push(`${file}: cites unknown unit ${id}`);
+  }
+  return errors;
+}
+
+async function markdownOutsideKnowledgeBase(root) {
+  const out = [];
+  async function walk(dir) {
+    for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+      if (['node_modules', 'knowledge-base', '.git'].includes(entry.name)) continue;
+      const file = path.join(dir, entry.name);
+      if (entry.isDirectory()) await walk(file);
+      else if (entry.name.endsWith('.md')) out.push([path.relative(root, file), await fs.readFile(file, 'utf8')]);
+    }
+  }
+  for (const folder of ['skills', 'docs']) await walk(path.join(root, folder));
+  return out;
+}
+
 export async function checkKnowledge(root) {
   const dir = path.join(root, 'skills/audit-frontend-designer-konvert/knowledge-base');
   const errors = [], known = new Map();
@@ -116,5 +139,6 @@ export async function checkKnowledge(root) {
   }
   errors.push(...checkSpecificity(known).map((e) => `knowledge-base: ${e}`));
   errors.push(...checkCoverageMap(await fs.readFile(path.join(root, 'docs/coverage-map.md'), 'utf8'), known));
+  errors.push(...checkUnitReferences(await markdownOutsideKnowledgeBase(root), known));
   return errors;
 }

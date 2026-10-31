@@ -56,6 +56,16 @@ async function walk(dir) {
       if (name !== path.basename(dir)) errors.push(`${relative}: name must match directory`);
       if (!description || description.length > 1024) errors.push(`${relative}: description must contain 1–1024 characters`);
       if (text.split('\n').length > 500) errors.push(`${relative}: exceeds 500 lines`);
+      if (name === 'create-frontend-from-zero-konvert') {
+        for (const section of ['Fronteiras e colaboração', 'Fluxo', 'Definição de pronto', 'Referências e exemplos']) {
+          if (!text.includes(`## ${section}`)) errors.push(`${relative}: missing ${section} section`);
+        }
+        for (const folder of ['references', 'examples']) {
+          for (const file of await fs.readdir(path.join(dir, folder))) {
+            if (file.endsWith('.md') && !text.includes(`](${folder}/${file})`)) errors.push(`${relative}: ${folder} file must be linked: ${file}`);
+          }
+        }
+      }
       if (name === 'audit-frontend-designer-konvert') {
         for (const section of ['Fluxo', 'Princípios de design', 'Catálogo de referências', 'Formato do relatório']) {
           if (!text.includes(`## ${section}`)) errors.push(`${relative}: missing ${section} section`);
