@@ -255,17 +255,24 @@ if (a.url) {
 
   const net = new Map();
   const pending = [];
+  let bufferedImages = 0;
+  let bufferedBytes = 0;
   page.on('response', (r) => {
     const ct = (r.headers()['content-type'] || '').split(';')[0];
     if (r.request().resourceType() !== 'image' && !ct.startsWith('image/')) return;
+    const length = Number(r.headers()['content-length']);
+    const bytes = Number.isSafeInteger(length) && length >= 0 ? length : null;
+    const canCopy = a['save-images'] && !a['no-save'] && bytes !== null && bytes <= 5 * 1024 * 1024 &&
+      !r.headers()['content-encoding'] && bufferedImages < 60 && bufferedBytes + bytes <= 50 * 1024 * 1024;
+    if (canCopy) { bufferedImages++; bufferedBytes += bytes; }
     pending.push(
       (async () => {
         let body = null;
-        try { body = await r.body(); } catch { /* corpo indisponível (ex.: redirect) */ }
+        if (canCopy) try { body = await r.body(); } catch { /* corpo indisponível (ex.: redirect) */ }
         net.set(r.url(), {
           status: r.status(),
           contentType: ct,
-          bytes: body ? body.length : Number(r.headers()['content-length']) || null,
+          bytes: body ? body.length : bytes,
           body: body && body.length <= 5 * 1024 * 1024 ? body : null,
         });
       })(),
@@ -326,13 +333,16 @@ if (a.url) {
       try {
         const local = fileURLToPath(it.src);
         const st = await fs.stat(local);
+        const canCopy = a['save-images'] && st.size <= 5 * 1024 * 1024 && bufferedImages < 60 && bufferedBytes + st.size <= 50 * 1024 * 1024;
+        if (canCopy) { bufferedImages++; bufferedBytes += st.size; }
         const ext = path.extname(local).toLowerCase();
         const contentType = ({ '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.avif': 'image/avif', '.gif': 'image/gif', '.svg': 'image/svg+xml', '.bmp': 'image/bmp' })[ext] ?? 'application/octet-stream';
-        n = { status: 200, contentType, bytes: st.size, body: st.size <= 5 * 1024 * 1024 ? await fs.readFile(local) : null };
+        n = { status: 200, contentType, bytes: st.size, body: canCopy ? await fs.readFile(local) : null };
       } catch { /* arquivo ausente ou inacessível: os dados ficam n/d */ }
     }
     const format = fmtOf(n, it.src);
     const flags = [];
+    if (a['save-images'] && !n?.body) flags.push('cópia-indisponível (tamanho desconhecido, codificação ou limite de memória)');
     const dataUri = it.src.startsWith('data:');
     if (it.broken) flags.push('quebrada');
     if (it.kind === 'img' && it.alt === null && !it.decorative) flags.push('alt-ausente');

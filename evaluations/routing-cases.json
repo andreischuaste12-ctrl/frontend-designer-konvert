@@ -1,0 +1,146 @@
+[
+  {
+    "id": "audit-01",
+    "skill": "frontend-designer",
+    "prompt": "Audit the existing homepage and identify UX problems without editing files.",
+    "shouldTrigger": true
+  },
+  {
+    "id": "audit-02",
+    "skill": "frontend-designer",
+    "prompt": "Who is this pricing page for, and which visual hierarchy issues should we fix?",
+    "shouldTrigger": true
+  },
+  {
+    "id": "audit-03",
+    "skill": "frontend-designer",
+    "prompt": "Improve the usability of our current checkout in the existing stack.",
+    "shouldTrigger": true
+  },
+  {
+    "id": "audit-04",
+    "skill": "frontend-designer",
+    "prompt": "Evaluate readability and trust in this SaaS landing page; preserve what works.",
+    "shouldTrigger": true
+  },
+  {
+    "id": "audit-05",
+    "skill": "frontend-designer",
+    "prompt": "Review keyboard focus and mobile navigation on the current website.",
+    "shouldTrigger": true
+  },
+  {
+    "id": "audit-06",
+    "skill": "frontend-designer",
+    "prompt": "Polish the current dashboard layout without using a design reference.",
+    "shouldTrigger": true
+  },
+  {
+    "id": "audit-07",
+    "skill": "frontend-designer",
+    "prompt": "Apply this DESIGN.md to the product page and verify reference fidelity.",
+    "shouldTrigger": false
+  },
+  {
+    "id": "audit-08",
+    "skill": "frontend-designer",
+    "prompt": "Make our landing page follow the supplied screenshot layout.",
+    "shouldTrigger": false
+  },
+  {
+    "id": "audit-09",
+    "skill": "frontend-designer",
+    "prompt": "Use this site as the central design reference and implement its visual roles.",
+    "shouldTrigger": false
+  },
+  {
+    "id": "audit-10",
+    "skill": "frontend-designer",
+    "prompt": "Fix a database migration that fails in production.",
+    "shouldTrigger": false
+  },
+  {
+    "id": "audit-11",
+    "skill": "frontend-designer",
+    "prompt": "Summarize this financial spreadsheet without touching the website.",
+    "shouldTrigger": false
+  },
+  {
+    "id": "audit-12",
+    "skill": "frontend-designer",
+    "prompt": "Write a standalone animation timeline; there is no interface review.",
+    "shouldTrigger": false
+  },
+  {
+    "id": "reference-01",
+    "skill": "design-por-referencia-konvert",
+    "prompt": "Apply this DESIGN.md to the product page and verify reference fidelity.",
+    "shouldTrigger": true
+  },
+  {
+    "id": "reference-02",
+    "skill": "design-por-referencia-konvert",
+    "prompt": "Make our landing page look like the supplied website reference.",
+    "shouldTrigger": true
+  },
+  {
+    "id": "reference-03",
+    "skill": "design-por-referencia-konvert",
+    "prompt": "Recreate the visual hierarchy of this screenshot while preserving our tokens.",
+    "shouldTrigger": true
+  },
+  {
+    "id": "reference-04",
+    "skill": "design-por-referencia-konvert",
+    "prompt": "Adapt this reference layout to our React components and compare the render.",
+    "shouldTrigger": true
+  },
+  {
+    "id": "reference-05",
+    "skill": "design-por-referencia-konvert",
+    "prompt": "Copy the supplied layout structure using our own content and licensed assets.",
+    "shouldTrigger": true
+  },
+  {
+    "id": "reference-06",
+    "skill": "design-por-referencia-konvert",
+    "prompt": "Use this written visual direction to implement and validate the checkout UI.",
+    "shouldTrigger": true
+  },
+  {
+    "id": "reference-07",
+    "skill": "design-por-referencia-konvert",
+    "prompt": "Audit this website without editing it or selecting a visual reference.",
+    "shouldTrigger": false
+  },
+  {
+    "id": "reference-08",
+    "skill": "design-por-referencia-konvert",
+    "prompt": "Identify the likely audience and usability problems in our current checkout.",
+    "shouldTrigger": false
+  },
+  {
+    "id": "reference-09",
+    "skill": "design-por-referencia-konvert",
+    "prompt": "Fix mobile overflow without changing the visual direction.",
+    "shouldTrigger": false
+  },
+  {
+    "id": "reference-10",
+    "skill": "design-por-referencia-konvert",
+    "prompt": "Implement a backend authentication endpoint.",
+    "shouldTrigger": false
+  },
+  {
+    "id": "reference-11",
+    "skill": "design-por-referencia-konvert",
+    "prompt": "Animate this video title card; interface reference fidelity is irrelevant.",
+    "shouldTrigger": false
+  },
+  {
+    "id": "reference-12",
+    "skill": "design-por-referencia-konvert",
+    "prompt": "Create a database schema for product inventory.",
+    "shouldTrigger": false
+  }
+]

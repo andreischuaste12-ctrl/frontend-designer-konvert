@@ -35,6 +35,8 @@ cp -R "$tmp_dir/repo"/skills/* .agents/skills/
 
 The expected result is `.agents/skills/frontend-designer/SKILL.md` and `.agents/skills/design-por-referencia-konvert/SKILL.md`, each with its supporting knowledge base, references, and scripts. If your agent uses a different skills directory, copy the `skills` folders there. Refresh the agent if it does not detect the skills automatically.
 
+See the [installation guide](docs/installation.md) for PowerShell, Claude Code paths, activation checks, updates, removal, and troubleshooting. Start with “Use frontend-designer to audit this page without editing it” or “Use design-por-referencia-konvert to implement this DESIGN.md.”
+
 ## Privacy and safe use
 
 - Keep generated audits in `.audit/`; the root `.gitignore` excludes this folder because captures and reports can contain page content, URLs, or third-party images.
@@ -54,9 +56,13 @@ npm run check
 npm test
 ```
 
+From the repository root, run `node scripts/validate-repository.mjs` to check skill metadata and relative Markdown links, and `node --test scripts/evaluate-routing.test.mjs` to check the routing scorer. The [routing evaluation guide](evaluations/README.md) explains how to score observed agent decisions; no activation accuracy has yet been measured.
+
 For a focused change, start with `--profile rapido`; use `tela` for up to three pages and `completo` for a site-wide pass. The capture defaults to blocking known analytics and tracking hosts to avoid adding synthetic visits to production data. Prefer localhost or staging. `--allow-private` opens access to private-network targets, `--allow-tracking` permits known trackers, and `--no-mask` reveals form fields in screenshots; use these only when the target and test data are safe. Reports and screenshots can include rendered page content even when URLs and form values are redacted.
 
-The smoke test uses a synthetic page on loopback and the installed Playwright Chromium. GitHub Actions runs syntax and unit checks on Node 20, 22, and 24, and runs the browser smoke test on Node 22.
+The smoke test uses a synthetic page on loopback and the installed Playwright Chromium. GitHub Actions is configured for syntax and unit checks on Node 20, 22, and 24 on Linux and Windows, and browser smoke tests on Node 22 on both systems. Inspect the actual workflow results before relying on platform compatibility.
+
+Use `node skills/design-por-referencia-konvert/scripts/compare.mjs --before .audit/before --after .audit/after --pixels` to produce style and pixel-difference reports from compatible captures. See [architecture and limitations](docs/architecture.md), [contributing](CONTRIBUTING.md), and [security and captured data](SECURITY.md).
 
 ## Repository layout
 
@@ -75,6 +81,8 @@ skills/
 .github/workflows/skill-tools.yml
 CHANGELOG.md
 docs/
+evaluations/
+scripts/
 ```
 
 The research notes that informed the front-end design knowledge base are in [`docs/pesquisa-designer-front-end-moderno.md`](docs/pesquisa-designer-front-end-moderno.md).

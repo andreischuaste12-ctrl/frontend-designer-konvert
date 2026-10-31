@@ -8,9 +8,9 @@
     "node": ">=20"
   },
   "scripts": {
-    "check": "node --check scripts/_common.mjs && node --check scripts/capture.mjs && node --check scripts/extract-styles.mjs && node --check scripts/image-manifest.mjs",
+    "check": "node --check scripts/_common.mjs && node --check scripts/capture.mjs && node --check scripts/extract-styles.mjs && node --check scripts/image-manifest.mjs && node --check scripts/compare.mjs",
     "test": "npm run test:unit && npm run test:smoke",
-    "test:unit": "node --test tests/common.test.mjs",
+    "test:unit": "node --test tests/common.test.mjs tests/compare.test.mjs",
     "test:smoke": "node --test tests/scripts-smoke.test.mjs"
   },
   "devDependencies": {

@@ -17,6 +17,7 @@ A coding-agent skill for adapting a visual reference (a `DESIGN.md`, URL, screen
 | `scripts/extract-styles.mjs` | Computed styles, CSS variables, fonts, type scale, estimated contrast, and target sizes. |
 | `scripts/image-manifest.mjs` | Static and rendered image inventory plus a visual-review guide. |
 | `scripts/_common.mjs` | Shared script utilities. |
+| `scripts/compare.mjs` | Measured-style differences and optional PNG comparison with diff images. |
 | `evals/evals-visao.proposta.json` | Proposed manual evaluation scenarios; not an executable test suite. |
 | `tests/` | Unit tests and local smoke tests for the three scripts. |
 | `package.json` and `package-lock.json` | Minimal runtime, pinned Playwright dependency, and reproducible checks. |
@@ -46,6 +47,7 @@ Run commands from the target project's root; `<skill>` is the path to this skill
 node <skill>/scripts/capture.mjs --url http://localhost:3000 --profile rapido --routes /,/product
 node <skill>/scripts/extract-styles.mjs --url http://localhost:3000 --width 1440
 node <skill>/scripts/image-manifest.mjs --root . --url http://localhost:3000
+node <skill>/scripts/compare.mjs --before .audit/before --after .audit/after --pixels
 # Add --save-images to explicitly create local review copies.
 ```
 

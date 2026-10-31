@@ -1,0 +1,26 @@
+# Contributing
+
+Keep changes focused on a reproducible user problem. Explain the affected skill, expected behavior, observed result, and validation. Use synthetic examples and do not include customer data, credentials, or third-party captures without redistribution rights.
+
+## Local checks
+
+```bash
+node scripts/validate-repository.mjs
+cd skills/design-por-referencia-konvert
+npm ci
+npx playwright install chromium
+npm run check
+npm test
+```
+
+Add regression tests for changed detector, comparison, or privacy behavior. Documentation-only changes need repository validation. Browser tests use loopback fixtures, not production sites. CI checks Linux and Windows; a configured job is not evidence that a particular run passed.
+
+## Skill quality
+
+The frontmatter name must match the directory. Descriptions must fit within 1,024 characters; keep each SKILL.md under 500 lines and move detail to linked modules. Keep relative links valid. State what was measured, inferred, assumed, and not verified. Do not claim a model activation accuracy without actual recorded evaluation decisions.
+
+Keep the README files in English. The knowledge modules may remain in Portuguese. Avoid breaking installed skill names or moving scripts without a migration path.
+
+## Release checks
+
+Review privacy and compatibility changes, update CHANGELOG.md, run the required checks, and inspect the CI results for the intended commit. Record breaking changes and migration instructions before tagging a release. Package versions describe the tooling; a repository release must state which skills and scripts it contains. Do not claim Windows compatibility from a Linux-only local run.

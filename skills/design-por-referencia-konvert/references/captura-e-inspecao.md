@@ -60,6 +60,14 @@ Siga [inventário de imagens](inventario-de-imagens.md).
 
 ## 6. Comparar com a referência
 
+```bash
+node <skill>/scripts/compare.mjs --before .audit/before --after .audit/after --pixels
+```
+
+Cada diretório deve conter `styles/computed-styles.json` e, com `--pixels`, `screenshots/capture-index.json` e seus PNGs. Também é possível passar diretamente as pastas de estilos ou screenshots. A saída padrão é `.audit/comparison/comparison.json` e `.md`, com PNGs de diferenças quando houver. `--threshold 24` é a tolerância por canal (0 a 255), não um limite de percentual aprovado. A ferramenta relata diferenças; a aceitação depende do escopo combinado.
+
+Use a mesma ordem de rotas, versão do navegador, fontes, conteúdo, larguras, esquema e estados. O pareamento de capturas usa o ID de rota e o viewport: ele não descobre se URLs redigidas representam páginas diferentes. Estilos são comparados por categoria/seletor e seletores ambíguos são recusados. Diferença de dimensões, pares ausentes e limite de pixels são registrados sem gerar um percentual enganoso. Para sites com DOM diferente, mapeie papéis manualmente.
+
 - Capture a implementação nas mesmas larguras e estados da referência e compare fatia a fatia e papel a papel.
 - Se a referência é uma URL de terceiros, capture-a só para estudo local, respeitando os termos do site, e não a publique nem a versione.
 - Em **réplica estrutural**, quantifique a diferença com uma ferramenta de diff de pixels do projeto (por exemplo, `toHaveScreenshot` do Playwright), com limiar combinado e % de pixels diferentes no relatório. Não instale ferramenta nova sem pedido. Em **inspiração** e **adaptação**, a comparação é por papéis, não por pixel.
@@ -91,3 +99,5 @@ Siga [inventário de imagens](inventario-de-imagens.md).
 ## 9. O que declarar no relatório
 
 Rotas, larguras, esquemas de cor e estados efetivamente capturados; o que ficou de fora e por quê; condições da captura (animações congeladas, mascaramento, banner não aceito); e quais valores são **medidos** e quais **inferidos**.
+
+A extração amostra o DOM principal; não cobre integralmente iframes, Shadow DOM, pseudo-elementos, mistura de camadas nem contraste de foco. Esses casos exigem inspeção específica. Não interprete ausência de alerta como conformidade.

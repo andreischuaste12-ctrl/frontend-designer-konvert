@@ -45,5 +45,5 @@ test('file URLs require opt-in and must resolve inside the working project', () 
   const projectFile = pathToFileURL(path.join(process.cwd(), 'package.json')).href;
   assert.equal(targetBlockReason(projectFile), 'file URLs require --allow-file');
   assert.equal(targetBlockReason(projectFile, { allowFile: true }), null);
-  assert.match(targetBlockReason('file:///etc/passwd', { allowFile: true }), /outside the project root/);
+  assert.match(targetBlockReason(pathToFileURL(process.execPath).href, { allowFile: true }), /outside the project root/);
 });

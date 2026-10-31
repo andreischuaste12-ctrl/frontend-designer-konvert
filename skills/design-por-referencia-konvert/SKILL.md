@@ -45,10 +45,13 @@ Associe cada papel ao token, à variável ou ao componente que já existe. Crie 
 - Preserve a semântica HTML, a ordem de foco, os estados (hover, foco, ativo, desabilitado, erro, vazio, carregando) e a copy existente.
 - Parta do conteúdo real para o layout: breakpoints nascem de onde o conteúdo quebra, não de uma lista fixa.
 - Não adicione dependência, fonte remota ou imagem remota sem necessidade demonstrada.
+- Antes de mudar markup, identifique contratos de tracking, SEO e checkout afetados. Preserve eventos, atributos usados por integrações, canonical, dados estruturados, condições comerciais e comportamento de consentimento conforme o escopo autorizado. Valide eventos em staging; não dispare conversões reais durante inspeção.
 
 ### 6. Verificar
 
 Execute o checklist de [validação](references/validacao.md) proporcional ao escopo. Não afirme fidelidade visual sem ter aberto a interface ou comparado com uma captura. Refaça as mesmas capturas e medições do passo 2 (mesmas larguras e estados) na interface implementada e compare com a referência. Corrija o que encontrar antes de concluir.
+
+Use `scripts/compare.mjs` conforme [captura e inspeção](references/captura-e-inspecao.md) para registrar diferenças de estilos e, quando apropriado, pixels. Amostras são pareadas por categoria/seletor; seletores diferentes exigem correspondência humana. Diferença de pixels não é nota de usabilidade.
 
 ### 7. Relatar
 
