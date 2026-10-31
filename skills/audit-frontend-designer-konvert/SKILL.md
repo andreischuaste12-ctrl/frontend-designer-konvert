@@ -1,11 +1,11 @@
 ---
 name: audit-frontend-designer-konvert
-description: Audit an existing frontend as a read-only UX/UI design reviewer. Assess audience needs, user journeys, visual hierarchy, interaction patterns, accessibility as experienced in the interface, and evidence-informed design psychology; preserve strengths and produce a structured Markdown and JSON report. This skill is limited to experience and interface design; use design-por-referencia-konvert to reproduce or implement a visual reference.
+description: Audit an existing frontend as a read-only UX/UI design reviewer. Assess audience needs, user journeys, visual hierarchy, interaction patterns, accessibility as experienced in the interface, and evidence-informed design psychology; preserve strengths and produce a structured Markdown and JSON report. Use design-por-referencia-konvert for directly requested changes, visual reproduction, or approved implementation.
 ---
 
 # Auditoria de frontend (UX/UI)
 
-Esta skill é a auditora somente leitura de um fluxo com duas skills. Ela inspeciona o projeto, reúne evidências, prioriza achados e escreve um relatório. **Nunca edite o projeto auditado, instale dependências nem implemente uma recomendação.**
+Esta skill é a auditora somente leitura do fluxo de três skills. Ela inspeciona o projeto, reúne evidências, prioriza achados e escreve um relatório. **Nunca edite o projeto auditado, instale dependências nem implemente uma recomendação.**
 
 **Diretório de saída autorizado:** `.audit/` do projeto, desde que ignorado pelo Git (`git check-ignore .audit/`), ou um destino indicado pelo usuário. Se `.audit/` não estiver ignorado, use um local fora do checkout ou pergunte o destino; não altere o `.gitignore` do projeto auditado. Só estes arquivos podem ser gravados, e apenas nesse diretório:
 
@@ -40,7 +40,7 @@ Para reproduzir uma referência visual, use [`design-por-referencia-konvert`](..
 
 ## Roteiros por produto
 
-Adapte a inspeção à tarefa com os roteiros de [e-commerce](knowledge-base/06-padroes-ecommerce.md), [SaaS](knowledge-base/07-padroes-saas.md) e [sites institucionais](knowledge-base/08-padroes-institucional.md). São heurísticas; confirme as hipóteses com evidências adequadas. Para estados da jornada consulte [jornadas e estados](knowledge-base/09-jornadas-e-estados.md), consulte os [padrões específicos](knowledge-base/10-padroes-detalhados.md), selecione as unidades aplicáveis e siga [unidades de conhecimento](references/unidades-de-conhecimento.md) ao formular achados, ajustando prioridade com justificativa. Depois de confirmar a stack pela inspeção do projeto, use as [jornadas por stack](knowledge-base/11-jornadas-por-stack.md) para indicar onde cada correção acontece e quem decide; o resultado do detector sozinho não confirma a stack.
+Adapte a inspeção à tarefa com os roteiros de [e-commerce](knowledge-base/06-padroes-ecommerce.md), [SaaS](knowledge-base/07-padroes-saas.md) e [sites institucionais](knowledge-base/08-padroes-institucional.md). São heurísticas; confirme as hipóteses com evidências adequadas. Para avaliar hierarquia, consistência, movimento e acabamento sem presumir defeitos, use a [inspeção visual orientada à tarefa](knowledge-base/12-inspecao-visual-orientada-a-tarefa.md). Para estados da jornada consulte [jornadas e estados](knowledge-base/09-jornadas-e-estados.md), consulte os [padrões específicos](knowledge-base/10-padroes-detalhados.md), selecione as unidades aplicáveis e siga [unidades de conhecimento](references/unidades-de-conhecimento.md) ao formular achados, ajustando prioridade com justificativa. Depois de confirmar a stack pela inspeção do projeto, use as [jornadas por stack](knowledge-base/11-jornadas-por-stack.md) para indicar onde cada correção acontece e quem decide; o resultado do detector sozinho não confirma a stack.
 
 ## Estudos de UX e psicologia
 

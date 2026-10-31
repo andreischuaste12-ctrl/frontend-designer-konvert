@@ -16,7 +16,7 @@ The weekly `Reference availability` workflow checks public catalog and study lin
 
 ## Routing
 
-`routing-cases.json` contains 72 cases, 24 per skill: 12 in English and 12 in Brazilian Portuguese, balanced between positive and negative examples, including nearby requests that belong to the other skill. They test **lead skill selection**, not helper use during a handoff.
+`routing-cases.json` contains 72 cases, 24 per skill: 12 in English and 12 in Brazilian Portuguese, with positive and negative examples, including nearby requests that belong to another skill. They test **lead skill selection**, not helper use during a handoff. The direct-refinement boundary was updated without a new observed run; earlier results, if any, would not be comparable.
 
 Start a clean context per case, present the prompt without its expected label, and record whether the candidate skill became the lead. Do not derive `triggered` from the labels. The input JSON must contain exactly one boolean observation for every case ID:
 

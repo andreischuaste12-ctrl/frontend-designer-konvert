@@ -8,19 +8,21 @@ This repository contains three complementary skills for coding agents. It is a s
 
 Use it as a read-only UX/UI design reviewer. It studies audience needs, user journeys, visual and interaction design, accessibility as experienced in the interface, and evidence-informed design psychology, then produces a structured Markdown and JSON report validated by `scripts/validate-report.mjs`. It never edits the audited project; it writes only the report and capture evidence to an ignored output directory.
 
-Start with this skill when the request is to audit, evaluate, or improve an existing interface. It does not require a visual reference.
+Start with this skill when the request is to audit or evaluate an existing interface. It does not require a visual reference.
 
 ### `design-por-referencia-konvert`
 
-Use it as the executor when implementing explicitly approved audit findings or adapting a supplied design guide, URL, screenshot, or visual direction, with before/after captures and measured styles to check the result.
+Use it as the executor when implementing explicitly approved audit findings, adapting a supplied design guide, URL, screenshot, or visual direction, or making a directly requested, scoped refinement to an existing interface. It checks before/after captures and measured styles where the interface can be rendered.
 
-Use this skill directly when a visual reference must be reproduced. For “audit and fix” requests, start with `audit-frontend-designer-konvert`; pass its report to this executor only after the user approves findings. A finding is implementable only when it is approved and its `external_dependency.status` is not `pending`. Do not use a gallery example as proof of usability.
+Use this skill directly when a visual reference must be reproduced or the user names a concrete existing UI change, such as a typography, motion, or responsive fix. For “audit and fix” requests, start with `audit-frontend-designer-konvert`; pass its report to this executor only after the user approves findings. A finding is implementable only when it is approved and its `external_dependency.status` is not `pending`. Do not use a gallery example as proof of usability.
 
 The auditor uses the executor's browser scripts for rendered evidence, so install both skills together; without them the auditor still works read-only but reports the missing evidence.
 
+The [capability map](docs/experience-capabilities.md) shows how visual evaluation, creation, and refinement are divided across the three skills and which browser interactions are not implemented.
+
 ### `create-frontend-from-zero-konvert`
 
-Use it to plan, implement, and verify a new frontend from a product brief, including when visual references inform an original build. It reuses the auditor's knowledge and the executor's browser tools when available. An existing interface requested as a visual reproduction or approved audit implementation remains the reference executor's responsibility. Creation quality and agent routing are not yet measured.
+Use it to plan, implement, and verify a new frontend from a product brief, including original visual direction exploration when needed. It reuses the auditor's knowledge and the executor's browser tools when available. An existing interface requested as a visual reproduction, scoped refinement, or approved audit implementation remains the reference executor's responsibility. Creation quality and agent routing are not yet measured.
 
 ## Install all three from main
 

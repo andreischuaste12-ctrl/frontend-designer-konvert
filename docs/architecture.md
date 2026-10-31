@@ -1,6 +1,6 @@
 # Workflow and artifact boundaries
 
-The creation skill builds and verifies a new frontend from a brief, drawing on the other skills when available. The audit skill examines a frontend and its audience without changing the project, then produces prioritized findings. The executor implements only approved findings or adapts a visual reference, and verifies the rendered result.
+The creation skill builds and verifies a new frontend from a brief, drawing on the other skills when available. The audit skill examines a frontend and its audience without changing the project, then produces prioritized findings. The executor implements approved findings, adapts a visual reference, or handles a directly requested, scoped refinement to an existing interface, and verifies the rendered result. Direct instructions do not approve unrelated findings in an audit report.
 
 ```mermaid
 flowchart LR
@@ -9,12 +9,13 @@ flowchart LR
   C --> V[validate-report.mjs]
   V --> D[Approved findings without pending dependencies]
   R[Visual reference] --> E[design-por-referencia-konvert]
+  S[Direct scoped change to existing UI] --> E
   D --> E
   E --> F[Rendered verification and comparison]
   F --> E
 ```
 
-All three skills are copyable directories installed side by side. The creation skill leads new builds; an existing interface requested as a visual reproduction or approved audit implementation remains the reference executor’s domain. The executor owns its browser scripts and pinned development dependency and can be used alone. The auditor depends on those scripts for rendered evidence; without them it falls back to read-only inspection and reports the missing evidence, without installing dependencies or changing the audited project. `verify-install.mjs` requires all three in the current development version.
+All three skills are copyable directories installed side by side. The creation skill leads new builds; visual reproduction, scoped refinement, and approved audit implementation on an existing interface belong to the executor. The executor owns its browser scripts and pinned development dependency and can be used alone. The auditor depends on those scripts for rendered evidence; without them it falls back to read-only inspection and reports the missing evidence, without installing dependencies or changing the audited project. `verify-install.mjs` requires all three in the current development version.
 
 The handoff contract is checked structurally by `audit-frontend-designer-konvert/scripts/validate-report.mjs` (zero dependencies); it cannot authenticate user approval. A finding is implementable only when `approved_for_implementation` is true and `external_dependency.status` is `not_applicable` or `resolved`; `--implementable --approved-ids <ids>` intersects eligible findings with IDs independently authorized by the user; the tool cannot authenticate that authorization. Version 1 reports are read with every described dependency treated as pending, because version 1 could not record a resolution.
 

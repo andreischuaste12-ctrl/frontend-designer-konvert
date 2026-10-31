@@ -1,11 +1,11 @@
 ---
 name: design-por-referencia-konvert
-description: Execute approved frontend design work from an audit report or visual reference such as a DESIGN.md, website URL, screenshot, or written style direction, then verify the rendered result. Use when asked to implement approved UX/UI findings or adapt a reference with measured styles and responsive captures. Preserve the target project's stack, tokens, content, and accessibility. Use audit-frontend-designer-konvert first for a read-only audit; do not use this skill for animation-only work or responsive bug fixes with no visual reference.
+description: Implement approved audit findings, adapt a visual reference, or make a directly requested, scoped refinement to an existing frontend. Cover visual hierarchy, typography, color, motion, UX copy, responsive behavior, and interface states with rendered before/after verification. Preserve the project's stack, content, integrations, and accessibility. Use audit-frontend-designer-konvert for a read-only audit and create-frontend-from-zero-konvert for a new interface.
 ---
 
 # Design por referência
 
-Converta uma referência visual em interface implementada no projeto, com cada decisão rastreável e a fidelidade verificada, não presumida.
+Implemente uma direção visual, um achado aprovado ou um ajuste de interface existente, com decisões rastreáveis e resultado verificado no render.
 
 Esta é a **executora** do fluxo. Se receber um relatório de `audit-frontend-designer-konvert`, implemente somente achados com `approved_for_implementation: true` e `external_dependency.status` diferente de `pending`. Quando a auditora estiver instalada, obtenha essa lista com `node <pasta-das-skills>/audit-frontend-designer-konvert/scripts/validate-report.mjs <relatorio.json> --implementable --approved-ids <ids-aprovados>`; um relatório inválido não autoriza edição. Os IDs devem vir de autorização explícita já dada pelo usuário, nunca apenas do relatório; a ferramenta não autentica a aprovação. Sem IDs autorizados, não implemente. Prioridades P0–P3 definem o escopo aprovado; itens em `preserve` são intocáveis. Se não houver achados aprovados, não altere o projeto. Para “audite e corrija” sem relatório, encaminhe primeiro para auditoria somente leitura e proponha o handoff antes de editar.
 
@@ -22,11 +22,11 @@ A referência orienta a aparência. Ela nunca remove conteúdo, controles, estad
 
 ### 1. Fechar o contrato de entrada
 
-Defina fonte, nível de fidelidade, escopo e o que é intocável. A entrada pode ser uma referência visual ou relatório de `audit-frontend-designer-konvert`; consulte [contrato de entrada](references/contrato-de-entrada.md). No relatório, trate achados aprovados P0–P3 como escopo e `preserve` como intocável. Não implemente achados não aprovados nem com dependência externa `pending`. Não mude o estado de uma dependência por conta própria: só o usuário ou o responsável indicado a resolve. Se o nível de fidelidade faltar e mudar o resultado, adote **adaptação**, declare a suposição e siga.
+Defina fonte, escopo e o que é intocável. A entrada pode ser um pedido direto e delimitado de refinamento, uma referência visual ou um relatório de `audit-frontend-designer-konvert`; consulte [contrato de entrada](references/contrato-de-entrada.md). Para referência visual, defina o nível de fidelidade. Para pedido direto, use o alvo e o resultado solicitados sem inventar uma referência. No relatório, trate achados aprovados P0–P3 como escopo e `preserve` como intocável. Não implemente achados não aprovados nem com dependência externa `pending`. Não mude o estado de uma dependência por conta própria: só o usuário ou o responsável indicado a resolve. Se o nível de fidelidade de uma referência faltar e mudar o resultado, adote **adaptação**, declare a suposição e siga.
 
 ### 2. Ler a referência
 
-Para selecionar fontes e adaptar padrões ao público e à tarefa, use o [guia de referências](references/guia-de-referencias.md).
+Para selecionar fontes e adaptar padrões ao público e à tarefa, use o [guia de referências](references/guia-de-referencias.md). Em pedido direto sem referência externa, a interface existente e o próprio pedido são o ponto de partida; não procure outra direção por conta própria.
 
 - Use primeiro o que já está no contexto (arquivo, anexo, URL, captura).
 - Registre a origem de cada informação. Leia apenas o que de fato abriu.
@@ -36,7 +36,7 @@ Para selecionar fontes e adaptar padrões ao público e à tarefa, use o [guia d
 
 ### 3. Extrair por papéis
 
-Preencha a tabela de papéis de [papéis e tokens](references/papeis-e-tokens.md): cor, tipografia, espaçamento, forma, elevação, movimento, composição, imagens e ícones, responsividade e componentes. Marque cada valor como **extraído** (lido da fonte), **medido** (obtido do render por script), **inferido** (deduzido de pixels), **decidido por você** ou **ausente**. O que a fonte não informa fica como **ausente**, nunca preenchido por palpite. Prefira **medido** a **inferido** sempre que o render estiver acessível.
+Para referência visual, preencha a tabela de papéis de [papéis e tokens](references/papeis-e-tokens.md): cor, tipografia, espaçamento, forma, elevação, movimento, composição, imagens e ícones, responsividade e componentes. Marque cada valor como **extraído** (lido da fonte), **medido** (obtido do render por script), **inferido** (deduzido de pixels), **decidido por você** ou **ausente**. O que a fonte não informa fica como **ausente**, nunca preenchido por palpite. Prefira **medido** a **inferido** sempre que o render estiver acessível. Em refinamento direto, registre somente os papéis afetados e o estado anterior da interface.
 
 ### 4. Mapear para o projeto
 
@@ -45,7 +45,10 @@ Associe cada papel ao token, à variável ou ao componente que já existe. Crie 
 ### 5. Implementar
 
 - Inspecione antes de editar: framework, estilos, componentes, assets e convenções. Use a [orientação de stack](references/adaptadores-de-stack.md) e, quando útil, o detector somente leitura. Antes de editar arquivos específicos de plataforma, confirme a stack pela inspeção, registre o motivo no relatório de execução e, se houver relatório de auditoria, no campo opcional `stack`; `signal` e `likely` não são confirmação.
-- Faça a menor mudança que atinja o nível de fidelidade combinado.
+- Faça a menor mudança que atinja o objetivo direto ou o nível de fidelidade combinado.
+- Para um pedido direto de refinamento, escolha a intervenção aplicável em [refinamento de interface](references/refinamento-de-interface.md) e vincule a mudança a uma tarefa e a um resultado observável. Não use esse caminho para contornar aprovação de achados da auditora.
+- Quando o alvo usa Tailwind e a mudança afeta tokens, temas ou componentes compartilhados, siga [Tailwind no sistema visual](references/tailwind-no-sistema-visual.md) depois de confirmar a versão e o consumidor reais.
+- Quando a interface depende de convenções Next.js, use [Next.js na interface](references/nextjs-na-interface.md) para localizar a rota, preservar a fronteira cliente/servidor e verificar estados e recursos renderizados.
 - Preserve a semântica HTML, a ordem de foco, os estados (hover, foco, ativo, desabilitado, erro, vazio, carregando) e a copy existente.
 - Parta do conteúdo real para o layout: breakpoints nascem de onde o conteúdo quebra, não de uma lista fixa.
 - Não adicione dependência, fonte remota ou imagem remota sem necessidade demonstrada.
@@ -53,13 +56,13 @@ Associe cada papel ao token, à variável ou ao componente que já existe. Crie 
 
 ### 6. Verificar
 
-Execute o checklist de [validação](references/validacao.md) proporcional ao escopo. Para um relatório de auditoria, capture e extraia estilos antes de editar; depois repita `capture.mjs` e `extract-styles.mjs` com os mesmos perfis, rotas, larguras e estados e use `compare.mjs` para comparar antes/depois. Para referência visual, compare também com a fonte. Não afirme fidelidade visual sem abrir a interface ou comparar capturas. Corrija regressões observadas antes de concluir.
+Execute o checklist de [validação](references/validacao.md) proporcional ao escopo. Para relatório de auditoria ou refinamento direto, capture e extraia estilos antes de editar; depois repita `capture.mjs` e `extract-styles.mjs` com os mesmos perfis, rotas, larguras e estados e use `compare.mjs` para comparar antes/depois. Para referência visual, compare também com a fonte. Não afirme fidelidade visual sem abrir a interface ou comparar capturas. Corrija regressões observadas antes de concluir.
 
 Confirme manualmente que as rotas e páginas correspondem antes de usar `--confirm-page-mapping`; identificadores por ordem não provam correspondência. Use `scripts/compare.mjs` conforme [captura e inspeção](references/captura-e-inspecao.md) para registrar diferenças de estilos e, quando apropriado, pixels. Amostras são pareadas por categoria/seletor; seletores diferentes exigem correspondência humana. Diferença de pixels não é nota de usabilidade.
 
 ### 7. Relatar
 
-Entregue de forma curta: fonte e nível de fidelidade usados, tabela de papéis (extraído, medido, inferido, decidido, ausente), arquivos alterados, verificações executadas com resultado e o que ficou sem verificar. Cite as evidências (arquivos de captura, `computed-styles.json`, manifesto de imagens) e as limitações de renderização.
+Entregue de forma curta: entrada e escopo usados, nível de fidelidade quando houver referência, papéis afetados e origem dos valores, arquivos alterados, verificações executadas com resultado e o que ficou sem verificar. Cite as evidências (arquivos de captura, `computed-styles.json`, manifesto de imagens) e as limitações de renderização.
 
 ## Evidência visual e privacidade
 

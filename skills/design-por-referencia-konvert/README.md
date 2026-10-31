@@ -1,6 +1,6 @@
 # design-por-referencia-konvert
 
-A coding-agent skill for adapting a visual reference (a `DESIGN.md`, URL, screenshot, or written direction) into a working interface. Decisions stay traceable, and fidelity is checked in the rendered result with viewport captures, measured styles, and an image inventory.
+A coding-agent skill for implementing approved audit findings, adapting a visual reference (a `DESIGN.md`, URL, screenshot, or written direction), or refining a directly requested part of an existing interface. Decisions stay traceable, and the rendered result is checked with viewport captures, measured styles, and an image inventory.
 
 ## Contents
 
@@ -9,6 +9,9 @@ A coding-agent skill for adapting a visual reference (a `DESIGN.md`, URL, screen
 | `SKILL.md` | Precedence, seven-step workflow, visual evidence, and limitations. |
 | `references/adaptadores-de-stack.md` | Stack hints, project inspection, and unverified documentation starting points. |
 | `references/contrato-de-entrada.md` | Reference source, fidelity level, scope, protected elements, and acceptance criteria. |
+| `references/refinamento-de-interface.md` | Scoped visual and interaction refinements, alternatives, and verification. |
+| `references/tailwind-no-sistema-visual.md` | Version-aware tokens, themes, component contracts, generated CSS, and consumer checks. |
+| `references/nextjs-na-interface.md` | Route and version inspection, client boundaries, interface states, rendered assets, and verification. |
 | `references/papeis-e-tokens.md` | Visual roles, evidence labels, and mapping to the target project. |
 | `references/captura-e-inspecao.md` | Rendering, screenshots, inspection, and style measurement. |
 | `references/inventario-de-imagens.md` | Image manifest, findings, and visual-review guide. |
@@ -83,8 +86,9 @@ Use this skill for requests such as:
 - “Apply this folder's `DESIGN.md` to the product page.”
 - “Make the checkout feel like this site: <URL>.”
 - “Recreate the hierarchy and mood of this screenshot while preserving our tokens.”
+- “Improve the visual hierarchy of this existing form without changing its behavior.”
 
-Use `audit-frontend-designer-konvert` for read-only audits. For “audit and fix” without an existing approved report, start with the auditor and propose the handoff before making changes. This skill is not intended for animation as the primary goal or for fixing responsive issues without a reference.
+Use `audit-frontend-designer-konvert` for read-only audits. For “audit and fix” without an existing approved report, start with the auditor and propose the handoff before making changes. A directly requested motion or responsive fix to an existing interface can use this skill when its target and expected behavior are clear; video work and backend-only changes remain outside its scope.
 
 ## License
 

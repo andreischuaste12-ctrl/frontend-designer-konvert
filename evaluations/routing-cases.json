@@ -122,8 +122,9 @@
   {
     "id": "reference-05",
     "skill": "design-por-referencia-konvert",
-    "prompt": "Copy the supplied layout structure using our own content and licensed assets.",
+    "prompt": "Improve the typography of this existing product page while preserving its content and behavior.",
     "shouldTrigger": true,
+    "expectedFlow": ["design-por-referencia-konvert"],
     "language": "en"
   },
   {
@@ -151,7 +152,8 @@
     "id": "reference-09",
     "skill": "design-por-referencia-konvert",
     "prompt": "Fix mobile overflow without changing the visual direction.",
-    "shouldTrigger": false,
+    "shouldTrigger": true,
+    "expectedFlow": ["design-por-referencia-konvert"],
     "language": "en"
   },
   {
@@ -298,8 +300,9 @@
   {
     "id": "reference-pt-05",
     "skill": "design-por-referencia-konvert",
-    "prompt": "Copie a estrutura do layout fornecido usando nosso conteúdo e assets licenciados.",
+    "prompt": "Melhore a tipografia desta página de produto existente sem alterar o conteúdo nem o comportamento.",
     "shouldTrigger": true,
+    "expectedFlow": ["design-por-referencia-konvert"],
     "language": "pt-BR"
   },
   {
@@ -327,7 +330,8 @@
     "id": "reference-pt-09",
     "skill": "design-por-referencia-konvert",
     "prompt": "Corrija o overflow no mobile sem mudar a direção visual.",
-    "shouldTrigger": false,
+    "shouldTrigger": true,
+    "expectedFlow": ["design-por-referencia-konvert"],
     "language": "pt-BR"
   },
   {

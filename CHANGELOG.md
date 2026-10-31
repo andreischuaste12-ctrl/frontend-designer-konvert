@@ -6,6 +6,10 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ### Added
 
+- Add original visual-inspection guidance to the auditor, scoped UI-refinement guidance to the executor, and direction exploration to the creation skill; route directly requested existing-interface refinements to the executor without bypassing audit-report approval.
+- Add original Tailwind system guidance for confirmed projects, shared between the executor and creation skill, without adding another skill or importing external material.
+- Add original Next.js interface guidance to the executor and creation skill, scoped to router, rendering, UI states, assets, and verification.
+
 - Add frontend security and localization guidance to the creation skill, with conditional checks in its delivery criteria.
 
 - Add an optional `coverage` matrix to the audit report (page or flow, task, state, viewport, optional stack, result `observed`/`not_observed`/`not_applicable`/`blocked`, evidence or reason, linked findings), validated and mirrored in a Markdown `## Cobertura` table. It stays proportional to the scope, keeps `schema_version: 2` reports without it valid, and lets the audit scorer split misses into `silentOmissions` and `declaredGaps`.

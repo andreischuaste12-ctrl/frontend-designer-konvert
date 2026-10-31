@@ -4,10 +4,11 @@ Feche estes cinco pontos antes de implementar. Preencha o que o contexto já res
 
 ## 1. Fonte da referência
 
-O relatório de `audit-frontend-designer-konvert` também pode ser a fonte principal da tarefa. Trate os achados P0–P3 marcados `approved_for_implementation: true` como escopo; os campos `preserve` do relatório são a lista de intocáveis. Implemente somente achados aprovados cuja `external_dependency.status` seja `not_applicable` ou `resolved`; `pending` bloqueia o achado mesmo com aprovação. Em relatórios `schema_version: 1`, qualquer texto em `requires_external_data_or_approval` conta como pendente. Achados sem aprovação explícita, dependências em aberto e recomendações sem critério de aceite não autorizam edição. Preserve os IDs para ligar mudanças e verificações ao relatório. O formato canônico está em [`contrato de relatório do auditor`](../../audit-frontend-designer-konvert/references/contrato-de-relatorio.md).
+O relatório de `audit-frontend-designer-konvert` também pode ser a fonte principal da tarefa. Trate os achados P0–P3 marcados `approved_for_implementation: true` como escopo; os campos `preserve` do relatório são a lista de intocáveis. Implemente somente achados aprovados cuja `external_dependency.status` seja `not_applicable` ou `resolved`; `pending` bloqueia o achado mesmo com aprovação. Em relatórios `schema_version: 1`, qualquer texto em `requires_external_data_or_approval` conta como pendente. Achados sem aprovação explícita, dependências em aberto e recomendações sem critério de aceite não autorizam edição. Preserve os IDs para ligar mudanças e verificações ao relatório. O formato canônico está em [`contrato de relatório do auditor`](../../audit-frontend-designer-konvert/references/contrato-de-relatorio.md). Um pedido direto do usuário para ajustar um alvo existente é outra entrada válida; ele não aprova automaticamente achados que ficaram fora do pedido.
 
 | Tipo | Como tratar |
 | --- | --- |
+| Pedido direto de refinamento | Use a tela, o componente ou o comportamento nomeado como escopo. Registre o resultado esperado e o que deve ser preservado; sem referência visual, não invente valores a extrair nem declare fidelidade a uma fonte ausente. Siga [refinamento de interface](refinamento-de-interface.md). |
 | Relatório de auditoria Markdown + JSON | Valide e filtre com `validate-report.mjs --markdown <md> --implementable --approved-ids <ids>` da auditora; os IDs devem vir da autorização explícita do usuário, não do relatório; sem o script, aplique a mesma regra lendo o JSON e verificando a autorização na conversa. Confira o Markdown e mantenha IDs, evidências, critérios de aceite e itens a preservar. Relatório inválido ou sem achados implementáveis não autoriza edição. |
 | Arquivo ou texto de design (DESIGN.md, guia de estilo) | Fonte principal; leia inteiro antes de extrair. |
 | URL pública ou site em execução | Capture e meça conforme [captura e inspeção](captura-e-inspecao.md): estilos computados e CSS viram valores **medidos**; capturas viram leitura visual. Registre a data da consulta. Não leia só o HTML. |
@@ -18,6 +19,8 @@ O relatório de `audit-frontend-designer-konvert` também pode ser a fonte princ
 Se a fonte não abrir ou não for possível renderizar, diga isso e prossiga com tokens locais. Peça o arquivo, a URL ou as capturas somente se a fidelidade for indispensável.
 
 ## 2. Nível de fidelidade
+
+Esta escala se aplica quando há referência visual. Em pedido direto de refinamento sem referência, use o resultado observável e os limites do pedido no lugar de uma promessa de fidelidade.
 
 | Nível | Significado | O que pode mudar |
 | --- | --- | --- |
@@ -37,7 +40,7 @@ Marca, copy, tokens, componentes, rotas, contratos de dados e comportamentos que
 
 ## 5. Critério de pronto
 
-Como o usuário reconhecerá que ficou certo: telas conferidas, viewports, estados, contraste mínimo, comparação com captura. Se não estiver dito, escolha `rapido` para mudança pontual, `tela` para até três telas e `completo` para site inteiro ou réplica estrutural. Compare a implementação com a referência nas mesmas larguras selecionadas, confira foco/hover e contraste dos controles principais, overflow e erros novos no console. Use a matriz completa de larguras (320, 375, 768, 1024 e 1440 px) quando o escopo ou uma mudança de breakpoint justificar; claro e escuro quando ambos existirem.
+Como o usuário reconhecerá que ficou certo: telas conferidas, viewports, estados, contraste mínimo e comparação com o estado anterior ou com a referência disponível. Se não estiver dito, escolha `rapido` para mudança pontual, `tela` para até três telas e `completo` para site inteiro ou réplica estrutural. Compare a implementação nas mesmas larguras selecionadas, confira foco/hover e contraste dos controles principais, overflow e erros novos no console. Use a matriz completa de larguras (320, 375, 768, 1024 e 1440 px) quando o escopo ou uma mudança de breakpoint justificar; claro e escuro quando ambos existirem.
 
 ## Perguntas mínimas
 

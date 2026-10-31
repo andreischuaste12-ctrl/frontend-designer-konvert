@@ -44,6 +44,16 @@ test('routes direct visual reproduction straight to the executor', () => {
   }
 });
 
+test('routes direct scoped refinements on an existing interface to the executor', () => {
+  const routingCases = JSON.parse(fs.readFileSync(new URL('../evaluations/routing-cases.json', import.meta.url), 'utf8'));
+  for (const id of ['reference-05', 'reference-pt-05', 'reference-09', 'reference-pt-09']) {
+    const item = routingCases.find((entry) => entry.id === id);
+    assert.equal(item.skill, 'design-por-referencia-konvert');
+    assert.equal(item.shouldTrigger, true);
+    assert.deepEqual(item.expectedFlow, ['design-por-referencia-konvert']);
+  }
+});
+
 test('routes new builds and reference-driven work on existing pages to their respective lead skills', () => {
   const entries = JSON.parse(fs.readFileSync(new URL('../evaluations/routing-cases.json', import.meta.url), 'utf8'));
   for (const id of ['create-03', 'create-pt-03']) {
