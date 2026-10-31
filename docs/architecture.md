@@ -1,20 +1,19 @@
 # Workflow and artifact boundaries
 
-The product helps coding agents understand a frontend and its audience, prioritize UX problems, and implement improvements in the existing stack. The reference skill adds a measured implementation workflow when a visual source is central to the task.
+The audit skill examines a frontend and its audience without changing the project, then produces prioritized findings. The executor implements only approved findings or adapts a visual reference, and verifies the rendered result.
 
 ```mermaid
 flowchart LR
-  A[Product and audience evidence] --> B[frontend-designer audit]
-  B --> C[Prioritized changes]
-  C --> D[Implementation in existing stack]
+  A[Product and audience evidence] --> B[audit-frontend-designer-konvert read-only audit]
+  B --> C[Markdown and JSON report]
+  C --> D[User-approved findings]
   R[Visual reference] --> E[design-por-referencia-konvert]
-  C --> E
-  E --> D
-  D --> F[Rendered verification and comparison]
-  F --> D
+  D --> E
+  E --> F[Rendered verification and comparison]
+  F --> E
 ```
 
-Both skills are copyable directories. The reference skill owns its browser scripts and pinned development dependency so it can be installed independently. The frontend skill conditionally reuses those tools; it can still audit using available browser tools when they are absent.
+Both skills are copyable directories. The executor owns its browser scripts and pinned development dependency so it can be installed independently. The auditor uses those scripts for rendered evidence when they are installed; otherwise it reports the evidence limitation and uses available read-only inspection without installing dependencies or changing the audited project.
 
 `capture.mjs` produces viewport captures and an index; `extract-styles.mjs` produces sampled measured styles; `image-manifest.mjs` inventories assets. `compare.mjs` compares category/selector samples and optionally matched PNG captures. Pixel changes are evidence of rendering differences, not proof of visual quality. Different selectors or content require human judgment.
 

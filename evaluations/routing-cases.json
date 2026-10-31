@@ -1,84 +1,89 @@
 [
   {
     "id": "audit-01",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Audit the existing homepage and identify UX problems without editing files.",
     "shouldTrigger": true,
     "language": "en"
   },
   {
     "id": "audit-02",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Who is this pricing page for, and which visual hierarchy issues should we fix?",
     "shouldTrigger": true,
     "language": "en"
   },
   {
     "id": "audit-03",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Improve the usability of our current checkout in the existing stack.",
     "shouldTrigger": true,
     "language": "en"
   },
   {
     "id": "audit-04",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Evaluate readability and trust in this SaaS landing page; preserve what works.",
     "shouldTrigger": true,
     "language": "en"
   },
   {
     "id": "audit-05",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Review keyboard focus and mobile navigation on the current website.",
     "shouldTrigger": true,
     "language": "en"
   },
   {
     "id": "audit-06",
-    "skill": "frontend-designer",
-    "prompt": "Polish the current dashboard layout without using a design reference.",
+    "skill": "audit-frontend-designer-konvert",
+    "prompt": "Audit and fix the dashboard: first perform a read-only audit, then propose a handoff for approved findings.",
     "shouldTrigger": true,
-    "language": "en"
+    "language": "en",
+    "expectedFlow": [
+      "audit-frontend-designer-konvert",
+      "design-por-referencia-konvert"
+    ],
+    "handoffRequiresUserApproval": true
   },
   {
     "id": "audit-07",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Apply this DESIGN.md to the product page and verify reference fidelity.",
     "shouldTrigger": false,
     "language": "en"
   },
   {
     "id": "audit-08",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Make our landing page follow the supplied screenshot layout.",
     "shouldTrigger": false,
     "language": "en"
   },
   {
     "id": "audit-09",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Use this site as the central design reference and implement its visual roles.",
     "shouldTrigger": false,
     "language": "en"
   },
   {
     "id": "audit-10",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Fix a database migration that fails in production.",
     "shouldTrigger": false,
     "language": "en"
   },
   {
     "id": "audit-11",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Summarize this financial spreadsheet without touching the website.",
     "shouldTrigger": false,
     "language": "en"
   },
   {
     "id": "audit-12",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Write a standalone animation timeline; there is no interface review.",
     "shouldTrigger": false,
     "language": "en"
@@ -93,9 +98,12 @@
   {
     "id": "reference-02",
     "skill": "design-por-referencia-konvert",
-    "prompt": "Make our landing page look like the supplied website reference.",
+    "prompt": "Make this page look like this site: <URL>. Go directly to implementation and verify the result.",
     "shouldTrigger": true,
-    "language": "en"
+    "language": "en",
+    "expectedFlow": [
+      "design-por-referencia-konvert"
+    ]
   },
   {
     "id": "reference-03",
@@ -169,84 +177,89 @@
   },
   {
     "id": "audit-pt-01",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Audite a página inicial atual e identifique problemas de UX sem editar arquivos.",
     "shouldTrigger": true,
     "language": "pt-BR"
   },
   {
     "id": "audit-pt-02",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Para quem é esta página de planos e quais problemas de hierarquia visual devemos corrigir?",
     "shouldTrigger": true,
     "language": "pt-BR"
   },
   {
     "id": "audit-pt-03",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Melhore a usabilidade do checkout atual mantendo a stack do projeto.",
     "shouldTrigger": true,
     "language": "pt-BR"
   },
   {
     "id": "audit-pt-04",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Avalie a leitura e a confiança nesta landing page SaaS; preserve o que funciona.",
     "shouldTrigger": true,
     "language": "pt-BR"
   },
   {
     "id": "audit-pt-05",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Revise o foco de teclado e a navegação mobile do site atual.",
     "shouldTrigger": true,
     "language": "pt-BR"
   },
   {
     "id": "audit-pt-06",
-    "skill": "frontend-designer",
-    "prompt": "Refine o layout do dashboard atual sem usar uma referência visual.",
+    "skill": "audit-frontend-designer-konvert",
+    "prompt": "Audite e corrija o dashboard: primeiro faça uma auditoria somente leitura e depois proponha o handoff para os achados aprovados.",
     "shouldTrigger": true,
-    "language": "pt-BR"
+    "language": "pt-BR",
+    "expectedFlow": [
+      "audit-frontend-designer-konvert",
+      "design-por-referencia-konvert"
+    ],
+    "handoffRequiresUserApproval": true
   },
   {
     "id": "audit-pt-07",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Aplique este DESIGN.md na página de produto e verifique a fidelidade à referência.",
     "shouldTrigger": false,
     "language": "pt-BR"
   },
   {
     "id": "audit-pt-08",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Deixe nossa landing page parecida com o layout deste print.",
     "shouldTrigger": false,
     "language": "pt-BR"
   },
   {
     "id": "audit-pt-09",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Use este site como referência central e implemente seus papéis visuais.",
     "shouldTrigger": false,
     "language": "pt-BR"
   },
   {
     "id": "audit-pt-10",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Corrija uma migração de banco de dados que falha em produção.",
     "shouldTrigger": false,
     "language": "pt-BR"
   },
   {
     "id": "audit-pt-11",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Resuma esta planilha financeira sem alterar o site.",
     "shouldTrigger": false,
     "language": "pt-BR"
   },
   {
     "id": "audit-pt-12",
-    "skill": "frontend-designer",
+    "skill": "audit-frontend-designer-konvert",
     "prompt": "Crie uma timeline de animação independente, sem revisão da interface.",
     "shouldTrigger": false,
     "language": "pt-BR"
@@ -261,9 +274,12 @@
   {
     "id": "reference-pt-02",
     "skill": "design-por-referencia-konvert",
-    "prompt": "Deixe nossa landing page no estilo deste site de referência.",
+    "prompt": "Faça esta página ficar igual a este site: <URL>. Vá direto para a implementação e verifique o resultado.",
     "shouldTrigger": true,
-    "language": "pt-BR"
+    "language": "pt-BR",
+    "expectedFlow": [
+      "design-por-referencia-konvert"
+    ]
   },
   {
     "id": "reference-pt-03",

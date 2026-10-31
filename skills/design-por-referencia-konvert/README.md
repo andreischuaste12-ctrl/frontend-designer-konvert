@@ -72,13 +72,15 @@ Refresh or restart the agent if it does not detect the skill. When installing it
 
 ## When to use
 
+This skill is the **executor**. For an audit report from `audit-frontend-designer-konvert`, implement only findings marked `approved_for_implementation: true` whose external dependencies are resolved. Treat each P0–P3 finding as approved scope only when that flag is true; preserve the report's `preserve` items. Capture and extract styles before changes, repeat both after changes with the same route, viewport, and state, then use `compare.mjs` to record before/after differences. The report format is documented in the auditor's [handoff contract](../audit-frontend-designer-konvert/references/contrato-de-relatorio.md).
+
 Use this skill for requests such as:
 
 - “Apply this folder's `DESIGN.md` to the product page.”
 - “Make the checkout feel like this site: <URL>.”
 - “Recreate the hierarchy and mood of this screenshot while preserving our tokens.”
 
-Use `frontend-designer` for an audit without a visual reference. This skill is not intended for animation as the primary goal or for fixing responsive issues without a reference.
+Use `audit-frontend-designer-konvert` for read-only audits. For “audit and fix” without an existing approved report, start with the auditor and propose the handoff before making changes. This skill is not intended for animation as the primary goal or for fixing responsive issues without a reference.
 
 ## License
 

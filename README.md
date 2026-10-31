@@ -4,17 +4,17 @@ This repository contains two complementary skills for coding agents. It is a ski
 
 ## Skills
 
-### `frontend-designer`
+### `audit-frontend-designer-konvert`
 
-Use it to understand a product and its audience, audit the current experience and visual design, identify what works and what should improve, then implement focused usability and responsive-design improvements.
+Use it as a read-only reviewer to understand the product and its audience, inspect user journeys, UX/UI, accessibility, performance, SEO, and tracking when applicable, then produce a structured Markdown and JSON report. It never edits the audited project.
 
 Start with this skill when the request is to audit, evaluate, or improve an existing interface. It does not require a visual reference.
 
 ### `design-por-referencia-konvert`
 
-Use it when the task is to adapt a supplied design guide, URL, screenshot, or visual direction into an implementation, with rendered captures and measured styles to check fidelity.
+Use it as the executor when implementing explicitly approved audit findings or adapting a supplied design guide, URL, screenshot, or visual direction, with before/after captures and measured styles to check the result.
 
-Use this skill when a reference is central to the task. It complements `frontend-designer`: first understand the product and its users; then use the reference-conversion workflow for the implementation. Do not use a gallery example as proof of usability.
+Use this skill directly when a visual reference must be reproduced. For “audit and fix” requests, start with `audit-frontend-designer-konvert`; pass its report to this executor only after the user approves findings. Do not use a gallery example as proof of usability.
 
 ## Install both skills
 
@@ -27,15 +27,15 @@ git clone --depth 1 --filter=blob:none --sparse \
   https://github.com/andreischuaste12-ctrl/frontend-designer-konvert.git \
   "$tmp_dir/repo"
 git -C "$tmp_dir/repo" sparse-checkout set \
-  skills/frontend-designer \
+  skills/audit-frontend-designer-konvert \
   skills/design-por-referencia-konvert
 mkdir -p .agents/skills
 cp -R "$tmp_dir/repo"/skills/* .agents/skills/
 ```
 
-The expected result is `.agents/skills/frontend-designer/SKILL.md` and `.agents/skills/design-por-referencia-konvert/SKILL.md`, each with its supporting knowledge base, references, and scripts. If your agent uses a different skills directory, copy the `skills` folders there. Refresh the agent if it does not detect the skills automatically.
+The expected result is `.agents/skills/audit-frontend-designer-konvert/SKILL.md` and `.agents/skills/design-por-referencia-konvert/SKILL.md`, each with its supporting knowledge base, references, and scripts. If your agent uses a different skills directory, copy the `skills` folders there. Refresh the agent if it does not detect the skills automatically.
 
-See the [installation guide](docs/installation.md) for PowerShell, Claude Code paths, activation checks, updates, removal, and troubleshooting. Start with “Use frontend-designer to audit this page without editing it” or “Use design-por-referencia-konvert to implement this DESIGN.md.”
+See the [installation guide](docs/installation.md) for PowerShell, Claude Code paths, activation checks, updates, removal, and troubleshooting. Start with “Use audit-frontend-designer-konvert to audit this page without editing it” or “Use design-por-referencia-konvert to implement this approved audit report.”
 
 ## Privacy and safe use
 
@@ -70,7 +70,7 @@ Known limits: DNS addresses are not validated/pinned, redirected subresources ar
 
 ```text
 skills/
-├── frontend-designer/
+├── audit-frontend-designer-konvert/
 │   ├── SKILL.md
 │   └── knowledge-base/
 └── design-por-referencia-konvert/

@@ -4,8 +4,11 @@ Feche estes cinco pontos antes de implementar. Preencha o que o contexto já res
 
 ## 1. Fonte da referência
 
+O relatório de `audit-frontend-designer-konvert` também pode ser a fonte principal da tarefa. Trate os achados P0–P3 marcados `approved_for_implementation: true` como escopo; os campos `preserve` do relatório são a lista de intocáveis. Implemente somente achados aprovados sem dependência externa pendente. Achados sem aprovação explícita, dependências em aberto e recomendações sem critério de aceite não autorizam edição. Preserve os IDs para ligar mudanças e verificações ao relatório. O formato canônico está em [`contrato de relatório do auditor`](../../audit-frontend-designer-konvert/references/contrato-de-relatorio.md).
+
 | Tipo | Como tratar |
 | --- | --- |
+| Relatório de auditoria Markdown + JSON | Use o JSON para filtrar escopo e aprovação; confira o Markdown e mantenha IDs, evidências, critérios de aceite e itens a preservar. Pause somente para dependência ou aprovação pendente que altere a implementação. |
 | Arquivo ou texto de design (DESIGN.md, guia de estilo) | Fonte principal; leia inteiro antes de extrair. |
 | URL pública ou site em execução | Capture e meça conforme [captura e inspeção](captura-e-inspecao.md): estilos computados e CSS viram valores **medidos**; capturas viram leitura visual. Registre a data da consulta. Não leia só o HTML. |
 | Captura de tela | Extraia o que é visível; tipografia e valores exatos ficam **inferidos**. |

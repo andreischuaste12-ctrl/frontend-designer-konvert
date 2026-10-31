@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "report_id": "SYNTH-001",
+  "project": "fictional product detail page",
+  "scope": {
+    "tasks": ["compare product options", "add one item to cart"],
+    "viewports": ["mobile", "desktop"],
+    "dimensions": ["UX", "visual hierarchy", "responsive behavior"]
+  },
+  "evidence_limits": [
+    "Synthetic product brief and rendered example only.",
+    "No analytics or representative user research was used."
+  ],
+  "preserve": [
+    "Current product data and selection behavior.",
+    "Existing price and checkout calculations.",
+    "Purchase control and its accessible name."
+  ],
+  "findings": [
+    {
+      "id": "UX-001",
+      "priority": "P1",
+      "location": "fictional product detail page, price and purchase panel",
+      "evidence_observed": "In the synthetic flow, delivery cost appears only after adding the item to the cart.",
+      "probable_impact": "Shoppers may postpone a decision or encounter an unexpected cost. Conversion impact is unmeasured.",
+      "confidence": { "level": "medium", "reason": "The sequence is visible in the supplied synthetic flow; user impact is a hypothesis." },
+      "preserve": ["Shipping rules", "Total-price calculation", "Checkout contract", "Purchase action"],
+      "next_step": "Ask the product owner for approved shipping-estimate rules, then show an estimate near the price if authorized.",
+      "acceptance_criteria": "The product page states how delivery cost is determined before cart, using approved shipping rules; keyboard and mobile checks pass.",
+      "requires_external_data_or_approval": "Product owner must confirm shipping rules.",
+      "approved_for_implementation": false
+    },
+    {
+      "id": "UX-002",
+      "priority": "P2",
+      "location": "fictional product detail page, option selector",
+      "evidence_observed": "The option labels contain internal paper codes without an explanation in the synthetic brief.",
+      "probable_impact": "First-time shoppers may not compare options confidently; comprehension is untested.",
+      "confidence": { "level": "low", "reason": "Code labels are observed, but shopper comprehension was not tested." },
+      "preserve": ["Available options", "Product data values", "Selection behavior"],
+      "next_step": "Request approved plain-language attributes and validate comprehension with representative shoppers.",
+      "acceptance_criteria": "Every option exposes an approved, understandable attribute without changing the underlying product value.",
+      "requires_external_data_or_approval": "Approved attribute names and user validation are required.",
+      "approved_for_implementation": false
+    }
+  ],
+  "handoff": {
+    "proposed_skill": "design-por-referencia-konvert",
+    "summary": "After the user approves individual findings and any required external inputs are available, implement only approved findings and verify their acceptance criteria.",
+    "implementation_performed": false
+  }
+}

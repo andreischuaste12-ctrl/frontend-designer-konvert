@@ -4,12 +4,26 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { isDeepStrictEqual } from 'node:util';
+import { validateSkillDirectories } from './skill-directory-contract.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const errors = [];
 let checked = 0;
 let syntaxChecked = 0;
 const jsonFiles = new Map();
+const skillsRoot = path.join(root, 'skills');
+const skillEntries = (await fs.readdir(skillsRoot, { withFileTypes: true })).filter((entry) => entry.isDirectory());
+const skillNames = skillEntries.map((entry) => entry.name);
+const skillMetadata = await Promise.all(skillEntries.map(async (entry) => {
+  let name;
+  try {
+    const content = await fs.readFile(path.join(skillsRoot, entry.name, 'SKILL.md'), 'utf8');
+    const front = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    name = front?.[1].match(/^name:\s*(.+)$/m)?.[1].trim();
+  } catch {}
+  return { directory: entry.name, name };
+}));
+errors.push(...validateSkillDirectories(skillMetadata));
 async function walk(dir) {
   for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
     if (entry.name.startsWith('.') || ['node_modules', 'coverage'].includes(entry.name)) continue;
@@ -38,7 +52,7 @@ async function walk(dir) {
       if (name !== path.basename(dir)) errors.push(`${relative}: name must match directory`);
       if (!description || description.length > 1024) errors.push(`${relative}: description must contain 1–1024 characters`);
       if (text.split('\n').length > 500) errors.push(`${relative}: exceeds 500 lines`);
-      if (name === 'frontend-designer') {
+      if (name === 'audit-frontend-designer-konvert') {
         for (const section of ['Workflow', 'Design principles', 'Reference catalog', 'Report format']) {
           if (!text.includes(`## ${section}`)) errors.push(`${relative}: missing ${section} section`);
         }
@@ -68,14 +82,17 @@ const rawRouting = jsonFiles.get(path.join(root, 'evaluations/routing-cases.json
 if (!Array.isArray(rawRouting)) errors.push('Routing cases must be a JSON array.');
 const routingCases = Array.isArray(rawRouting) ? rawRouting : [];
 if (new Set(routingCases.map((c) => c?.id)).size !== routingCases.length) errors.push('Routing case IDs must be unique.');
-for (const skill of ['frontend-designer', 'design-por-referencia-konvert']) {
+for (const skill of skillNames) {
   const cases = routingCases.filter((c) => c?.skill === skill);
+  if (cases.length !== 24) errors.push(`${skill}: requires exactly 24 routing cases.`);
   if (cases.filter((c) => c.shouldTrigger === true).length < 6 || cases.filter((c) => c.shouldTrigger === false).length < 6) errors.push(`${skill}: requires at least 6 positive and 6 negative routing cases.`);
 }
-if (routingCases.some((c) => !c || !c.id || typeof c.prompt !== 'string' || !c.prompt.trim() || typeof c.shouldTrigger !== 'boolean' || !['frontend-designer', 'design-por-referencia-konvert'].includes(c.skill))) errors.push('Invalid routing case.');
+if (routingCases.some((c) => !c || !c.id || typeof c.prompt !== 'string' || !c.prompt.trim() || typeof c.shouldTrigger !== 'boolean' || !skillNames.includes(c.skill))) errors.push('Invalid routing case.');
 const capture = jsonFiles.get(path.join(tooling, 'examples/capture-index.example.json'));
 if (!capture || capture.tool !== 'capture.mjs' || !Array.isArray(capture.widths) || !capture.widths.every((n) => Number.isInteger(n) && n > 0) || !Array.isArray(capture.pages) || !Array.isArray(capture.files) || !capture.files.every((f) => f && typeof f.file === 'string' && path.basename(f.file) === f.file && Number.isInteger(f.width) && ['light', 'dark'].includes(f.scheme))) errors.push('Invalid capture-index example shape.');
 const images = jsonFiles.get(path.join(tooling, 'examples/image-manifest.example.json'));
 if (!images || typeof images.url !== 'string' || !Number.isInteger(images.width) || !Array.isArray(images.items) || !images.items.every((i) => i && ['img', 'background'].includes(i.kind) && typeof i.src === 'string' && Array.isArray(i.rendered) && i.rendered.length === 2 && i.rendered.every((n) => Number.isFinite(n) && n >= 0) && Array.isArray(i.flags))) errors.push('Invalid image-manifest example shape.');
+const auditReport = jsonFiles.get(path.join(root, 'skills/audit-frontend-designer-konvert/examples/audit-report.example.json'));
+if (!auditReport || auditReport.schema_version !== 1 || !Array.isArray(auditReport.findings) || auditReport.findings.some((f) => !f?.id || !['P0', 'P1', 'P2', 'P3'].includes(f.priority) || typeof f.location !== 'string' || typeof f.evidence_observed !== 'string' || typeof f.probable_impact !== 'string' || !['high', 'medium', 'low'].includes(f.confidence?.level) || !Array.isArray(f.preserve) || typeof f.next_step !== 'string' || typeof f.acceptance_criteria !== 'string' || !(typeof f.requires_external_data_or_approval === 'string' || f.requires_external_data_or_approval === false) || typeof f.approved_for_implementation !== 'boolean')) errors.push('Invalid audit report example shape.');
 if (errors.length) { console.error(errors.join('\n')); process.exitCode = 1; }
 else console.log(`Validated ${checked} Markdown files, ${syntaxChecked} JavaScript modules, ${jsonFiles.size} JSON files, example shapes, skill metadata, relative links, and tooling lockfile.`);

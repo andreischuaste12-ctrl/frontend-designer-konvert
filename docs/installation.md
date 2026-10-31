@@ -11,7 +11,7 @@ tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
 git clone --depth 1 https://github.com/andreischuaste12-ctrl/frontend-designer-konvert.git "$tmp_dir/repo"
 mkdir -p .agents/skills
-cp -R "$tmp_dir/repo/skills/frontend-designer" .agents/skills/
+cp -R "$tmp_dir/repo/skills/audit-frontend-designer-konvert" .agents/skills/
 cp -R "$tmp_dir/repo/skills/design-por-referencia-konvert" .agents/skills/
 ```
 
@@ -26,7 +26,7 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'Clone failed' }
   $skillsTarget = '.agents/skills' # Claude Code: '.claude/skills'
   New-Item -ItemType Directory -Force $skillsTarget | Out-Null
-  Copy-Item -Recurse (Join-Path $skillSource 'skills/frontend-designer') $skillsTarget
+  Copy-Item -Recurse (Join-Path $skillSource 'skills/audit-frontend-designer-konvert') $skillsTarget
   Copy-Item -Recurse (Join-Path $skillSource 'skills/design-por-referencia-konvert') $skillsTarget
 } finally {
   if (Test-Path $skillSource) { Remove-Item -Recurse -Force $skillSource }
@@ -37,7 +37,7 @@ Use these commands for a fresh installation. Before updating an existing copy, b
 
 ## Verify
 
-Confirm that both installed folders contain SKILL.md and supporting files. Ask the agent: “Use frontend-designer to audit this page without editing it.” It should identify the task and audience, inspect the current interface, preserve strengths, and distinguish observations from hypotheses.
+Confirm that both installed folders contain SKILL.md and supporting files. Ask the agent: “Use audit-frontend-designer-konvert to audit this page without editing it.” It should inspect the product, audience, journeys, and interface read-only; preserve strengths; distinguish observations from hypotheses; and produce Markdown and JSON reports. For “audit and fix,” it should finish the audit and propose a handoff before implementation. The executor only implements findings the user approves.
 
 Then try a synthetic reference request: “Use design-por-referencia-konvert to apply this DESIGN.md to the sample page.” It should establish scope, respect project tokens, implement the reference, and report actual visual checks. These manual checks are useful examples, not measured activation accuracy.
 
@@ -51,4 +51,4 @@ Add `.audit/` to the target project's `.gitignore`. Install the optional browser
 - URL blocked: prefer loopback or staging; review network flags in the skill before changing access.
 - Comparison rejected: use identical viewports and schemes, and selectors that identify samples uniquely.
 
-To uninstall, delete only `frontend-designer` and `design-por-referencia-konvert` from the agent's skills directory. Review or remove local `.audit/` output separately; it may contain private content.
+To uninstall, delete only `audit-frontend-designer-konvert` and `design-por-referencia-konvert` from the agent's skills directory. Review or remove local `.audit/` output separately; it may contain private content.

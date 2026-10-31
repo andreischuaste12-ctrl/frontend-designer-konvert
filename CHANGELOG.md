@@ -4,6 +4,9 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+- Rename the read-only audit skill to `audit-frontend-designer-konvert` and define an approval-gated report handoff to the reference implementation executor.
+- Add a Markdown and JSON audit report contract with synthetic examples, clarify before/after capture and style comparison, and validate that every skill directory ends in `-konvert` with matching metadata.
+- Update installation, architecture, and routing guidance for auditor-first “audit and fix” requests and direct visual-reference implementation; routing accuracy remains unmeasured.
 - Prevent Chromium from following unchecked HTTP redirects; validate/restart GET main-navigation hops and block redirected subresources/non-GET navigation with explicit reporting.
 - Redact common authorization/cookie/JWT formats, Windows/WSL/Unix paths, Brazilian identifiers/phones, and static project-root paths; retain best-effort/manual-review limits.
 - Use native screenshot animation/caret controls under CSP, add redirect/CSP regressions, split script smoke scenarios, and validate JSON syntax and example shapes.
