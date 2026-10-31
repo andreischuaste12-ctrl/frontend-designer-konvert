@@ -28,6 +28,10 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ### Changed
 
+- Update CI actions to `actions/checkout` v7.0.1 and `actions/setup-node` v7.1.0 (pinned by SHA), removing the Node.js 20 runtime deprecation warning.
+- Update the React/Tailwind fixture to React and React DOM 19.3.1, Vite 8.3.5 and Autoprefixer 10.6.2; Tailwind stays on v3 because a major upgrade changes rendered defaults and the audit answer key.
+- Dependabot groups `react`/`react-dom` and build tooling, ignores Tailwind majors in the fixture, checks the fixture monthly and groups action updates.
+
 - Allow an explicitly requested private source map only in a new Git-ignored file outside report output; anonymized reports remain the default.
 - Clarify comparison mapping, normalize Markdown fields and label report eligibility without implying user authorization.
 - Rewrite all knowledge units with problem-specific applicability, exceptions, evidence, observable acceptance criteria and justified method and priority; 55 of 82 units cite WCAG 2.2 or official sources read at a recorded commit, and the rest are marked as unverified editorial heuristics. Four duplicate units were removed (UXK-CHK-055, UXK-FRM-051, UXK-FRM-052, UXK-DSH-052).

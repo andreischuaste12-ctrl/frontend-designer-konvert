@@ -4,11 +4,32 @@ updates:
     directory: /skills/design-por-referencia-konvert
     schedule:
       interval: weekly
+    groups:
+      # Playwright and the axe integration are tested together by the smoke suite.
+      browser-tooling:
+        patterns: ["playwright", "@axe-core/*"]
   - package-ecosystem: npm
     directory: /evaluations/fixtures/react-tailwind
+    # Synthetic evaluation target, never deployed: monthly is enough.
     schedule:
-      interval: weekly
+      interval: monthly
+    groups:
+      # react-dom requires the exact same react version; separate PRs fail npm ci.
+      react:
+        patterns: ["react", "react-dom"]
+      build-tooling:
+        patterns: ["vite", "postcss", "autoprefixer"]
+        update-types: ["minor", "patch"]
+    ignore:
+      # The fixture and the stack adapter document Tailwind v3 (tailwind.config.js and the
+      # PostCSS plugin). A major upgrade changes rendered defaults and therefore the audit
+      # answer key; migrate it deliberately, together with evaluations/audit-quality/cases.json.
+      - dependency-name: tailwindcss
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
