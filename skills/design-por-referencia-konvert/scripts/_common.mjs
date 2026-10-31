@@ -1,6 +1,8 @@
 // Utilitários compartilhados pelos scripts de captura e inspeção.
 // Os scripts navegam com GET e não clicam nem enviam formulários, mas executam JS da página.
 import { createRequire } from 'node:module';
+import { lookup as dnsLookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
 import { networkHost, ipBlockReason } from './_network.mjs';
 import { realpathSync } from 'node:fs';
 import fs from 'node:fs/promises';
@@ -85,6 +87,27 @@ export function targetBlockReason(raw, { allowFile = false, allowPrivate = false
   return ipBlockReason(host, allowPrivate);
 }
 
+// Applies the literal-IP policy to every address a hostname resolves to. This closes
+// static names that point at internal ranges (for example wildcard DNS services), but
+// the browser resolves the name again, so a TTL-0 rebinding race remains possible.
+// A failed lookup is not a block: proxies may resolve names this host cannot.
+export async function resolvedBlockReason(hostname, { allowPrivate = false, lookup = dnsLookup } = {}) {
+  const host = networkHost(hostname);
+  if (!host || isIP(host)) return null;
+  let addresses;
+  try { addresses = await lookup(host, { all: true, verbatim: true }); } catch { return null; }
+  for (const entry of Array.isArray(addresses) ? addresses : []) {
+    const raw = String(entry?.address ?? '').split('%')[0];
+    const family = isIP(raw);
+    if (!family) return 'unexpected resolver output is blocked';
+    // Resolvers may return dotted IPv4 tails (::ffff:10.0.0.5); the classifier expects URL-normalized hex.
+    const address = family === 6 ? networkHost(new URL(`http://[${raw}]/`).hostname) : raw;
+    const reason = ipBlockReason(address, allowPrivate);
+    if (reason) return `${reason} (resolved address)`;
+  }
+  return null;
+}
+
 export function createInspectionContext(browser, options = {}) {
   return browser.newContext({ ...options, serviceWorkers: 'block' });
 }
@@ -92,8 +115,15 @@ export function createInspectionContext(browser, options = {}) {
 const pendingNavigations = new WeakMap();
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
-export async function installRequestGuards(context, { allowFile = false, allowPrivate = false, allowTracking = false, blockWrites = false, trackingBlocked = new Set(), blockedTargets = new Set(), blockedWriteMethods = new Set(), blockedRedirects = new Set() } = {}) {
+export async function installRequestGuards(context, { allowFile = false, allowPrivate = false, allowTracking = false, blockWrites = false, trackingBlocked = new Set(), blockedTargets = new Set(), blockedWriteMethods = new Set(), blockedRedirects = new Set(), lookup = dnsLookup } = {}) {
   if (typeof context.routeWebSocket !== 'function') fail('Playwright with browser-context WebSocket routing is required. Install the pinned skill dependencies.', 2);
+  const resolvedReasons = new Map();
+  const resolvedReason = (u) => {
+    if (!['http:', 'https:'].includes(u.protocol)) return Promise.resolve(null);
+    const host = networkHost(u.hostname);
+    if (!resolvedReasons.has(host)) resolvedReasons.set(host, resolvedBlockReason(host, { allowPrivate, lookup }));
+    return resolvedReasons.get(host);
+  };
   await context.route('**/*', async (route) => {
     const raw = route.request().url();
     let u;
@@ -104,7 +134,7 @@ export async function installRequestGuards(context, { allowFile = false, allowPr
       await route.abort('blockedbyclient');
       return;
     }
-    const reason = targetBlockReason(raw, { allowFile, allowPrivate });
+    const reason = targetBlockReason(raw, { allowFile, allowPrivate }) || await resolvedReason(u);
     if (reason) {
       blockedTargets.add(u.hostname || u.protocol);
       await route.abort('blockedbyclient');
@@ -159,7 +189,7 @@ export async function installRequestGuards(context, { allowFile = false, allowPr
     const u = new URL(socket.url());
     u.protocol = u.protocol === 'wss:' ? 'https:' : 'http:';
     const tracker = isTrackerUrl(u);
-    const reason = targetBlockReason(u.href, { allowFile, allowPrivate });
+    const reason = targetBlockReason(u.href, { allowFile, allowPrivate }) || await resolvedReason(u);
     if (tracker && !allowTracking) trackingBlocked.add(u.hostname.toLowerCase());
     if (reason) blockedTargets.add(u.hostname || u.protocol);
     if (blockWrites) blockedWriteMethods.add('WEBSOCKET');

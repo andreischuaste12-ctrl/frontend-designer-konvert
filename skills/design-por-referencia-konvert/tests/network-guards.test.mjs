@@ -143,3 +143,16 @@ test('capture disables animations natively when CSP rejects injected CSS', { tim
   }, `data:image/png;base64,${png.toString('base64')}`);
   assert.deepEqual(pixel, [255, 0, 0, 255], 'infinite animation must be cancelled to its initial position for capture');
 });
+
+test('names resolving to forbidden addresses are blocked before the browser request leaves', { timeout: 20000 }, async (t) => {
+  const f = await fixture(t);
+  const blockedTargets = new Set();
+  const ctx = await createInspectionContext(f.browser);
+  await installRequestGuards(ctx, { blockedTargets, lookup: async () => [{ address: '169.254.169.254', family: 4 }] });
+  const page = await ctx.newPage();
+  const port = new URL(f.url).port;
+  await assert.rejects(page.goto(`http://metadata-alias.test:${port}/`));
+  assert.deepEqual([...blockedTargets], ['metadata-alias.test']);
+  assert.deepEqual(f.requests, [], 'a guarded name must not reach any server');
+  await ctx.close();
+});

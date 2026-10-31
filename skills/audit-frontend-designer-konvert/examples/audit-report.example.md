@@ -1,6 +1,6 @@
 # Auditoria sintética de frontend
 
-> Exemplo fictício. Nenhum site real, cliente, conta ou estudo com usuários foi usado. Este relatório não autoriza implementação.
+> Exemplo fictício. Nenhum site real, cliente, conta ou estudo com usuários foi usado. Só o achado UX-003 está aprovado e desbloqueado; os demais não autorizam implementação.
 
 ## Contexto do relatório
 
@@ -21,7 +21,7 @@
 - **Preservar:** Regras de frete existentes, cálculo do preço total, contrato do checkout e ação de compra.
 - **Próximo passo:** Pedir ao responsável pelo produto as regras aprovadas de estimativa de frete e, se autorizado, mostrar uma estimativa perto do preço.
 - **Critério de aceite:** A página de produto informa como o custo de entrega é determinado antes do carrinho, usando as regras de frete aprovadas; as verificações de teclado e mobile passam.
-- **Exige dado ou aprovação externa:** Sim — o responsável pelo produto precisa confirmar as regras de frete.
+- **Dependência externa:** pendente — o responsável pelo produto precisa confirmar as regras de frete.
 - **Aprovado para implementação:** false
 
 ### UX-002 — Códigos internos das opções precisam de explicação
@@ -34,8 +34,21 @@
 - **Preservar:** Opções disponíveis, valores dos dados do produto e comportamento de seleção.
 - **Próximo passo:** Solicitar atributos aprovados em linguagem simples e validar a compreensão com compradores representativos.
 - **Critério de aceite:** Cada opção expõe um atributo aprovado e compreensível, sem alterar o valor de produto subjacente.
-- **Exige dado ou aprovação externa:** Sim — nomes de atributos aprovados e validação com usuários.
+- **Dependência externa:** pendente — nomes de atributos aprovados e validação com usuários.
 - **Aprovado para implementação:** false
+
+### UX-003 — Botão de compra sem destaque em mobile
+
+- **Prioridade:** P2
+- **Local:** página de produto fictícia, botão de compra em mobile (375 px)
+- **Evidência observada:** Na captura sintética, o botão de compra usa texto cinza-claro sobre fundo cinza e tem o mesmo peso visual dos links secundários ao lado.
+- **Impacto provável:** A ação principal pode demorar mais a ser reconhecida; o efeito na conclusão da compra é uma hipótese não medida.
+- **Confiança:** média — contraste e peso visual foram observados na captura sintética; o comportamento dos compradores não foi testado.
+- **Preservar:** Texto do botão, nome acessível e evento de adicionar ao carrinho.
+- **Próximo passo:** Aplicar ao botão de compra a cor primária aprovada pela marca e diferenciá-lo dos links secundários.
+- **Critério de aceite:** O botão de compra é o controle de maior destaque no painel em 375 px e 1440 px, com contraste de texto de pelo menos 4,5:1 e foco visível; texto, nome acessível e evento permanecem iguais.
+- **Dependência externa:** resolvida — a cor primária para ações precisava de aprovação da marca; o responsável pela marca (fictício) aprovou o token de cor primária existente.
+- **Aprovado para implementação:** true
 
 ## O que preservar
 
@@ -45,4 +58,4 @@
 
 ## Handoff proposto
 
-Depois que o usuário aprovar achados individuais e as entradas externas necessárias estiverem disponíveis, entregue este relatório a `design-por-referencia-konvert`. Implemente apenas os achados marcados como aprovados, preserve os itens acima e verifique cada critério de aceite. Nenhuma implementação foi realizada.
+Entregue este relatório a `design-por-referencia-konvert`. Hoje só UX-003 pode ser implementado (aprovado, dependência resolvida). UX-001 e UX-002 ficam fora da alteração até as dependências serem resolvidas e o usuário aprovar cada um. Preserve os itens acima e verifique cada critério de aceite. Nenhuma implementação foi realizada.

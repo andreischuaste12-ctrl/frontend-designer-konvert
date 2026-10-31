@@ -1,0 +1,18 @@
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-family: system-ui, sans-serif; color: #1c1c1c; background: #fff; line-height: 1.55; }
+.topbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; padding: 1rem 2rem; }
+.topbar nav a { margin-left: 1rem; color: #1c1c1c; }
+.brand { font-weight: 800; color: #1c1c1c; text-decoration: none; }
+.hero { background: #12162b; color: #fff; padding: 4rem 2rem; text-align: center; }
+.hero h1 { font-size: clamp(1.75rem, 4vw, 3rem); max-width: 22ch; margin: 0 auto 1rem; }
+.hero-sub { color: #d7dbef; margin: 0 auto 2rem; max-width: 50ch; }
+.hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+.hero-link { display: inline-block; padding: 0.75rem 1.25rem; border: 1px solid #fff; border-radius: 6px; color: #fff; text-decoration: none; font-weight: 600; }
+.logos { display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; padding: 1.5rem; color: #6b6b6b; filter: grayscale(1); font-weight: 700; }
+.features { max-width: 1000px; margin: 0 auto; padding: 3rem 2rem; display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.features h2 { grid-column: 1 / -1; }
+.muted { color: #9a9a9a; }
+.faq { max-width: 760px; margin: 0 auto; padding: 3rem 2rem; }
+.faq details { border-bottom: 1px solid #e3e3e3; padding: 0.75rem 0; }
+.faq summary { cursor: pointer; font-weight: 600; }
+.footer { text-align: center; padding: 2rem; color: #555; }

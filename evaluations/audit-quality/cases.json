@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "minRepetitions": 3,
+  "targets": {
+    "reportValidRate": 1,
+    "criticalRecall": 0.8,
+    "overallRecall": 0.6,
+    "precision": 0.7,
+    "decoyFlagRate": 0.1,
+    "preserveCoverage": 0.67,
+    "priorityAgreement": 0.7,
+    "unsupportedClaims": 0
+  },
+  "cases": [
+    {
+      "id": "loja",
+      "fixture": "evaluations/fixtures/loja",
+      "brief": "Audite a página de produto em index.html sem editar arquivos. Público: pessoas comprando equipamento de trilha, a maioria em mobile. Tarefa principal: escolher a cor e adicionar a mochila ao carrinho.",
+      "expected": [
+        { "id": "E1", "priority": "P1", "summary": "Botão 'Adicionar ao carrinho' tem menos destaque que as ações secundárias.", "evidence": "css/product.css: .buy-button #9b9b9b sobre #e6e6e6 (2,23:1), peso 400; links secundários têm 6,66:1." },
+        { "id": "E2", "priority": "P1", "summary": "Indicador de foco removido de botões, links e campos.", "evidence": "css/base.css: button:focus, a:focus, input:focus { outline: none }." },
+        { "id": "E3", "priority": "P1", "summary": "Custo de frete só é informado no carrinho; não há estimativa nem campo de CEP na página.", "evidence": "index.html: 'Frete calculado no carrinho.'" },
+        { "id": "E4", "priority": "P2", "summary": "Opções de cor exibem códigos internos (CZ-01, VD-07, PT-03) em vez de nomes ou amostras.", "evidence": "index.html: fieldset.options." },
+        { "id": "E5", "priority": "P2", "summary": "Links de navegação ficam com contraste insuficiente em telas até 600 px.", "evidence": "css/header.css: .nav a #b5b5b5 sobre branco (2,05:1) no media query de 600 px." },
+        { "id": "E6", "priority": "P2", "summary": "Imagem principal do produto marcada como decorativa (alt vazio).", "evidence": "index.html: img.product-image alt=\"\"." },
+        { "id": "E7", "priority": "P3", "summary": "Rodapé com política de trocas em 10 px e contraste baixo.", "evidence": "css/footer.css: font-size 10px, #aaa sobre branco (2,32:1)." }
+      ],
+      "decoys": [
+        { "id": "D1", "summary": "Preço à vista acompanhado de parcelamento sem juros: padrão esperado no varejo brasileiro, não uma ambiguidade." },
+        { "id": "D2", "summary": "Tabela de especificações densa: adequada à comparação técnica do produto." },
+        { "id": "D3", "summary": "Resumo de avaliações com média e número de avaliações: prova social verificável, não padrão manipulativo." }
+      ],
+      "preserve": [
+        { "id": "P1", "summary": "Evento add_to_cart, id e data-sku do botão de compra (js/cart.js)." },
+        { "id": "P2", "summary": "Valores de preço e parcelamento." },
+        { "id": "P3", "summary": "Estrutura de breadcrumb, h1 e canonical." }
+      ]
+    },
+    {
+      "id": "saas",
+      "fixture": "evaluations/fixtures/saas",
+      "brief": "Audite a página de planos em index.html sem editar arquivos. Público: donos de pequenos negócios de serviços avaliando uma ferramenta de agendamento pela primeira vez. Tarefa principal: entender o produto, escolher um plano e iniciar o teste grátis.",
+      "expected": [
+        { "id": "E1", "priority": "P1", "summary": "Título e subtítulo do hero usam jargão e não dizem o que o produto faz.", "evidence": "index.html: h1 'Orquestração omnichannel sinérgica...' e subtítulo genérico; o produto é uma agenda online." },
+        { "id": "E2", "priority": "P1", "summary": "Preços sem período e com cobrança anual antecipada pré-selecionada, explicada só em nota pequena.", "evidence": "index.html: 'R$ 79' sem '/mês'; toggle Anual marcado; css/pricing.css: .fine-print 11px #a3a3a3 sobre #f6f7fb (2,36:1)." },
+        { "id": "E3", "priority": "P2", "summary": "Três ações do hero com o mesmo peso visual; não há ação principal clara.", "evidence": "index.html/css/site.css: três .hero-link com o mesmo estilo." },
+        { "id": "E4", "priority": "P2", "summary": "Campos do cadastro sem rótulo visível ou programático, só placeholder.", "evidence": "index.html: inputs do #signup-form sem label." },
+        { "id": "E5", "priority": "P2", "summary": "Mensagem de erro genérica e não associada ao campo.", "evidence": "js/signup.js: 'Dados inválidos.' único para todos os casos." },
+        { "id": "E6", "priority": "P2", "summary": "Descrições dos recursos com contraste insuficiente.", "evidence": "css/site.css: .muted #9a9a9a sobre branco (2,81:1)." }
+      ],
+      "decoys": [
+        { "id": "D1", "summary": "FAQ longo com details/summary: responde dúvidas reais de decisão (cartão, cancelamento, segurança)." },
+        { "id": "D2", "summary": "Hero escuro com texto branco: contraste de 17,9:1." },
+        { "id": "D3", "summary": "Plano destacado como recomendado com critério explícito (equipes de 5 a 20 pessoas)." },
+        { "id": "D4", "summary": "Nomes de clientes em cinza: tratamento comum de faixa de logos, com contraste de 5,3:1." }
+      ],
+      "preserve": [
+        { "id": "P1", "summary": "Contrato do formulário: campos nome, email, empresa e senha enviados a /api/signup, e evento sign_up (js/signup.js)." },
+        { "id": "P2", "summary": "Valores e recursos de cada plano." },
+        { "id": "P3", "summary": "Conteúdo do FAQ, inclusive cancelamento sem multa no plano mensal." }
+      ]
+    },
+    {
+      "id": "institucional",
+      "fixture": "evaluations/fixtures/institucional",
+      "brief": "Audite a página inicial em index.html sem editar arquivos. Público: donos de micro e pequenas empresas procurando um escritório de contabilidade. Tarefa principal: entender os serviços e entrar em contato.",
+      "expected": [
+        { "id": "E1", "priority": "P1", "summary": "Submenu de Serviços abre só com hover; o gatilho não é focável nem acionável por toque ou teclado.", "evidence": "css/nav.css: .has-sub:hover .submenu; index.html: span.sub-trigger." },
+        { "id": "E2", "priority": "P1", "summary": "Carrossel troca de slide a cada 3 s, sem pausa e sem respeitar movimento reduzido; o h1 some.", "evidence": "js/carousel.js: setInterval 3000 sem controles; o h1 está no primeiro slide." },
+        { "id": "E3", "priority": "P2", "summary": "Não há ação de contato clara: todos os CTAs dizem 'Saiba mais' e telefone/horário só aparecem no rodapé.", "evidence": "index.html: .cta 'Saiba mais'; contato apenas no footer." },
+        { "id": "E4", "priority": "P2", "summary": "Botão flutuante de WhatsApp sem nome acessível.", "evidence": "index.html: a.whatsapp contém só svg aria-hidden, sem texto ou aria-label." },
+        { "id": "E5", "priority": "P3", "summary": "Parágrafo justificado e sem largura máxima, com linhas muito longas em telas largas.", "evidence": "css/site.css: .about p text-align: justify; .about sem max-width." }
+      ],
+      "decoys": [
+        { "id": "D1", "summary": "Fonte serifada nos títulos: escolha de marca legítima, legível no tamanho usado." },
+        { "id": "D2", "summary": "Seção de responsáveis técnicos com nome e registro: sinal de confiança adequado ao segmento." },
+        { "id": "D3", "summary": "Paleta azul-marinho conservadora com bastante espaço em branco." }
+      ],
+      "preserve": [
+        { "id": "P1", "summary": "Link externo da Área do cliente." },
+        { "id": "P2", "summary": "Dados legais e de contato: responsáveis técnicos com registro, endereço, telefone e horário." },
+        { "id": "P3", "summary": "Lista de serviços e suas rotas." }
+      ]
+    }
+  ]
+}

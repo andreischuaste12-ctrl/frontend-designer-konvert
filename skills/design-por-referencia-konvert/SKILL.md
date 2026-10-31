@@ -7,7 +7,7 @@ description: Execute approved frontend design work from an audit report or visua
 
 Converta uma referência visual em interface implementada no projeto, com cada decisão rastreável e a fidelidade verificada, não presumida.
 
-Esta é a **executora** do fluxo. Se receber um relatório de `audit-frontend-designer-konvert`, implemente somente achados com `approved_for_implementation: true` e sem dependência externa pendente. Prioridades P0–P3 definem o escopo aprovado; itens em `preserve` são intocáveis. Se não houver achados aprovados, não altere o projeto. Para “audite e corrija” sem relatório, encaminhe primeiro para auditoria somente leitura e proponha o handoff antes de editar.
+Esta é a **executora** do fluxo. Se receber um relatório de `audit-frontend-designer-konvert`, implemente somente achados com `approved_for_implementation: true` e `external_dependency.status` diferente de `pending`. Quando a auditora estiver instalada, obtenha essa lista com `node <pasta-das-skills>/audit-frontend-designer-konvert/scripts/validate-report.mjs <relatorio.json> --implementable`; um relatório inválido não autoriza edição. Prioridades P0–P3 definem o escopo aprovado; itens em `preserve` são intocáveis. Se não houver achados aprovados, não altere o projeto. Para “audite e corrija” sem relatório, encaminhe primeiro para auditoria somente leitura e proponha o handoff antes de editar.
 
 ## Ordem de precedência
 
@@ -22,7 +22,7 @@ A referência orienta a aparência. Ela nunca remove conteúdo, controles, estad
 
 ### 1. Fechar o contrato de entrada
 
-Defina fonte, nível de fidelidade, escopo e o que é intocável. A entrada pode ser uma referência visual ou relatório de `audit-frontend-designer-konvert`; consulte [contrato de entrada](references/contrato-de-entrada.md). No relatório, trate achados aprovados P0–P3 como escopo e `preserve` como intocável. Não implemente achados pendentes, não aprovados ou dependentes de decisão externa. Se o nível de fidelidade faltar e mudar o resultado, adote **adaptação**, declare a suposição e siga.
+Defina fonte, nível de fidelidade, escopo e o que é intocável. A entrada pode ser uma referência visual ou relatório de `audit-frontend-designer-konvert`; consulte [contrato de entrada](references/contrato-de-entrada.md). No relatório, trate achados aprovados P0–P3 como escopo e `preserve` como intocável. Não implemente achados não aprovados nem com dependência externa `pending`. Não mude o estado de uma dependência por conta própria: só o usuário ou o responsável indicado a resolve. Se o nível de fidelidade faltar e mudar o resultado, adote **adaptação**, declare a suposição e siga.
 
 ### 2. Ler a referência
 
@@ -62,7 +62,7 @@ Entregue de forma curta: fonte e nível de fidelidade usados, tabela de papéis 
 ## Evidência visual e privacidade
 
 - Os scripts não clicam nem enviam formulários, mas o navegador executa JavaScript da página e pode carregar recursos externos. GET não garante ausência de efeitos colaterais; use apenas alvos que o usuário autorizou inspecionar.
-- A proteção de rede bloqueia destinos privados literais, endpoints de metadata e provedores de tracking conhecidos por padrão. Ela não valida o IP final após resolução DNS; não use a ferramenta como sandbox para URLs não confiáveis nem como garantia contra DNS rebinding. `--allow-private` amplia explicitamente o acesso a redes privadas; prefira loopback para desenvolvimento local.
+- A proteção de rede bloqueia destinos privados, endpoints de metadata e provedores de tracking conhecidos por padrão. Nomes de host são resolvidos e cada endereço passa pela mesma política dos IPs literais; se a resolução local falhar (por exemplo atrás de proxy), a requisição segue e a checagem fica só no nome. O navegador resolve o nome de novo, então um DNS rebinding com TTL curto ainda pode vencer a checagem: não use a ferramenta como sandbox para URLs não confiáveis. `--allow-private` amplia explicitamente o acesso a redes privadas; prefira loopback para desenvolvimento local.
 - `--allow-tracking` permite analytics e só deve ser usado em alvos de teste/staging quando isso for necessário para a inspeção. Em produção, o padrão pode omitir variações de testes A/B, métricas e widgets; registre essa limitação.
 - O bloqueio por host não cobre todo tracking na própria origem. `--block-writes` bloqueia métodos HTTP diferentes de GET/HEAD e todos os WebSockets nos três scripts; é opt-in porque pode impedir consultas GraphQL e alterar o render. WebSockets permitidos seguem a mesma política de alvos/trackers. Service workers ficam desativados, o que pode alterar experiências offline ou cacheadas. Os relatórios registram a opção e os métodos bloqueados, sem corpos de requisição; WebSocket aparece como `WEBSOCKET`. Isso não garante ausência de efeitos colaterais em GET.
 - Redirects GET da navegação principal são revalidados antes de cada salto. Redirects de subrecursos e navegações não-GET são recusados e registrados em `blockedRedirects`; recursos legítimos podem ficar ausentes. A mediação HTTP altera tempos e pode afetar o render. Confira as condições em [captura e inspeção](references/captura-e-inspecao.md).

@@ -6,7 +6,7 @@ This repository contains two complementary skills for coding agents. It is a ski
 
 ### `audit-frontend-designer-konvert`
 
-Use it as a read-only UX/UI design reviewer. It studies audience needs, user journeys, visual and interaction design, accessibility as experienced in the interface, and evidence-informed design psychology, then produces a structured Markdown and JSON report. It never edits the audited project.
+Use it as a read-only UX/UI design reviewer. It studies audience needs, user journeys, visual and interaction design, accessibility as experienced in the interface, and evidence-informed design psychology, then produces a structured Markdown and JSON report validated by `scripts/validate-report.mjs`. It never edits the audited project; it writes only the report and capture evidence to an ignored output directory.
 
 Start with this skill when the request is to audit, evaluate, or improve an existing interface. It does not require a visual reference.
 
@@ -14,7 +14,9 @@ Start with this skill when the request is to audit, evaluate, or improve an exis
 
 Use it as the executor when implementing explicitly approved audit findings or adapting a supplied design guide, URL, screenshot, or visual direction, with before/after captures and measured styles to check the result.
 
-Use this skill directly when a visual reference must be reproduced. For “audit and fix” requests, start with `audit-frontend-designer-konvert`; pass its report to this executor only after the user approves findings. Do not use a gallery example as proof of usability.
+Use this skill directly when a visual reference must be reproduced. For “audit and fix” requests, start with `audit-frontend-designer-konvert`; pass its report to this executor only after the user approves findings. A finding is implementable only when it is approved and its `external_dependency.status` is not `pending`. Do not use a gallery example as proof of usability.
+
+The auditor uses the executor's browser scripts for rendered evidence, so install both skills together; without them the auditor still works read-only but reports the missing evidence.
 
 ## Install both skills
 
@@ -57,15 +59,17 @@ npm run check
 npm test
 ```
 
-From the repository root, run `node scripts/validate-repository.mjs` to check JavaScript/JSON syntax, minimum example shapes, skill metadata, knowledge-module links, relative Markdown links, and manifest/lockfile consistency. Run `node --test scripts/*.test.mjs` to check the routing scorer, the repository contract, and the install verifier. After copying the skills into a project, `node scripts/verify-install.mjs <skills-dir>` confirms that both skills are structurally discoverable. The [routing evaluation guide](evaluations/README.md) explains how to score observed agent decisions; no activation accuracy has yet been measured.
+From the repository root, run `node scripts/validate-repository.mjs` to check JavaScript/JSON syntax, the audit report contract on the synthetic example, evaluation cases, skill metadata, knowledge-module links, relative Markdown links, and manifest/lockfile consistency. Run `node --test "scripts/*.test.mjs" "skills/audit-frontend-designer-konvert/tests/*.test.mjs"` for the scorers, the handoff scope checker, the repository contract, the install verifier, and the report validator. After copying the skills into a project, `node scripts/verify-install.mjs <skills-dir>` confirms that both skills are structurally discoverable.
+
+The [evaluation guide](evaluations/README.md) covers routing, audit quality on three synthetic projects (with planted issues, legitimate decoys, and preserve items), and a deterministic handoff scope check. The scorers are tested; no agent run has been recorded, so routing accuracy, audit quality, and handoff compliance remain unmeasured.
 
 For a focused change, start with `--profile rapido`; use `tela` for up to three pages and `completo` for a site-wide pass. The capture defaults to blocking known analytics and tracking hosts to avoid adding synthetic visits to production data. Prefer localhost or staging. `--allow-private` opens access to private-network targets, `--allow-tracking` permits known trackers, and `--no-mask` reveals form fields in screenshots; use these only when the target and test data are safe. Use `--block-writes` to optionally reject methods other than GET/HEAD and all WebSockets; it can block first-party telemetry and POST-based reads, so inspect the resulting capture. Reports and screenshots can include rendered page content even when URLs and form values are redacted.
 
-`npm test` includes browser smoke tests and fails without a Chromium that matches the pinned Playwright version. If you cannot download one, point `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` at an installed Chromium; results may differ slightly from the pinned build. The smoke test uses a synthetic page on loopback and the installed Playwright Chromium. GitHub Actions is configured for syntax and unit checks on Node 20, 22, and 24 on Linux and Windows, and browser smoke tests on Node 22 on both systems. Inspect the actual workflow results before relying on platform compatibility.
+`npm test` includes browser smoke tests and fails without a Chromium that matches the pinned Playwright version. If you cannot download one, point `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` at an installed Chromium; results may differ slightly from the pinned build. The smoke test uses a synthetic page on loopback and the installed Playwright Chromium. GitHub Actions is configured for repository validation and root/auditor tests on Node 22, syntax and unit checks on Node 20, 22, and 24, and browser smoke tests on Node 22, each on Linux and Windows. Inspect the actual workflow results before relying on platform compatibility.
 
 Use `node skills/design-por-referencia-konvert/scripts/compare.mjs --before .audit/before --after .audit/after --pixels` to produce style and pixel-difference reports from compatible captures. See [architecture and limitations](docs/architecture.md), [contributing](CONTRIBUTING.md), and [security and captured data](SECURITY.md).
 
-Known limits: DNS addresses are not validated/pinned, redirected subresources are blocked, HTTP mediation changes timing, and text redaction is best effort. Screenshots can expose visible page content. Treat missing resources as incomplete evidence and review artifacts before sharing.
+Known limits: hostnames are resolved and checked before each request but not pinned, so a short-TTL DNS rebinding race remains possible; a failed local lookup does not block; redirected subresources are blocked; HTTP mediation changes timing; and text redaction is best effort. Screenshots can expose visible page content. Treat missing resources as incomplete evidence and review artifacts before sharing.
 
 ## Repository layout
 
@@ -73,7 +77,11 @@ Known limits: DNS addresses are not validated/pinned, redirected subresources ar
 skills/
 ├── audit-frontend-designer-konvert/
 │   ├── SKILL.md
-│   └── knowledge-base/
+│   ├── examples/
+│   ├── knowledge-base/
+│   ├── references/
+│   ├── scripts/        # validate-report.mjs
+│   └── tests/
 └── design-por-referencia-konvert/
     ├── SKILL.md
     ├── examples/
@@ -85,6 +93,10 @@ skills/
 CHANGELOG.md
 docs/
 evaluations/
+├── audit-quality/      # answer key for the auditor
+├── fixtures/           # synthetic loja, saas, institucional projects
+├── handoff/            # report + file mapping for the executor
+└── routing-cases.json
 scripts/
 ```
 
