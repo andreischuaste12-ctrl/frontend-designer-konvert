@@ -1,0 +1,54 @@
+name: Release verified tag
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ github.ref_name }}
+      RELEASE_REF_TYPE: ${{ github.ref_type }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Verify tag points to a main commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_REF_TYPE" == tag && "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          release_commit=$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")
+          [[ "$release_commit" =~ ^[a-f0-9]{40}$ && "$(git rev-parse HEAD)" == "$release_commit" ]]
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          git merge-base --is-ancestor "$release_commit" refs/remotes/origin/main
+          printf 'RELEASE_COMMIT=%s\n' "$release_commit" >> "$GITHUB_ENV"
+      - name: Require successful CI for this exact commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/workflows/skill-tools.yml/runs?per_page=100&head_sha=$RELEASE_COMMIT&event=push" > "$RUNNER_TEMP/skill-runs.json"
+          node scripts/release-readiness.mjs runs "$RUNNER_TEMP/skill-runs.json" "$RELEASE_COMMIT" > "$RUNNER_TEMP/skill-run-id"
+          IFS= read -r skill_run_id < "$RUNNER_TEMP/skill-run-id"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$skill_run_id/jobs?per_page=100" > "$RUNNER_TEMP/skill-jobs.json"
+          node scripts/release-readiness.mjs jobs "$RUNNER_TEMP/skill-jobs.json"
+      - name: Publish release notes for the verified tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag_object=$(git rev-parse "refs/tags/$RELEASE_TAG")
+          remote_tag_object=$(git ls-remote --refs origin "refs/tags/$RELEASE_TAG" | cut -f1)
+          [[ "$tag_object" == "$remote_tag_object" ]]
+          node scripts/release-readiness.mjs notes CHANGELOG.md "$RELEASE_TAG" > "$RUNNER_TEMP/release-notes.md"
+          gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG" --notes-file "$RUNNER_TEMP/release-notes.md"

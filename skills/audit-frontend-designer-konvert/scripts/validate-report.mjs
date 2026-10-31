@@ -132,16 +132,23 @@ export function compareMarkdownIds(report, markdown) {
     const finding = report?.findings?.find((f) => f?.id === headings[i][1]);
     if (!finding) continue;
     const section = String(markdown).slice(headings[i].index, headings[i + 1]?.index ?? undefined).split(/^##\s/m)[0];
-    const priority = section.match(/\*\*Prioridade:\*\*\s*(P[0-3])/i)?.[1];
-    const approval = section.match(/\*\*Aprovado para implementação:\*\*\s*(true|false)/i)?.[1]?.toLowerCase();
+    const priority = section.match(/^\s*-\s+\*\*Prioridade:\*\*\s*(P[0-3])\s*$/im)?.[1];
+    const approval = section.match(/^\s*-\s+\*\*Aprovado para implementação:\*\*\s*(true|false)\s*$/im)?.[1]?.toLowerCase();
     if (priority !== finding.priority) errors.push(`Markdown priority differs or is missing for ${finding.id}`);
     if (approval !== String(finding.approved_for_implementation)) errors.push(`Markdown approval differs or is missing for ${finding.id}`);
     for (const [label, field] of [['Local', 'location'], ['Evidência observada', 'evidence_observed'], ['Impacto provável', 'probable_impact'], ['Próximo passo', 'next_step'], ['Critério de aceite', 'acceptance_criteria']]) {
-      const line = section.split('\n').find((v) => v.startsWith(`- **${label}:**`));
-      const value = line?.slice(`- **${label}:**`.length).trim();
-      if (value !== finding[field]) errors.push(`Markdown ${field} differs or is missing for ${finding.id}`);
+      const lines = section.split('\n');
+      const prefix = new RegExp(`^\\s*-\\s+\\*\\*${label}:\\*\\*\\s*(.*)$`, 'i');
+      const index = lines.findIndex((v) => prefix.test(v));
+      const parts = index < 0 ? [] : [lines[index].match(prefix)[1]];
+      for (let j = index + 1; index >= 0 && j < lines.length; j++) {
+        if (/^\s*-\s+\*\*[^*]+:\*\*/.test(lines[j]) || /^\s*#{2,}\s/.test(lines[j])) break;
+        parts.push(lines[j]);
+      }
+      const normalize = (value) => String(value ?? '').replace(/\\([\\`*_{}\[\]()#+.!|>\-])/g, '$1').replace(/\s+/g, ' ').trim();
+      if (index < 0 || normalize(parts.join(' ')) !== normalize(finding[field])) errors.push(`Markdown ${field} differs or is missing for ${finding.id}`);
     }
-    const dependency = section.match(/\*\*Dependência externa:\*\*\s*(pendente|resolvida|não aplicável)/i)?.[1]?.toLowerCase();
+    const dependency = section.match(/^\s*-\s+\*\*Dependência externa:\*\*\s*(pendente|resolvida|não aplicável)\b/im)?.[1]?.toLowerCase();
     const expected = { pending: 'pendente', resolved: 'resolvida', not_applicable: 'não aplicável' }[finding.external_dependency?.status];
     if (dependency !== expected) errors.push(`Markdown dependency differs or is missing for ${finding.id}`);
   }
@@ -185,7 +192,7 @@ async function main() {
       })),
     }, null, 2));
   } else {
-    console.log(`Valid report: ${report.findings.length} finding(s); implementable: ${ready.map((f) => f.id).join(', ') || 'none'}.`);
+    console.log(`Valid report: ${report.findings.length} finding(s); eligible in report (requires independent --approved-ids): ${ready.map((f) => f.id).join(', ') || 'none'}.`);
   }
 }
 

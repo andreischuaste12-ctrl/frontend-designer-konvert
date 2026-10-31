@@ -10,6 +10,10 @@ Three evaluations answer different questions. None of them calls a model: an age
 
 Use the same agent configuration, installed skills, and source commit for every case in a run. Keep run artifacts under `.audit/` and record the source commit; scores from different case sets are not comparable.
 
+## Reference availability
+
+The optional `Reference availability` workflow checks public catalog and study links with HTTP HEAD and records each check time in the job summary. A successful response does not verify the content, publication details, or scientific claims. A 403 or 429 means restricted, not definitively broken; connection errors and unsupported network environments are inconclusive. It never deletes or changes links. The checker refuses to run when a proxy is configured because it cannot safely enforce its connection policy through a proxy.
+
 ## Routing
 
 `routing-cases.json` contains 24 cases per skill: 12 in English and 12 in Brazilian Portuguese, balanced between positive and negative examples, including nearby requests that belong to the other skill. They test **lead skill selection**, not helper use during a handoff.
@@ -36,7 +40,7 @@ The scorer writes `routing-score.json`, counts false positives and false negativ
 
 ## Audit quality
 
-`audit-quality/cases.json` describes three synthetic projects in `fixtures/`: a product page (`loja`), a SaaS pricing page (`saas`), and an accounting firm homepage (`institucional`). Each case lists:
+`audit-quality/cases.json` describes six synthetic projects in `fixtures/`: a product page (`loja`), a SaaS pricing page (`saas`), an accounting firm homepage (`institucional`), and three static previews with Shopify, WordPress, and React/Tailwind marker files. The marker fixtures are not functioning platform installations and do not prove platform integration. Each case lists:
 
 - `expected`: issues planted in the fixture, with the priority and the evidence a good audit should cite;
 - `decoys`: legitimate design choices that a weak audit tends to flag as problems;

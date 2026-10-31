@@ -13,6 +13,7 @@ const TOOLING_FILES = [
   'scripts/extract-styles.mjs',
   'scripts/image-manifest.mjs',
   'scripts/compare.mjs',
+  'scripts/detect-stack.mjs',
 ];
 
 async function exists(file) {

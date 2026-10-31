@@ -37,6 +37,10 @@ Para reproduzir uma referência visual, use [`design-por-referencia-konvert`](..
 - Trate galerias de referência como inspiração. Não copie texto, identidade, ilustrações nem composições distintivas de terceiros.
 - Proteja a privacidade: use dados sintéticos, mantenha artefatos fora do Git, redija o conteúdo do relatório e revise capturas antes de compartilhar.
 
+## Roteiros por produto
+
+Adapte a inspeção à tarefa com os roteiros de [e-commerce](knowledge-base/06-padroes-ecommerce.md), [SaaS](knowledge-base/07-padroes-saas.md) e [sites institucionais](knowledge-base/08-padroes-institucional.md). São heurísticas; confirme as hipóteses com evidências adequadas.
+
 ## Estudos de UX e psicologia
 
 Use a [base de estudos de UX/UI e psicologia](knowledge-base/05-estudos-ux-ui-psicologia.md) para formular perguntas e hipóteses. Os resumos recebidos são provisórios até a conferência das fontes originais; não afirme ter lido fontes inacessíveis.

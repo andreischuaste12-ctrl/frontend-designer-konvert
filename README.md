@@ -82,7 +82,7 @@ For a focused change, start with `--profile rapido`; use `tela` for up to three 
 
 Use `node skills/design-por-referencia-konvert/scripts/compare.mjs --before .audit/before --after .audit/after --confirm-page-mapping --pixels` to produce style and pixel-difference reports after manually confirming page and route correspondence; ordinal route IDs cannot verify that correspondence. See [architecture and limitations](docs/architecture.md), [contributing](CONTRIBUTING.md), and [security and captured data](SECURITY.md).
 
-Known limits: hostnames are resolved and checked on first encounter per context but not pinned; failed lookups are retried, so a short-TTL DNS rebinding race remains possible; a failed local lookup does not block; redirected subresources are blocked; HTTP mediation changes timing; and text redaction is best effort. Screenshots can expose visible page content. Treat missing resources as incomplete evidence and review artifacts before sharing.
+Known limits: hostnames are resolved and checked on first encounter per context but not pinned; failed lookups are retried, so a short-TTL DNS rebinding race remains possible; failed lookups block by default; `--allow-unresolved-dns` weakens this guard for trusted proxy environments; redirected subresources are blocked; HTTP mediation changes timing; and text redaction is best effort. Screenshots can expose visible page content. Treat missing resources as incomplete evidence and review artifacts before sharing.
 
 ## Repository layout
 

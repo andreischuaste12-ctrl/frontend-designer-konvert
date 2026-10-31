@@ -28,6 +28,7 @@ const HELP = `Uso: node capture.mjs --url <url> [opções]
   --allow-file             Permite uma URL file:// local explicitamente.
   --allow-private          Permite alvos/subrecursos em IPs privados (metadata continua bloqueado).
   --allow-tracking         Permite requests de analytics; bloqueados por padrão.
+  --allow-unresolved-dns Permite falhas de DNS local (reduz proteção; use apenas com proxy confiável).
   --block-writes           Bloqueia métodos além de GET/HEAD e WebSockets (opt-in).
   --profile <nome>         rapido | tela (padrão) | completo.
   --routes </a,/b>         Rotas relativas à URL (padrão: só a URL).
@@ -41,7 +42,7 @@ const HELP = `Uso: node capture.mjs --url <url> [opções]
   --no-mask                Não mascarar campos de texto (use só com dados fictícios).
   --timeout <ms>           Timeout de navegação (padrão: 30000).
 
-Aviso: IPs resolvidos são verificados quando a consulta tem sucesso, mas não são fixados; falhas de DNS não bloqueiam. Não é uma sandbox de rede.
+Aviso: falhas e timeouts de DNS são bloqueados por padrão; --allow-unresolved-dns permite prosseguir sem validação de IP. Endereços não são fixados; não é uma sandbox de rede.
 Saída: route-NN__largura__estado.png + capture-index.json (metadados sanitizados e evidências).`;
 
 const { values: a } = parseArgs({
@@ -50,6 +51,7 @@ const { values: a } = parseArgs({
     'allow-file': { type: 'boolean', default: false },
     'allow-private': { type: 'boolean', default: false },
     'allow-tracking': { type: 'boolean', default: false },
+    'allow-unresolved-dns': { type: 'boolean', default: false },
     'block-writes': { type: 'boolean', default: false },
     routes: { type: 'string', default: '' },
     out: { type: 'string', default: '.audit/screenshots' },
@@ -109,7 +111,7 @@ const index = {
   widths,
   schemes,
   profile: a.profile,
-  trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(), blockedRedirects: [...blockedRedirects].sort(),
+  trackingAllowed: a['allow-tracking'], allowUnresolvedDns: a['allow-unresolved-dns'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(), blockedRedirects: [...blockedRedirects].sort(),
   trackingBlocked: [],
   blockedTargets: [],
   notes: [
@@ -296,7 +298,7 @@ for (const scheme of schemes) {
       reducedMotion: 'reduce',
     });
     await installRequestGuards(ctx, {
-      allowFile: a['allow-file'], allowPrivate: a['allow-private'], allowTracking: a['allow-tracking'],
+      allowFile: a['allow-file'], allowPrivate: a['allow-private'], allowTracking: a['allow-tracking'], allowUnresolvedDns: a['allow-unresolved-dns'],
       trackingBlocked, blockedTargets, blockWrites: a['block-writes'], blockedWriteMethods, blockedRedirects,
     });
     await ctx.addInitScript(metricsInit);

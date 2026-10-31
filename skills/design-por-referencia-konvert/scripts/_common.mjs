@@ -90,8 +90,8 @@ export function targetBlockReason(raw, { allowFile = false, allowPrivate = false
 // Applies the literal-IP policy to every address a hostname resolves to. This closes
 // static names that point at internal ranges (for example wildcard DNS services), but
 // the browser resolves the name again, so a TTL-0 rebinding race remains possible.
-// A failed lookup is not a block: proxies may resolve names this host cannot.
-export async function resolvedBlockReason(hostname, { allowPrivate = false, lookup = dnsLookup, timeout = 2000, onFailure = () => {} } = {}) {
+// Resolution failures are blocked unless the operator explicitly allows unresolved DNS.
+export async function resolvedBlockReason(hostname, { allowPrivate = false, allowUnresolvedDns = false, lookup = dnsLookup, timeout = 2000, onFailure = () => {} } = {}) {
   const host = networkHost(hostname);
   if (!host || isIP(host)) return null;
   let addresses;
@@ -101,8 +101,8 @@ export async function resolvedBlockReason(hostname, { allowPrivate = false, look
       lookup(host, { all: true, verbatim: true }),
       new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('DNS timeout')), timeout); }),
     ]);
-    if (!Array.isArray(addresses) || !addresses.length) { onFailure(); return null; }
-  } catch { onFailure(); return null; }
+    if (!Array.isArray(addresses) || !addresses.length) { onFailure(); return allowUnresolvedDns ? null : 'DNS resolution failed; blocked by policy'; }
+  } catch { onFailure(); return allowUnresolvedDns ? null : 'DNS resolution failed; blocked by policy'; }
   finally { clearTimeout(timer); }
   for (const entry of Array.isArray(addresses) ? addresses : []) {
     const raw = String(entry?.address ?? '').split('%')[0];
@@ -123,7 +123,7 @@ export function createInspectionContext(browser, options = {}) {
 const pendingNavigations = new WeakMap();
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
-export async function installRequestGuards(context, { allowFile = false, allowPrivate = false, allowTracking = false, blockWrites = false, trackingBlocked = new Set(), blockedTargets = new Set(), blockedWriteMethods = new Set(), blockedRedirects = new Set(), lookup = dnsLookup } = {}) {
+export async function installRequestGuards(context, { allowFile = false, allowPrivate = false, allowTracking = false, allowUnresolvedDns = false, blockWrites = false, trackingBlocked = new Set(), blockedTargets = new Set(), blockedWriteMethods = new Set(), blockedRedirects = new Set(), lookup = dnsLookup } = {}) {
   if (typeof context.routeWebSocket !== 'function') fail('Playwright with browser-context WebSocket routing is required. Install the pinned skill dependencies.', 2);
   const resolvedReasons = new Map();
   const resolvedReason = (u) => {
@@ -131,7 +131,7 @@ export async function installRequestGuards(context, { allowFile = false, allowPr
     const host = networkHost(u.hostname);
     if (!resolvedReasons.has(host)) {
       let failed = false;
-      const pending = resolvedBlockReason(host, { allowPrivate, lookup, onFailure: () => { failed = true; } }).then((reason) => {
+      const pending = resolvedBlockReason(host, { allowPrivate, allowUnresolvedDns, lookup, onFailure: () => { failed = true; } }).then((reason) => {
         if (failed) resolvedReasons.delete(host);
         return reason;
       });

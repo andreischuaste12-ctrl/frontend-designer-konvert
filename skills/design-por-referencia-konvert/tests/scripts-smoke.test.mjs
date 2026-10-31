@@ -49,6 +49,17 @@ describe('browser CLI regression scenarios', { concurrency: false, timeout: 1200
     assert.ok(styles.elements.some((e) => e.text.startsWith('contact ') && e.contrastStatus === 'indeterminado'));
     assert.ok(styles.elements.some((e) => e.contrastStatus === 'falha'));
     assert.ok(styles.targets.some((e) => e.selector.includes('tiny') && e.lt24));
+    assert.equal(styles.meta.axeRequested, false);
+    assert.ok(!(await readdir(path.join(out, 'styles'))).includes('a11y-findings.json'));
+  });
+
+  test('optional automated accessibility summary omits page text and HTML', async () => {
+    await run('extract-styles', ['--url', url, '--width', '375', '--axe', '--out', path.join(out, 'axe')]);
+    const report = await json(path.join(out, 'axe/a11y-findings.json'));
+    assert.ok(report.violations.some((v) => v.id === 'image-alt' && v.nodeCount > 0));
+    assert.doesNotMatch(JSON.stringify(report), /owner@example|synthetic-field|<img|#private-field/);
+    assert.ok(report.violations.every((v) => Object.keys(v).sort().join(',') === 'id,impact,nodeCount'));
+    assert.equal((await json(path.join(out, 'axe/computed-styles.json'))).meta.axeRequested, true);
   });
 
   test('write blocking prevents a same-origin POST while preserving default POST-based reads', async () => {
@@ -79,9 +90,10 @@ describe('browser CLI regression scenarios', { concurrency: false, timeout: 1200
     await run('capture', ['--url', url, '--widths', '375,1440', '--max-controls', '0', '--max-tiles', '1', '--out', a]);
     await run('extract-styles', ['--url', url, '--out', path.join(out, 'compare-styles')]);
     await assert.rejects(run('compare', ['--before', a, '--after', a, '--pixels', '--out', path.join(out, 'no-mapping')]), (error) => error.code === 1 && /confirm-page-mapping/.test(error.stderr));
-    await run('compare', ['--confirm-page-mapping', '--before', path.join(out, 'compare-styles'), '--after', path.join(out, 'compare-styles'), '--out', path.join(out, 'same-styles')]);
+    await run('compare', ['--before', path.join(out, 'compare-styles'), '--after', path.join(out, 'compare-styles'), '--out', path.join(out, 'same-styles')]);
     const styles = await json(path.join(out, 'same-styles/comparison.json'));
     assert.ok(styles.styles.entries.length > 0 && styles.styles.entries.every((e) => e.status === 'unchanged'));
+    assert.equal(styles.styles.pageMapping, 'unverified');
     await run('compare', ['--confirm-page-mapping', '--before', a, '--after', a, '--pixels', '--out', path.join(out, 'same')]);
     const same = await json(path.join(out, 'same/comparison.json'));
     assert.ok(same.pixels.length > 0 && same.pixels.every((p) => p.status === 'compared' && p.differentPercent === 0));

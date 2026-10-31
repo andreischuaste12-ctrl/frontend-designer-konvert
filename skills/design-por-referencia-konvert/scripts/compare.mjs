@@ -122,20 +122,20 @@ async function main() {
     pixels: { type: 'boolean', default: false }, 'confirm-page-mapping': { type: 'boolean', default: false }, threshold: { type: 'string', default: '24' }, help: { type: 'boolean', default: false },
   } });
   if (a.help || !a.before || !a.after) {
-    console.log('Usage: node compare.mjs --before <audit-dir> --after <audit-dir> --confirm-page-mapping [--pixels] [--threshold 0..255] [--out .audit/comparison]');
+    console.log('Usage: node compare.mjs --before <audit-dir> --after <audit-dir> [--confirm-page-mapping] [--pixels] [--threshold 0..255] [--out .audit/comparison]');
     process.exitCode = a.help ? 0 : 1; return;
   }
-  if (!a['confirm-page-mapping']) throw new ComparisonError('Confirm that the route order and pages correspond using --confirm-page-mapping.');
+  if (a.pixels && !a['confirm-page-mapping']) throw new ComparisonError('Confirm that the route order and pages correspond using --confirm-page-mapping.');
   const threshold = Number(a.threshold);
   if (!Number.isInteger(threshold) || threshold < 0 || threshold > 255) throw new ComparisonError('Threshold must be an integer from 0 to 255.');
-  const report = { schemaVersion: 1, styles: null, pixels: null, limitations: [
-    'Page and route correspondence is operator-confirmed, not automatically verified; redacted URLs and ordinal routes cannot prove identity.',
+  const report = { schemaVersion: 1, pageMapping: a['confirm-page-mapping'] ? 'operator-confirmed' : 'unverified', styles: null, pixels: null, limitations: [
+    'Page and route correspondence is not automatically verified; redacted URLs and ordinal routes cannot prove identity.',
     'Style matching uses category and selector, not semantic role inference. Unmatched elements need human review.',
     'Pixel differences reflect rendering conditions, not UX quality or accessibility compliance.',
   ] };
   const left = await locate(a.before, 'computed-styles.json', 'styles'), right = await locate(a.after, 'computed-styles.json', 'styles');
   if (!!left !== !!right) throw new ComparisonError('Style data must exist on both sides.');
-  if (left) report.styles = compareStyles(await readJson(left), await readJson(right), { confirmPageMapping: true });
+  if (left) report.styles = compareStyles(await readJson(left), await readJson(right), { confirmPageMapping: a['confirm-page-mapping'] });
   const out = await ensureDir(path.resolve(a.out));
   if (a.pixels) {
     const x = await locate(a.before, 'capture-index.json', 'screenshots'), y = await locate(a.after, 'capture-index.json', 'screenshots');

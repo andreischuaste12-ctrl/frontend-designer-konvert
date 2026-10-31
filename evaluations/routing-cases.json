@@ -2,7 +2,7 @@
   {
     "id": "audit-01",
     "skill": "audit-frontend-designer-konvert",
-    "prompt": "Audit the existing homepage and identify UX problems without editing files.",
+    "prompt": "Audit the existing Shopify product page and identify UX problems without editing files.",
     "shouldTrigger": true,
     "language": "en"
   },
@@ -30,7 +30,7 @@
   {
     "id": "audit-05",
     "skill": "audit-frontend-designer-konvert",
-    "prompt": "Review keyboard focus and mobile navigation on the current website.",
+    "prompt": "Review keyboard focus and mobile navigation in our WordPress site.",
     "shouldTrigger": true,
     "language": "en"
   },
@@ -49,7 +49,7 @@
   {
     "id": "audit-07",
     "skill": "audit-frontend-designer-konvert",
-    "prompt": "Apply this DESIGN.md to the product page and verify reference fidelity.",
+    "prompt": "Apply this DESIGN.md to the Shopify product page and verify reference fidelity.",
     "shouldTrigger": false,
     "language": "en"
   },
@@ -91,7 +91,7 @@
   {
     "id": "reference-01",
     "skill": "design-por-referencia-konvert",
-    "prompt": "Apply this DESIGN.md to the product page and verify reference fidelity.",
+    "prompt": "Apply this DESIGN.md to the Shopify product page and verify reference fidelity.",
     "shouldTrigger": true,
     "language": "en"
   },
@@ -129,7 +129,7 @@
   {
     "id": "reference-06",
     "skill": "design-por-referencia-konvert",
-    "prompt": "Use this written visual direction to implement and validate the checkout UI.",
+    "prompt": "Use this written visual direction to implement and validate the WordPress checkout UI.",
     "shouldTrigger": true,
     "language": "en"
   },
@@ -178,7 +178,7 @@
   {
     "id": "audit-pt-01",
     "skill": "audit-frontend-designer-konvert",
-    "prompt": "Audite a página inicial atual e identifique problemas de UX sem editar arquivos.",
+    "prompt": "Audite a página de produto Shopify atual e identifique problemas de UX sem editar arquivos.",
     "shouldTrigger": true,
     "language": "pt-BR"
   },
@@ -206,7 +206,7 @@
   {
     "id": "audit-pt-05",
     "skill": "audit-frontend-designer-konvert",
-    "prompt": "Revise o foco de teclado e a navegação mobile do site atual.",
+    "prompt": "Revise o foco de teclado e a navegação mobile do site WordPress.",
     "shouldTrigger": true,
     "language": "pt-BR"
   },
@@ -225,7 +225,7 @@
   {
     "id": "audit-pt-07",
     "skill": "audit-frontend-designer-konvert",
-    "prompt": "Aplique este DESIGN.md na página de produto e verifique a fidelidade à referência.",
+    "prompt": "Aplique este DESIGN.md na página de produto Shopify e verifique a fidelidade à referência.",
     "shouldTrigger": false,
     "language": "pt-BR"
   },
@@ -267,7 +267,7 @@
   {
     "id": "reference-pt-01",
     "skill": "design-por-referencia-konvert",
-    "prompt": "Aplique este DESIGN.md na página de produto e verifique a fidelidade à referência.",
+    "prompt": "Aplique este DESIGN.md na página de produto Shopify e verifique a fidelidade à referência.",
     "shouldTrigger": true,
     "language": "pt-BR"
   },
@@ -305,7 +305,7 @@
   {
     "id": "reference-pt-06",
     "skill": "design-por-referencia-konvert",
-    "prompt": "Use esta direção visual escrita para implementar e validar a UI do checkout.",
+    "prompt": "Use esta direção visual escrita para implementar e validar a UI do checkout WordPress.",
     "shouldTrigger": true,
     "language": "pt-BR"
   },

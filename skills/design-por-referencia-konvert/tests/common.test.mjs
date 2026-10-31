@@ -186,10 +186,11 @@ test('tracker and invalid WebSockets close without DNS and a failed DNS lookup i
   assert.equal(closed, 2); assert.equal(calls, 0);
   const route = () => ({ request: () => ({ url: () => 'https://fixture.example.invalid/', method: () => 'GET', isNavigationRequest: () => false }), fetch: async () => { fetched++; return { headers: () => ({}), status: () => 200, dispose: async () => {} }; }, fulfill: async () => {}, abort: async () => {} });
   await routeHandler(route()); await routeHandler(route());
-  assert.equal(calls, 2); assert.equal(fetched, 1);
+  assert.equal(calls, 2); assert.equal(fetched, 0);
   let failed = false;
-  assert.equal(await resolvedBlockReason('timeout.example.invalid', { lookup: () => new Promise(() => {}), timeout: 10, onFailure: () => { failed = true; } }), null);
+  assert.match(await resolvedBlockReason('timeout.example.invalid', { lookup: () => new Promise(() => {}), timeout: 10, onFailure: () => { failed = true; } }), /blocked by policy/);
   assert.equal(failed, true);
+  assert.equal(await resolvedBlockReason('timeout.example.invalid', { lookup: () => new Promise(() => {}), timeout: 10, allowUnresolvedDns: true }), null);
 });
 
 test('redirect destinations are checked before being sent to the browser', async () => {
@@ -217,7 +218,7 @@ test('local-network permission restoration is scoped to loopback main origins on
     await installRequestGuards({
       route: async (_pattern, fn) => { handler = fn; }, routeWebSocket: async () => {},
       grantPermissions: async (permissions, options) => { grants.push({ permissions, options }); },
-    });
+    }, { lookup: async (host) => [{ address: host === 'localhost' ? '127.0.0.1' : '93.184.216.34', family: 4 }] });
     await handler({
       request: () => ({ url: () => raw, method: () => 'GET', isNavigationRequest: () => true, frame: () => frame }),
       fetch: async () => ({ status: () => 200, headers: () => ({}), dispose: async () => {} }),
@@ -229,7 +230,7 @@ test('local-network permission restoration is scoped to loopback main origins on
   }
 });
 
-test('resolved hostnames inherit the literal-IP policy, and lookup failures stay non-blocking', async () => {
+test('resolved hostnames inherit the literal-IP policy, and lookup failures block by default', async () => {
   const lookupFor = (addresses) => async () => addresses.map((address) => ({ address, family: address.includes(':') ? 6 : 4 }));
   assert.match(await resolvedBlockReason('metadata-alias.example.test', { lookup: lookupFor(['169.254.169.254']) }) ?? '', /metadata.*resolved address/);
   assert.match(await resolvedBlockReason('internal.example.test', { lookup: lookupFor(['93.184.216.34', '10.0.0.5']) }) ?? '', /allow-private/);
@@ -240,7 +241,9 @@ test('resolved hostnames inherit the literal-IP policy, and lookup failures stay
   assert.match(await resolvedBlockReason('link-local.example.test', { allowPrivate: true, lookup: lookupFor(['fe80::1%eth0']) }) ?? '', /blocked/);
   assert.equal(await resolvedBlockReason('public.example.test', { lookup: lookupFor(['93.184.216.34', '2606:4700:4700::1111']) }), null);
   assert.equal(await resolvedBlockReason('localhost', { lookup: lookupFor(['127.0.0.1', '::1']) }), null);
-  assert.equal(await resolvedBlockReason('unresolvable.example.test', { lookup: async () => { throw new Error('ENOTFOUND'); } }), null);
+  const failed = async () => { const e = new Error('ENOTFOUND'); e.code = 'ENOTFOUND'; throw e; };
+  assert.match(await resolvedBlockReason('unresolvable.example.test', { lookup: failed }), /blocked by policy/);
+  assert.equal(await resolvedBlockReason('unresolvable.example.test', { lookup: failed, allowUnresolvedDns: true }), null);
   let calls = 0;
   assert.equal(await resolvedBlockReason('10.0.0.5', { lookup: async () => { calls++; return []; } }), null);
   assert.equal(calls, 0, 'literal addresses are classified without DNS');

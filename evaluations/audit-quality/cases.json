@@ -81,6 +81,117 @@
         { "id": "P2", "summary": "Dados legais e de contato: responsáveis técnicos com registro, endereço, telefone e horário." },
         { "id": "P3", "summary": "Lista de serviços e suas rotas." }
       ]
+    },
+    {
+      "id": "shopify-preview",
+      "fixture": "evaluations/fixtures/shopify-preview",
+      "brief": "Audite index.html sem editar arquivos. Contexto: loja de acessórios para caminhada; escolher o tamanho e consultar entrega. Os arquivos de plataforma são apenas marcadores sintéticos.",
+      "expected": [
+        {
+          "id": "E1",
+          "priority": "P1",
+          "summary": "O campo não tem rótulo programático nem visível.",
+          "evidence": "index.html: input com placeholder sem label."
+        },
+        {
+          "id": "E2",
+          "priority": "P1",
+          "summary": "O foco do teclado é removido de campos e botões.",
+          "evidence": "index.html: button:focus,input:focus {outline:none}."
+        },
+        {
+          "id": "E3",
+          "priority": "P2",
+          "summary": "O custo de entrega só aparece depois da compra.",
+          "evidence": "index.html: texto \"Entrega informada depois da compra.\""
+        }
+      ],
+      "decoys": [
+        {
+          "id": "D1",
+          "summary": "Ação de tabela de tamanhos identificada por texto."
+        }
+      ],
+      "preserve": [
+        {
+          "id": "P1",
+          "summary": "Ação para tabela de tamanhos e nome da coleção."
+        }
+      ]
+    },
+    {
+      "id": "wordpress-preview",
+      "fixture": "evaluations/fixtures/wordpress-preview",
+      "brief": "Audite index.html sem editar arquivos. Contexto: página institucional de consultoria; entender os serviços e enviar uma solicitação. Os arquivos de plataforma são apenas marcadores sintéticos.",
+      "expected": [
+        {
+          "id": "E1",
+          "priority": "P1",
+          "summary": "O campo não tem rótulo programático nem visível.",
+          "evidence": "index.html: input com placeholder sem label."
+        },
+        {
+          "id": "E2",
+          "priority": "P1",
+          "summary": "O foco do teclado é removido de campos e botões.",
+          "evidence": "index.html: button:focus,input:focus {outline:none}."
+        },
+        {
+          "id": "E3",
+          "priority": "P2",
+          "summary": "O formulário não informa prazo de resposta.",
+          "evidence": "index.html: texto \"Prazo de resposta não informado.\""
+        }
+      ],
+      "decoys": [
+        {
+          "id": "D1",
+          "summary": "Ação de serviços identificada por texto."
+        }
+      ],
+      "preserve": [
+        {
+          "id": "P1",
+          "summary": "Nome da organização e ação de serviços."
+        }
+      ]
+    },
+    {
+      "id": "react-preview",
+      "fixture": "evaluations/fixtures/react-preview",
+      "brief": "Audite index.html sem editar arquivos. Contexto: interface de agenda para pequenas equipes; pesquisar compromissos e criar um evento. Os arquivos de plataforma são apenas marcadores sintéticos.",
+      "expected": [
+        {
+          "id": "E1",
+          "priority": "P1",
+          "summary": "O campo não tem rótulo programático nem visível.",
+          "evidence": "index.html: input com placeholder sem label."
+        },
+        {
+          "id": "E2",
+          "priority": "P1",
+          "summary": "O foco do teclado é removido de campos e botões.",
+          "evidence": "index.html: button:focus,input:focus {outline:none}."
+        },
+        {
+          "id": "E3",
+          "priority": "P2",
+          "summary": "O estado vazio não explica como alterar a busca nem oferece ação contextual.",
+          "evidence": "index.html: mensagem \"Nenhum compromisso encontrado.\" sem orientação junto ao resultado."
+        }
+      ],
+      "decoys": [
+        {
+          "id": "D1",
+          "summary": "Ação de criação de evento identificada por texto."
+        }
+      ],
+      "preserve": [
+        {
+          "id": "P1",
+          "summary": "Nome da interface e ação de criação de evento."
+        }
+      ]
     }
   ]
 }

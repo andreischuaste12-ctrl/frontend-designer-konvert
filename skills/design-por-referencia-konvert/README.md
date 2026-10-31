@@ -7,12 +7,14 @@ A coding-agent skill for adapting a visual reference (a `DESIGN.md`, URL, screen
 | File | Purpose |
 | --- | --- |
 | `SKILL.md` | Precedence, seven-step workflow, visual evidence, and limitations. |
+| `references/adaptadores-de-stack.md` | Stack hints, project inspection, and unverified documentation starting points. |
 | `references/contrato-de-entrada.md` | Reference source, fidelity level, scope, protected elements, and acceptance criteria. |
 | `references/papeis-e-tokens.md` | Visual roles, evidence labels, and mapping to the target project. |
 | `references/captura-e-inspecao.md` | Rendering, screenshots, inspection, and style measurement. |
 | `references/inventario-de-imagens.md` | Image manifest, findings, and visual-review guide. |
 | `references/validacao.md` | Fidelity, accessibility, responsive, state, image, and integration checklist. |
 | `references/modelo-design-md.md` | Optional `DESIGN.md` template. |
+| `scripts/detect-stack.mjs` | Read-only, bounded stack marker detection; results are hypotheses. |
 | `scripts/capture.mjs` | Route, viewport, and color-scheme screenshots, including tiles and focus/hover crops. |
 | `scripts/extract-styles.mjs` | Computed styles, CSS variables, fonts, type scale, estimated contrast, and target sizes. |
 | `scripts/image-manifest.mjs` | Static and rendered image inventory plus a visual-review guide. |
@@ -35,15 +37,17 @@ npm test
 
 The scripts prefer the skill's installed Playwright and fall back to the target project's installation. Browser-context WebSocket routing support is required; older project dependencies without that API are rejected rather than silently skipping network guards.
 
+`extract-styles.mjs --axe` optionally runs the pinned axe-core integration and writes `a11y-findings.json` with rule IDs, severity and counts only; node HTML, selectors and text are omitted. It is a partial automated check, not an accessibility certification. Check `meta.axeRequested` and the file timestamp to avoid using stale output. All other artifacts still require a privacy review.
+
 The scripts do not install dependencies, click, or submit forms. Chromium does execute the target site's JavaScript, so use only authorized targets and prefer synthetic data. Credentials, query strings, and URL fragments are removed from reported URLs; error messages are also sanitized. Output is written under `.audit/`, which the repository root `.gitignore` excludes.
 
-Use `capture.mjs --profile rapido|tela|completo` to size the capture to the task. Individual flags such as `--widths` and `--max-controls` override profile defaults. Known metadata endpoints, tracker hosts, and private-network targets (literal or DNS-resolved) are blocked by default. `--allow-tracking` permits known trackers; `--allow-private` permits private-network targets; and `--no-mask` reveals form fields in screenshots. Prefer localhost or staging and synthetic data. Hostnames are resolved and every returned address is classified before each request; the browser resolves again, so a short-TTL DNS rebinding race remains possible. The guard is not a sandbox for untrusted URLs.
+Use `capture.mjs --profile rapido|tela|completo` to size the capture to the task. Individual flags such as `--widths` and `--max-controls` override profile defaults. Known metadata endpoints, tracker hosts, and private-network targets (literal or DNS-resolved) are blocked by default. `--allow-tracking` permits known trackers; `--allow-private` permits private-network targets; and `--no-mask` reveals form fields in screenshots. Prefer localhost or staging and synthetic data. Hostnames are resolved and every returned address is classified on first encounter in a browser context; the browser resolves again, so a short-TTL DNS rebinding race remains possible. The guard is not a sandbox for untrusted URLs.
 
 Images are not copied by default. Use `--save-images` only when local review copies are needed; do not commit or redistribute them without checking their rights. Screenshots and reports can contain rendered page content, so review them before sharing.
 
 `--block-writes` optionally rejects HTTP methods other than GET/HEAD and all WebSocket connections in the three browser-inspection scripts. It can block first-party POST telemetry, but also GraphQL reads, CORS preflights, and real-time UI. The default preserves permitted requests; prefer staging. Reports record `blockWrites` and `blockedWriteMethods` (including `WEBSOCKET`). WebSockets follow the same target/tracker policy. Service workers are disabled, so offline/cached experiences may differ.
 
-CIDR checks cover literal private/reserved IP ranges and embedded IPv4 in mapped/compatible IPv6, well-known NAT64, and 6to4. Local-use NAT64 and Teredo are denied because their translation behavior cannot be inferred safely. Resolved hostnames go through the same classification; a local lookup failure does not block. Short-TTL DNS rebinding and deployment-specific translations remain outside these guards' guarantees; they are not a network sandbox.
+CIDR checks cover literal private/reserved IP ranges and embedded IPv4 in mapped/compatible IPv6, well-known NAT64, and 6to4. Local-use NAT64 and Teredo are denied because their translation behavior cannot be inferred safely. Resolved hostnames go through the same classification; a local lookup failure blocks by default. `--allow-unresolved-dns` permits continuing without address validation and weakens protection. Short-TTL DNS rebinding and deployment-specific translations remain outside these guards' guarantees; they are not a network sandbox.
 
 HTTP redirects are not automatically forwarded to Chromium. Approved GET main-navigation hops are validated and restarted with a 20-hop limit; subresource and non-GET redirects are aborted and listed in `blockedRedirects`. Missing redirected assets require canonical URLs or a partial-coverage report. Response mediation changes timing and buffering behavior; laboratory metrics are not production network measurements. Text redaction covers known formats only and does not sanitize screenshot pixels.
 

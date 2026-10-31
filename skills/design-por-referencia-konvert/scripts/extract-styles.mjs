@@ -13,15 +13,17 @@ const HELP = `Uso: node extract-styles.mjs --url <url> [opções]
   --allow-file       Permite uma URL file:// local explicitamente.
   --allow-private    Permite alvos/subrecursos em IPs privados (metadata continua bloqueado).
   --allow-tracking   Permite requests de analytics; bloqueados por padrão.
+  --allow-unresolved-dns Permite falhas de DNS local (reduz proteção; use apenas com proxy confiável).
   --block-writes     Bloqueia métodos além de GET/HEAD e WebSockets (opt-in).
   --out <dir>        Saída (padrão: .audit/styles).
   --width <px>       Largura do viewport (padrão: 1440). Rode também com 375.
   --scheme <s>       light | dark (padrão: light).
   --max-per <n>      Exemplos por categoria (padrão: 12).
   --selectors <css>  Seletores extras, separados por vírgula (categoria "custom").
+  --axe              Executa verificação automática opcional; saída resumida sem HTML ou seletores.
   --timeout <ms>     Timeout de navegação (padrão: 30000).
 
-Aviso: IPs resolvidos são verificados quando a consulta tem sucesso, mas não são fixados; falhas de DNS não bloqueiam. Não é uma sandbox de rede.
+Aviso: falhas e timeouts de DNS são bloqueados por padrão; --allow-unresolved-dns permite prosseguir sem validação de IP. Endereços não são fixados; não é uma sandbox de rede.
 Saída: computed-styles.json, styles-summary.md, aria-snapshot.yml (quando suportado).`;
 
 const { values: a } = parseArgs({
@@ -30,12 +32,14 @@ const { values: a } = parseArgs({
     'allow-file': { type: 'boolean', default: false },
     'allow-private': { type: 'boolean', default: false },
     'allow-tracking': { type: 'boolean', default: false },
+    'allow-unresolved-dns': { type: 'boolean', default: false },
     'block-writes': { type: 'boolean', default: false },
     out: { type: 'string', default: '.audit/styles' },
     width: { type: 'string', default: '1440' },
     scheme: { type: 'string', default: 'light' },
     'max-per': { type: 'string', default: '12' },
     selectors: { type: 'string', default: '' },
+    axe: { type: 'boolean', default: false },
     timeout: { type: 'string', default: '30000' },
     help: { type: 'boolean', default: false },
   },
@@ -64,7 +68,7 @@ const blockedTargets = new Set();
 const blockedWriteMethods = new Set();
 const blockedRedirects = new Set();
 await installRequestGuards(ctx, {
-  allowFile: a['allow-file'], allowPrivate: a['allow-private'], allowTracking: a['allow-tracking'],
+  allowFile: a['allow-file'], allowPrivate: a['allow-private'], allowTracking: a['allow-tracking'], allowUnresolvedDns: a['allow-unresolved-dns'],
   trackingBlocked, blockedTargets, blockWrites: a['block-writes'], blockedWriteMethods, blockedRedirects,
 });
 await ctx.addInitScript(metricsInit);
@@ -355,6 +359,22 @@ try {
 } catch {
   /* versão do Playwright sem ariaSnapshot */
 }
+let axeReport = null;
+if (a.axe) {
+  try {
+    const { AxeBuilder } = await import('@axe-core/playwright');
+    const result = await new AxeBuilder({ page }).analyze();
+    const summarize = (rows) => rows.map((rule) => ({
+      id: /^[a-z0-9-]+$/.test(rule.id) ? rule.id : 'unknown',
+      impact: ['minor', 'moderate', 'serious', 'critical'].includes(rule.impact) ? rule.impact : null,
+      nodeCount: Array.isArray(rule.nodes) ? rule.nodes.length : 0,
+    }));
+    axeReport = { tool: 'axe-core', generatedAt: new Date().toISOString(), violations: summarize(result.violations), incomplete: summarize(result.incomplete), limitations: 'Automated checks are partial and do not certify accessibility compliance; node content and selectors are omitted for privacy.' };
+  } catch {
+    await browser.close();
+    fail('Verificação axe indisponível. Instale as dependências fixadas e confira a página; detalhes e conteúdo foram omitidos.', 3);
+  }
+}
 await browser.close();
 
 function redactValues(value) {
@@ -367,10 +387,11 @@ const safeData = redactValues(data);
 Object.assign(data, safeData);
 const meta = {
   tool: 'extract-styles.mjs', url: redactUrl(url.href), status: resp ? resp.status() : null, width, scheme,
-  serviceWorkersBlocked: true, trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(), blockedRedirects: [...blockedRedirects].sort(), trackingBlocked: [...trackingBlocked].sort(), blockedTargets: [...blockedTargets].sort(),
+  serviceWorkersBlocked: true, axeRequested: a.axe, trackingAllowed: a['allow-tracking'], allowUnresolvedDns: a['allow-unresolved-dns'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(), blockedRedirects: [...blockedRedirects].sort(), trackingBlocked: [...trackingBlocked].sort(), blockedTargets: [...blockedTargets].sort(),
   at: new Date().toISOString(),
 };
 await fs.writeFile(path.join(outDir, 'computed-styles.json'), JSON.stringify({ meta, ...safeData }, null, 2), 'utf8');
+if (axeReport) await fs.writeFile(path.join(outDir, 'a11y-findings.json'), JSON.stringify(axeReport, null, 2), 'utf8');
 
 const fails = safeData.elements.filter((e) => e.contrastStatus === 'falha');
 const indet = safeData.elements.filter((e) => e.contrastStatus === 'indeterminado');

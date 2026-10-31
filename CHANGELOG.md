@@ -4,6 +4,25 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+### Added
+
+- Add product-specific UX guidance, synthetic stack-marker evaluation fixtures, safe local stack detection and an opt-in accessibility summary without DOM snippets.
+- Add a reference availability workflow, a DNS pinning investigation, release-readiness checks and contributor automation; accessibility, platform integration and agent quality still require real-world validation.
+
+### Security
+
+- Require the latest completed successful CI run and its full matrix for the exact main commit before creating a release; GitHub branch protection and live workflow behavior require separate verification.
+
+### Breaking
+
+- DNS resolution failures and timeouts now block requests by default; `--allow-unresolved-dns` explicitly restores the weaker proxy-compatible behavior.
+
+### Changed
+
+- Allow an explicitly requested private source map only in a new Git-ignored file outside report output; anonymized reports remain the default.
+- Clarify comparison mapping, normalize Markdown fields and label report eligibility without implying user authorization.
+- Report coverage in CI without a percentage gate until its scope and an achievable baseline are established.
+
 ## 0.1.0 — 2026-10-31
 
 - Label ambiguous local-number patterns as redacted ambiguous numbers instead of asserting they are phone numbers; the conservative privacy default may still hide order codes or year ranges.

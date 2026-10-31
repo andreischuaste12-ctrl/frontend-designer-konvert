@@ -57,6 +57,8 @@ Execute na raiz do projeto auditado, trocando `.agents/skills` pela pasta onde a
 
 ## Renderização em Markdown
 
+Cada achado usa um cabeçalho `### UX-001` seguido de itens `- **Rótulo:** valor`. Os rótulos verificados são `Prioridade`, `Local`, `Evidência observada`, `Impacto provável`, `Próximo passo`, `Critério de aceite`, `Dependência externa` e `Aprovado para implementação`. O validador normaliza espaços e quebras de linha nos campos textuais e aceita escapes Markdown comuns; os valores devem corresponder ao JSON. O estado da dependência usa `pendente`, `resolvida` ou `não aplicável`; aprovação usa `true` ou `false`.
+
 Inclua o contexto do relatório e os limites de evidência, depois uma seção por achado com todos os campos obrigatórios, seguida dos itens a preservar do projeto inteiro e do handoff proposto. Mantenha IDs e valores do Markdown alinhados ao JSON. Mantenha os achados estritamente sobre UX/UI e psicologia do design. Não inclua edições de código-fonte nem descreva recomendações como trabalho concluído.
 
 ## Exemplo

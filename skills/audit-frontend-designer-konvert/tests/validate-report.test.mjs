@@ -104,10 +104,17 @@ test('Markdown and JSON must contain the same finding IDs', async () => {
   assert.match(compareMarkdownIds(example, md.replace('**Prioridade:** P1', '**Prioridade:** P3')).join('\n'), /priority differs/);
   assert.match(compareMarkdownIds(example, md + '\n### UX-001 — duplicado\n').join('\n'), /duplicate/);
   assert.deepEqual(implementableFindings({ findings: [{ id: 'UX-001', approved_for_implementation: true }] }), []);
+  const multiline = structuredClone(example);
+  multiline.findings[0].location = multiline.findings[0].location.replace(', ', ',\n');
+  const formatted = md.replace('- **Local:** página de produto fictícia, painel de preço e compra', '- **Local:** página de produto fictícia,\n  painel de preço e compra');
+  assert.deepEqual(compareMarkdownIds(multiline, formatted), []);
 });
 
 test('the CLI exits 0 for valid input, 1 for contract violations, and 2 for unreadable input', async (t) => {
   const run = promisify(execFile);
+  const summary = await run(process.execPath, [script, fileURLToPath(exampleUrl)]);
+  assert.match(summary.stdout, /eligible in report \(requires independent --approved-ids\)/);
+  assert.doesNotMatch(summary.stdout, /implementable:/);
   const withoutApproval = await run(process.execPath, [script, fileURLToPath(exampleUrl), '--implementable']);
   assert.deepEqual(JSON.parse(withoutApproval.stdout).implementable, []);
   const blocked = await run(process.execPath, [script, fileURLToPath(exampleUrl), '--implementable', '--approved-ids', 'UX-001']);

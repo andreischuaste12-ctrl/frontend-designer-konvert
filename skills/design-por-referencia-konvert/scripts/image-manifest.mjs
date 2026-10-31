@@ -8,15 +8,18 @@ import { parseArgs } from 'node:util';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 import { loadPlaywright, launch, checkUrl, installRequestGuards, createInspectionContext, targetBlockReason, ensureDir, metricsInit, preparePage, redactUrl, redactText, fail } from './_common.mjs';
 
 const HELP = `Uso: node image-manifest.mjs [--root <dir>] [--url <url>] [opções]
 
   --root <dir>   Varre o projeto em busca de imagens e das suas referências.
+  --source-map <arquivo> Grava mapa privado de IDs e caminhos apenas em arquivo novo ignorado pelo Git, fora da saída de relatórios.
   --url <url>    Mede as imagens no render.
   --allow-file   Permite uma URL file:// local explicitamente.
   --allow-private Permite alvos/subrecursos em IPs privados (metadata continua bloqueado).
   --allow-tracking Permite requests de analytics; bloqueados por padrão.
+  --allow-unresolved-dns Permite falhas de DNS local (reduz proteção; use apenas com proxy confiável).
   --block-writes Bloqueia métodos além de GET/HEAD e WebSockets (opt-in).
   --width <px>   Largura do viewport no modo --url (padrão: 1440). Rode também com 375.
   --out <dir>    Saída (padrão: .audit/images).
@@ -25,16 +28,18 @@ const HELP = `Uso: node image-manifest.mjs [--root <dir>] [--url <url>] [opçõe
   --no-save      Mantido por compatibilidade; imagens não são copiadas por padrão.
   --timeout <ms> Timeout de navegação (padrão: 30000).
 
-Aviso: IPs resolvidos são verificados quando a consulta tem sucesso, mas não são fixados; falhas de DNS não bloqueiam. Não é uma sandbox de rede.
+Aviso: falhas e timeouts de DNS são bloqueados por padrão; --allow-unresolved-dns permite prosseguir sem validação de IP. Endereços não são fixados; não é uma sandbox de rede.
 Saída: images-static.json/.md e/ou images-rendered.json/.md, e imagens-revisao.md (roteiro de revisão visual).`;
 
 const { values: a } = parseArgs({
   options: {
     root: { type: 'string' },
+    'source-map': { type: 'string' },
     url: { type: 'string' },
     'allow-file': { type: 'boolean', default: false },
     'allow-private': { type: 'boolean', default: false },
     'allow-tracking': { type: 'boolean', default: false },
+    'allow-unresolved-dns': { type: 'boolean', default: false },
     'block-writes': { type: 'boolean', default: false },
     width: { type: 'string', default: '1440' },
     out: { type: 'string', default: '.audit/images' },
@@ -50,11 +55,27 @@ if (a.help || (!a.root && !a.url)) {
   process.exit(a.help ? 0 : 1);
 }
 if (a['save-images'] && a['no-save']) fail('Use --save-images ou --no-save, não ambos.');
+if (a['source-map'] && !a.root) fail('--source-map exige --root.');
 
 const outDir = await ensureDir(path.resolve(a.out));
 const kb = (n) => (n == null ? 'n/d' : n >= 1048576 ? `${(n / 1048576).toFixed(2)} MB` : `${(n / 1024).toFixed(1)} KB`);
 const RASTER = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'bmp']);
 const review = []; // itens para revisão visual: { id, where, facts }
+
+async function writePrivateSourceMap(root, output, requested, mapping) {
+  try {
+    const repo = await fs.realpath(execFileSync('git', ['-C', path.resolve(root), 'rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim());
+    const resolved = path.resolve(requested);
+    const parent = await fs.realpath(path.dirname(resolved));
+    const destination = path.join(parent, path.basename(resolved));
+    const relative = path.relative(repo, destination);
+    const outputRelative = path.relative(await fs.realpath(output), destination);
+    if (!relative || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative) || relative.split(path.sep)[0] === '.git') throw new Error('outside project');
+    if (!outputRelative || (!outputRelative.startsWith(`..${path.sep}`) && outputRelative !== '..' && !path.isAbsolute(outputRelative))) throw new Error('inside report output');
+    execFileSync('git', ['-C', repo, 'check-ignore', '-q', '--', destination], { stdio: 'ignore' });
+    await fs.writeFile(destination, JSON.stringify(mapping, null, 2), { encoding: 'utf8', flag: 'wx', mode: 0o600 });
+  } catch { fail('Mapa privado recusado: use arquivo novo em diretório existente, dentro do repositório e ignorado pelo Git, fora da saída de relatórios. Caminho omitido.'); }
+}
 
 // ---------------------------------------------------------------- estático
 const IMG_EXT = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.avif', '.svg', '.ico', '.bmp']);
@@ -233,6 +254,12 @@ if (a.root) {
     refs: item.refs.map((ref) => ({ ...ref, file: sourceId(ref.file) })),
     alt: item.alt.map((ref) => ({ ...ref, file: sourceId(ref.file) })),
   })) };
+  if (a['source-map']) {
+    const mapping = Object.fromEntries(raw.images.map((item, index) => [`image-${String(index + 1).padStart(4, '0')}.${item.format}`, item.path]));
+    for (const [file, id] of sources) mapping[id] = file;
+    await writePrivateSourceMap(a.root, outDir, a['source-map'], mapping);
+    console.log('Mapa privado criado; revise-o localmente e não compartilhe.');
+  }
   await fs.writeFile(path.join(outDir, 'images-static.json'), JSON.stringify(res, null, 2), 'utf8');
   const rows = res.images
     .map((i) => `| ${i.path} | ${i.format} | ${i.width ?? '?'}×${i.height ?? '?'} | ${kb(i.bytes)} | ${i.refs.map((r) => `${r.file}:${r.line}`).slice(0, 3).join('<br>') || '—'} | ${[...new Set(i.alt.map((x) => x.alt))].join(', ') || '—'} | ${i.flags.join('; ') || '—'} |`)
@@ -265,7 +292,7 @@ if (a.url) {
   const blockedWriteMethods = new Set();
   const blockedRedirects = new Set();
   await installRequestGuards(ctx, {
-    allowFile: a['allow-file'], allowPrivate: a['allow-private'], allowTracking: a['allow-tracking'],
+    allowFile: a['allow-file'], allowPrivate: a['allow-private'], allowTracking: a['allow-tracking'], allowUnresolvedDns: a['allow-unresolved-dns'],
     trackingBlocked, blockedTargets, blockWrites: a['block-writes'], blockedWriteMethods, blockedRedirects,
   });
   await ctx.addInitScript(metricsInit);
@@ -409,7 +436,7 @@ if (a.url) {
   const safeLcp = dom.lcp ? { ...dom.lcp, url: dom.lcp.url ? redactUrl(dom.lcp.url) : null } : null;
   const safeUrl = redactUrl(url.href);
   await fs.writeFile(path.join(outDir, 'images-rendered.json'), JSON.stringify({
-    url: safeUrl, width, lcp: safeLcp, cls: dom.cls, serviceWorkersBlocked: true, trackingAllowed: a['allow-tracking'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(), blockedRedirects: [...blockedRedirects].sort(),
+    url: safeUrl, width, lcp: safeLcp, cls: dom.cls, serviceWorkersBlocked: true, trackingAllowed: a['allow-tracking'], allowUnresolvedDns: a['allow-unresolved-dns'], blockWrites: a['block-writes'], blockedWriteMethods: [...blockedWriteMethods].sort(), blockedRedirects: [...blockedRedirects].sort(),
     trackingBlocked: [...trackingBlocked].sort(), blockedTargets: [...blockedTargets].sort(), items: clean,
   }, null, 2), 'utf8');
   const rows = clean

@@ -44,7 +44,7 @@ Associe cada papel ao token, à variável ou ao componente que já existe. Crie 
 
 ### 5. Implementar
 
-- Inspecione antes de editar: framework, estilos, componentes, assets e convenções.
+- Inspecione antes de editar: framework, estilos, componentes, assets e convenções. Quando útil, use a [orientação de stack](references/adaptadores-de-stack.md) e o detector somente leitura; sinais são hipóteses a confirmar.
 - Faça a menor mudança que atinja o nível de fidelidade combinado.
 - Preserve a semântica HTML, a ordem de foco, os estados (hover, foco, ativo, desabilitado, erro, vazio, carregando) e a copy existente.
 - Parta do conteúdo real para o layout: breakpoints nascem de onde o conteúdo quebra, não de uma lista fixa.
@@ -64,7 +64,7 @@ Entregue de forma curta: fonte e nível de fidelidade usados, tabela de papéis 
 ## Evidência visual e privacidade
 
 - Os scripts não clicam nem enviam formulários, mas o navegador executa JavaScript da página e pode carregar recursos externos. GET não garante ausência de efeitos colaterais; use apenas alvos que o usuário autorizou inspecionar.
-- A proteção de rede bloqueia destinos privados, endpoints de metadata e provedores de tracking conhecidos por padrão. Nomes de host são resolvidos e cada endereço passa pela mesma política dos IPs literais; se a resolução local falhar (por exemplo atrás de proxy), a requisição segue e a checagem fica só no nome. O navegador resolve o nome de novo, então um DNS rebinding com TTL curto ainda pode vencer a checagem: não use a ferramenta como sandbox para URLs não confiáveis. `--allow-private` amplia explicitamente o acesso a redes privadas; prefira loopback para desenvolvimento local.
+- A proteção de rede bloqueia destinos privados, endpoints de metadata e provedores de tracking conhecidos por padrão. Nomes de host são resolvidos e cada endereço passa pela mesma política dos IPs literais; se a resolução local falhar ou expirar, a requisição é bloqueada por padrão. `--allow-unresolved-dns` permite prosseguir sem validação do IP em ambientes de proxy confiáveis e reduz a proteção. O navegador resolve o nome de novo, então um DNS rebinding com TTL curto ainda pode vencer a checagem: não use a ferramenta como sandbox para URLs não confiáveis. `--allow-private` amplia explicitamente o acesso a redes privadas; prefira loopback para desenvolvimento local.
 - `--allow-tracking` permite analytics e só deve ser usado em alvos de teste/staging quando isso for necessário para a inspeção. Em produção, o padrão pode omitir variações de testes A/B, métricas e widgets; registre essa limitação.
 - O bloqueio por host não cobre todo tracking na própria origem. `--block-writes` bloqueia métodos HTTP diferentes de GET/HEAD e todos os WebSockets nos três scripts; é opt-in porque pode impedir consultas GraphQL e alterar o render. WebSockets permitidos seguem a mesma política de alvos/trackers. Service workers ficam desativados, o que pode alterar experiências offline ou cacheadas. Os relatórios registram a opção e os métodos bloqueados, sem corpos de requisição; WebSocket aparece como `WEBSOCKET`. Isso não garante ausência de efeitos colaterais em GET.
 - Redirects GET da navegação principal são revalidados antes de cada salto. Redirects de subrecursos e navegações não-GET são recusados e registrados em `blockedRedirects`; recursos legítimos podem ficar ausentes. A mediação HTTP altera tempos e pode afetar o render. Confira as condições em [captura e inspeção](references/captura-e-inspecao.md).

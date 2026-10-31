@@ -14,7 +14,7 @@ node <skill>/scripts/image-manifest.mjs --url http://localhost:3000 --width 375
 # Para salvar até 60 cópias locais explicitamente, acrescente --save-images
 ```
 
-Saída em `.audit/images/`: `images-static.md/.json`, `images-rendered.md/.json` e `imagens-revisao.md` (roteiro de revisão em lotes de 8). Com `--save-images`, também cria `files/` com até 60 cópias nomeadas sem usar nomes de origem. Use `--skip pasta1,pasta2` para ignorar pastas. O script ignora `node_modules`, `.git`, builds, caches, `.audit`, links simbólicos e arquivos `.env`/chaves. URL credentials, paths, query strings, fragments, emails e file paths são removidos dos relatórios.
+Saída em `.audit/images/`: `images-static.md/.json`, `images-rendered.md/.json` e `imagens-revisao.md` (roteiro de revisão em lotes de 8). Com `--save-images`, também cria `files/` com até 60 cópias nomeadas sem usar nomes de origem. Use `--skip pasta1,pasta2` para ignorar pastas. O script ignora `node_modules`, `.git`, builds, caches, `.audit`, links simbólicos e arquivos `.env`/chaves. Credenciais e caminhos em URLs e padrões conhecidos de dados sensíveis são redigidos por melhor esforço; nomes arbitrários, texto renderizado e pixels exigem revisão manual antes de compartilhar.
 
 Rode o render em 375 e 1440 px: `srcset` e `sizes` podem escolher arquivos diferentes.
 
@@ -54,4 +54,4 @@ Rode o render em 375 e 1440 px: `srcset` e `sizes` podem escolher arquivos difer
 - Separe **fato** (medido ou visto) de **hipótese** (por exemplo, "provável ganho de LCP").
 - Informe a cobertura: quantas imagens o inventário listou, quantas foram abertas, quantas ficaram sem revisão.
 
-No inventário estático, nomes e caminhos são substituídos por IDs locais (`image-0001`, `source-0001`) para evitar expor dados em nomes de arquivos. Não há mapa reverso salvo; localize a origem manualmente quando necessário. Outros conteúdos e pixels ainda podem conter dados pessoais e exigem revisão antes de compartilhar.
+No inventário estático, nomes e caminhos são substituídos por IDs locais (`image-0001`, `source-0001`) para evitar expor dados em nomes de arquivos. Nenhum mapa reverso é salvo por padrão. Para uso estritamente local, `--source-map .audit/private/image-map.json` grava um mapa com caminhos reais somente se o arquivo for novo, estiver dentro do repositório, ignorado pelo Git, em diretório existente e fora da pasta de relatórios. Crie antes `.audit/private/` e confirme que `.audit/` está ignorado. O arquivo é criado com permissão 0600 onde suportada; não o compartilhe. Outros conteúdos e pixels ainda podem conter dados pessoais e exigem revisão antes de compartilhar.
