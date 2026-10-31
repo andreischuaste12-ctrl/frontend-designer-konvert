@@ -30,18 +30,19 @@ async function withTimeout(promise, ms) {
   try { return await Promise.race([promise, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('timeout')), ms); })]); }
   finally { clearTimeout(timer); }
 }
-function pinnedHead(url, address, timeout) {
+function pinnedRequest(url, address, timeout, method = 'HEAD') {
   return new Promise((resolve, reject) => {
     const u = new URL(url);
-    const req = httpsRequest(u, { method: 'HEAD', family: 4, servername: u.hostname, timeout, lookup: (_host, _options, callback) => callback(null, address, 4), headers: { 'User-Agent': 'Konvert-Reference-Check/1.0' } }, (res) => {
+    const req = httpsRequest(u, { method, family: 4, servername: u.hostname, timeout, lookup: (_host, _options, callback) => callback(null, address, 4), headers: { 'User-Agent': 'Konvert-Reference-Check/1.0', ...(method === 'GET' ? { Range: 'bytes=0-0' } : {}) } }, (res) => {
       const status = res.statusCode, location = res.headers.location;
-      res.resume(); resolve({ status, location });
+      // Only the status and redirect target matter; never read a GET body.
+      res.destroy(); resolve({ status, location });
     });
     req.on('timeout', () => req.destroy(new Error('timeout')));
     req.on('error', reject); req.end();
   });
 }
-export async function checkReference(raw, { lookup = dnsLookup, request = pinnedHead, timeout = 5000 } = {}) {
+export async function checkReference(raw, { lookup = dnsLookup, request = pinnedRequest, timeout = 5000 } = {}) {
   let url = normalizedUrl(raw);
   if (!url) return { status: 'inconclusive', reason: 'unsupported URL' };
   for (let hop = 0; hop <= 3; hop++) {
@@ -51,7 +52,11 @@ export async function checkReference(raw, { lookup = dnsLookup, request = pinned
     const address = publicIPv4(addresses);
     if (!address) return { status: 'inconclusive', reason: 'no exclusively public IPv4 answer' };
     let response;
-    try { response = await request(url, address, timeout); }
+    try {
+      response = await request(url, address, timeout, 'HEAD');
+      // Some servers reject HEAD; retry once with a one-byte GET before judging the link.
+      if ([405, 501].includes(response.status)) response = await request(url, address, timeout, 'GET');
+    }
     catch { return { status: 'inconclusive', reason: 'connection or TLS failed' }; }
     if (response.status >= 200 && response.status < 300) return { status: 'available', httpStatus: response.status };
     if ([301,302,303,307,308].includes(response.status) && response.location) {
@@ -65,6 +70,10 @@ export async function checkReference(raw, { lookup = dnsLookup, request = pinned
   }
   return { status: 'inconclusive', reason: 'redirect limit' };
 }
+/** Fails the scheduled job only for definitive 404/410 answers, so a broken reference alerts the maintainer. */
+export function exitCodeFor(results) {
+  return results.some((item) => item?.status === 'unavailable') ? 1 : 0;
+}
 async function main() {
   // Direct pinned connections cannot safely honor an HTTP proxy; do not bypass one.
   if (process.env.HTTPS_PROXY || process.env.https_proxy || process.env.HTTP_PROXY || process.env.http_proxy || process.env.ALL_PROXY || process.env.all_proxy) throw new Error('Proxy configuration is unsupported; no requests made.');
@@ -74,8 +83,10 @@ async function main() {
   // Bounded workers avoid a burst of requests to external sites.
   let next = 0;
   await Promise.all(Array.from({ length: 3 }, async () => { while (next < urls.length) { const index = next++; results[index] = { url: urls[index], checkedAt: new Date().toISOString(), ...await checkReference(urls[index]) }; } }));
-  console.log('# Reference availability (HTTP HEAD)\n\nA response is not a content or scientific verification. Restricted and inconclusive sources require manual review; no links are deleted.\n\n| Source | Checked at (UTC) | Status | HTTP |\n| --- | --- | --- | --- |');
+  console.log('# Reference availability (HTTP HEAD)\n\nA response is not a content or scientific verification. Restricted and inconclusive sources require manual review; unavailable (404/410) sources fail the job; no links are deleted.\n\n| Source | Checked at (UTC) | Status | HTTP |\n| --- | --- | --- | --- |');
   for (const item of results) console.log(`| ${item.url} | ${item.checkedAt} | ${item.status} | ${item.httpStatus ?? '—'} |`);
+  process.exitCode = exitCodeFor(results);
+  if (process.exitCode) console.error('At least one reference returned 404 or 410; review it manually. No links were changed.');
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   main().catch((error) => { console.error(error.message === 'Proxy configuration is unsupported; no requests made.' ? error.message : 'Reference check failed; details omitted.'); process.exitCode = 1; });

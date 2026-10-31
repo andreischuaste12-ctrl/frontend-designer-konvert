@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { selectSuccessfulRun, verifyMatrixJobs, releaseNotes } from './release-readiness.mjs';
 const sha = 'a'.repeat(40);
 const run = { id: 123, run_number: 1, head_sha: sha, head_branch: 'main', event: 'push', status: 'completed', conclusion: 'success' };
-const jobs = [{ name: 'coverage', status: 'completed', conclusion: 'success' }];
+const jobs = [{ name: 'coverage', status: 'completed', conclusion: 'success' }, { name: 'fixture-react', status: 'completed', conclusion: 'success' }];
 for (const os of ['ubuntu-latest', 'windows-latest']) {
   for (const name of [`repository (${os})`, `smoke (${os})`, ...['20', '22', '24'].map((n) => `validate (${n}, ${os})`)]) jobs.push({ name, status: 'completed', conclusion: 'success' });
 }
@@ -20,6 +20,7 @@ test('requires every distinct matrix job to have completed successfully', () => 
   assert.throws(() => verifyMatrixJobs({ jobs: jobs.slice(1) }));
   assert.throws(() => verifyMatrixJobs({ jobs: [ ...jobs.slice(0, -1), { ...jobs.at(-1), conclusion: 'skipped' } ] }));
   assert.throws(() => verifyMatrixJobs({ jobs: [ ...jobs, jobs[0] ] }));
+  assert.throws(() => verifyMatrixJobs({ jobs: jobs.filter((j) => j.name !== 'fixture-react') }), 'the runnable fixture build is part of the release gate');
 });
 test('requires the matching stable release section and does not include Unreleased', () => {
   const log = '# Changelog\n\n## Unreleased\n\n- private draft\n\n## 0.2.0 — 2026-10-31\n\n- public note\n\n## 0.1.0\n\n- older\n';

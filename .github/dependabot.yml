@@ -4,6 +4,10 @@ updates:
     directory: /skills/design-por-referencia-konvert
     schedule:
       interval: weekly
+  - package-ecosystem: npm
+    directory: /evaluations/fixtures/react-tailwind
+    schedule:
+      interval: weekly
   - package-ecosystem: github-actions
     directory: /
     schedule:

@@ -12,7 +12,7 @@ Use the same agent configuration, installed skills, and source commit for every 
 
 ## Reference availability
 
-The optional `Reference availability` workflow checks public catalog and study links with HTTP HEAD and records each check time in the job summary. A successful response does not verify the content, publication details, or scientific claims. A 403 or 429 means restricted, not definitively broken; connection errors and unsupported network environments are inconclusive. It never deletes or changes links. The checker refuses to run when a proxy is configured because it cannot safely enforce its connection policy through a proxy.
+The weekly `Reference availability` workflow checks public catalog and study links with HTTP HEAD, retries once with a one-byte GET when a server answers 405 or 501, and records each check time in the job summary. A successful response does not verify the content, publication details, or scientific claims. A 403 or 429 means restricted, not definitively broken; connection errors and unsupported network environments are inconclusive. Only a 404 or 410 fails the job, so the maintainer is notified to review the reference manually; it never deletes or changes links. The checker refuses to run when a proxy is configured because it cannot safely enforce its connection policy through a proxy.
 
 ## Routing
 
