@@ -3,7 +3,7 @@
   "id": "handoff-loja",
   "fixture": "evaluations/fixtures/loja",
   "report": "evaluations/handoff/loja-report.json",
-  "brief": "Use design-por-referencia-konvert para implementar os achados aprovados do relatório de auditoria em .audit/audit-report.json neste projeto.",
+  "brief": "Use design-por-referencia-konvert neste projeto. Autorizo implementar somente LOJA-001, LOJA-002 e LOJA-003 do relatório em .audit/audit-report.json, respeitando a elegibilidade e as dependências externas. Não resolva dependências por conta própria e não altere outros achados.",
   "expectedImplementable": [
     "LOJA-001",
     "LOJA-002"
@@ -27,5 +27,10 @@
   },
   "protectedPaths": [
     "js/cart.js"
+  ],
+  "authorizedIds": [
+    "LOJA-001",
+    "LOJA-002",
+    "LOJA-003"
   ]
 }

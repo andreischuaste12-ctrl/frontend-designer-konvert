@@ -77,14 +77,14 @@
   {
     "id": "audit-11",
     "skill": "audit-frontend-designer-konvert",
-    "prompt": "Summarize this financial spreadsheet without touching the website.",
+    "prompt": "Increase the heading sizes on this existing page using its current type scale.",
     "shouldTrigger": false,
     "language": "en"
   },
   {
     "id": "audit-12",
     "skill": "audit-frontend-designer-konvert",
-    "prompt": "Write a standalone animation timeline; there is no interface review.",
+    "prompt": "Fix the horizontal overflow on this existing mobile page and verify the result.",
     "shouldTrigger": false,
     "language": "en"
   },
@@ -256,14 +256,14 @@
   {
     "id": "audit-pt-11",
     "skill": "audit-frontend-designer-konvert",
-    "prompt": "Resuma esta planilha financeira sem alterar o site.",
+    "prompt": "Aumente os títulos desta página existente usando a escala tipográfica atual.",
     "shouldTrigger": false,
     "language": "pt-BR"
   },
   {
     "id": "audit-pt-12",
     "skill": "audit-frontend-designer-konvert",
-    "prompt": "Crie uma timeline de animação independente, sem revisão da interface.",
+    "prompt": "Corrija o overflow horizontal desta página mobile existente e verifique o resultado.",
     "shouldTrigger": false,
     "language": "pt-BR"
   },

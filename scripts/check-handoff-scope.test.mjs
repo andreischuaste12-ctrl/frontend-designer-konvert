@@ -101,5 +101,18 @@ test('operator approvals narrow the fixture scope and an empty approval permits 
   assert.equal(checkScope(handoff, rawReport, ['css/product.css'], []).passed, false);
   assert.throws(() => checkScope(handoff, rawReport, [], ['UNKNOWN-001']), /known finding/);
   assert.deepEqual(checkScope(handoff, rawReport, [], ['LOJA-003']).implementable, [], 'approval cannot unblock a pending dependency');
-  assert.deepEqual(checkScope({ ...handoff, expectedImplementable: undefined }, rawReport, []).implementable, [], 'missing approval fails closed');
+  assert.deepEqual(checkScope({ ...handoff, authorizedIds: undefined }, rawReport, []).implementable, [], 'missing approval fails closed');
+});
+
+
+test('handoff approvals are independent of report flags and legacy warnings remain visible', async () => {
+  const { handoff, rawReport } = await loadCase();
+  assert.deepEqual(handoff.authorizedIds, ['LOJA-001', 'LOJA-002', 'LOJA-003']);
+  assert.ok(validateHandoffCase({ ...handoff, brief: 'Implemente os achados aprovados.' }, rawReport).errors.some((e) => e.includes('brief must explicitly')));
+  assert.ok(handoff.authorizedIds.every((id) => handoff.brief.includes(id)));
+  assert.ok(validateHandoffCase({ ...handoff, authorizedIds: undefined }, rawReport).errors.some((e) => e.includes('authorizedIds')));
+  assert.ok(validateHandoffCase({ ...handoff, authorizedIds: ['LOJA-001'] }, rawReport).errors.some((e) => e.includes('expectedImplementable')));
+  const legacy = validateHandoffCase(handoff, { ...rawReport, schema_version: 2 });
+  assert.deepEqual(legacy.errors, []);
+  assert.ok(legacy.warnings.some((w) => w.includes('version 2')));
 });

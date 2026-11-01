@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "report_id": "EVAL-LOJA-001",
   "project": "loja sintética de avaliação",
   "scope": {
@@ -16,7 +16,8 @@
   },
   "evidence_limits": [
     "Projeto sintético sem pesquisa com usuários.",
-    "Estados após envio de formulário não foram observados."
+    "Estados após envio de formulário não foram observados.",
+    "Relatório prescrito para testar o handoff; não representa uma auditoria real executada por agente."
   ],
   "preserve": [
     "Evento add_to_cart, id add-to-cart e data-sku do botão de compra.",
@@ -32,7 +33,7 @@
       "probable_impact": "A ação principal pode ser reconhecida mais tarde que as secundárias; efeito na conversão não medido.",
       "confidence": {
         "level": "high",
-        "reason": "Cores e pesos medidos nos estilos."
+        "reason": "Cores declaradas no CSS sintético; a razão indicada depende do fundo esperado e não confirma o render."
       },
       "preserve": [
         "Texto do botão",
@@ -43,7 +44,16 @@
       "external_dependency": {
         "status": "not_applicable"
       },
-      "approved_for_implementation": true
+      "approved_for_implementation": true,
+      "finding_kind": "problem",
+      "evidence": {
+        "type": "source_code",
+        "source": "estilos em css/product.css",
+        "state": "normal",
+        "viewport": "375 px"
+      },
+      "inference": "A observação no código sintético sustenta investigar a condição descrita; não comprova o comportamento renderizado.",
+      "hypothesis": "A ação principal pode ser reconhecida mais tarde que as secundárias; efeito na conversão não medido."
     },
     {
       "id": "LOJA-002",
@@ -53,7 +63,7 @@
       "probable_impact": "Em mobile, a navegação pode ser difícil de ler; hipótese não testada com usuários.",
       "confidence": {
         "level": "high",
-        "reason": "Cor medida no media query."
+        "reason": "Cores declaradas no CSS sintético; a razão indicada depende do fundo esperado e não confirma o render."
       },
       "preserve": [
         "Itens e rotas da navegação"
@@ -65,7 +75,16 @@
         "detail": "A cor dos links em mobile precisava de aprovação da marca.",
         "resolution": "Responsável fictício pela marca aprovou #333333 para os links em telas pequenas."
       },
-      "approved_for_implementation": true
+      "approved_for_implementation": true,
+      "finding_kind": "problem",
+      "evidence": {
+        "type": "source_code",
+        "source": "css/header.css",
+        "state": "normal",
+        "viewport": "375 px"
+      },
+      "inference": "A observação no código sintético sustenta investigar a condição descrita; não comprova o comportamento renderizado.",
+      "hypothesis": "Em mobile, a navegação pode ser difícil de ler; hipótese não testada com usuários."
     },
     {
       "id": "LOJA-003",
@@ -86,7 +105,16 @@
         "status": "pending",
         "detail": "O responsável fictício pela operação precisa definir as regras de estimativa de frete."
       },
-      "approved_for_implementation": true
+      "approved_for_implementation": true,
+      "finding_kind": "problem",
+      "evidence": {
+        "type": "source_code",
+        "source": "index.html, informação de frete no painel de compra",
+        "state": "normal",
+        "viewport": "375 px"
+      },
+      "inference": "A observação no código sintético sustenta investigar a condição descrita; não comprova o comportamento renderizado.",
+      "hypothesis": "O custo total fica desconhecido até o carrinho; impacto no abandono é hipótese."
     },
     {
       "id": "LOJA-004",
@@ -96,7 +124,7 @@
       "probable_impact": "Informação de confiança pode passar despercebida; hipótese.",
       "confidence": {
         "level": "high",
-        "reason": "Tamanho e cor medidos."
+        "reason": "Cores declaradas no CSS sintético; a razão indicada depende do fundo esperado e não confirma o render."
       },
       "preserve": [
         "Links de política e contato"
@@ -106,7 +134,16 @@
       "external_dependency": {
         "status": "not_applicable"
       },
-      "approved_for_implementation": false
+      "approved_for_implementation": false,
+      "finding_kind": "problem",
+      "evidence": {
+        "type": "source_code",
+        "source": "css/footer.css",
+        "state": "normal",
+        "viewport": "375 px"
+      },
+      "inference": "A observação no código sintético sustenta investigar a condição descrita; não comprova o comportamento renderizado.",
+      "hypothesis": "Informação de confiança pode passar despercebida; hipótese."
     },
     {
       "id": "LOJA-005",
@@ -126,12 +163,78 @@
       "external_dependency": {
         "status": "not_applicable"
       },
-      "approved_for_implementation": false
+      "approved_for_implementation": false,
+      "finding_kind": "problem",
+      "evidence": {
+        "type": "source_code",
+        "source": "css/base.css",
+        "state": "normal",
+        "viewport": "375 px"
+      },
+      "inference": "A observação no código sintético sustenta investigar a condição descrita; não comprova o comportamento renderizado.",
+      "hypothesis": "Quem navega por teclado pode perder a posição na página."
     }
   ],
   "handoff": {
     "proposed_skill": "design-por-referencia-konvert",
     "summary": "Implementar LOJA-001 e LOJA-002. LOJA-003 está aprovado, mas bloqueado pela dependência pendente; LOJA-004 e LOJA-005 não foram aprovados.",
     "implementation_performed": false
-  }
+  },
+  "coverage": [
+    {
+      "area": "index.html, painel de compra; estilos em css/product.css",
+      "task": "Escolher a cor e adicionar ao carrinho",
+      "state": "normal",
+      "viewport": "375 px",
+      "result": "observed",
+      "evidence": "Evidência de código prescrita no cenário sintético: estilos em css/product.css",
+      "findings": [
+        "LOJA-001"
+      ]
+    },
+    {
+      "area": "cabeçalho em telas até 600 px; css/header.css",
+      "task": "Escolher a cor e adicionar ao carrinho",
+      "state": "normal",
+      "viewport": "375 px",
+      "result": "observed",
+      "evidence": "Evidência de código prescrita no cenário sintético: css/header.css",
+      "findings": [
+        "LOJA-002"
+      ]
+    },
+    {
+      "area": "index.html, informação de frete no painel de compra",
+      "task": "Escolher a cor e adicionar ao carrinho",
+      "state": "normal",
+      "viewport": "375 px",
+      "result": "observed",
+      "evidence": "Evidência de código prescrita no cenário sintético: index.html, informação de frete no painel de compra",
+      "findings": [
+        "LOJA-003"
+      ]
+    },
+    {
+      "area": "rodapé; css/footer.css",
+      "task": "Escolher a cor e adicionar ao carrinho",
+      "state": "normal",
+      "viewport": "375 px",
+      "result": "observed",
+      "evidence": "Evidência de código prescrita no cenário sintético: css/footer.css",
+      "findings": [
+        "LOJA-004"
+      ]
+    },
+    {
+      "area": "estilos globais; css/base.css",
+      "task": "Escolher a cor e adicionar ao carrinho",
+      "state": "normal",
+      "viewport": "375 px",
+      "result": "observed",
+      "evidence": "Evidência de código prescrita no cenário sintético: css/base.css",
+      "findings": [
+        "LOJA-005"
+      ]
+    }
+  ]
 }

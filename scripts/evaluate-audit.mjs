@@ -21,6 +21,9 @@ export function validateAuditCases(data) {
     if (typeof targets[key] !== 'number' || targets[key] < 0 || targets[key] > 1) errors.push(`targets.${key} must be between 0 and 1`);
   }
   if (!Number.isInteger(targets.unsupportedClaims) || targets.unsupportedClaims < 0) errors.push('targets.unsupportedClaims must be a non-negative integer');
+  for (const key of ['requireCaseDetection', 'requireCaseCriticalDetection']) {
+    if (targets[key] !== undefined && typeof targets[key] !== 'boolean') errors.push(`targets.${key} must be a boolean`);
+  }
   const caseIds = new Set();
   for (const item of data.cases) {
     if (!isId(item?.id) || caseIds.has(item.id)) { errors.push('case IDs must be unique non-empty strings'); continue; }
@@ -81,14 +84,16 @@ export function scoreAudit(data, runs) {
     const declaredGaps = run.declaredGaps ?? [];
     if (!Array.isArray(declaredGaps) || new Set(declaredGaps).size !== declaredGaps.length || declaredGaps.some((id) => !expected.has(id) || usedExpected.has(id))) throw new Error('declaredGaps must list unmatched expected IDs once.');
 
+    // An invalid delivery cannot contribute accepted findings or preservation evidence.
+    if (!run.reportValid) { usedExpected.clear(); usedFindings.clear(); }
     const critical = item.expected.filter((x) => CRITICAL.has(x.priority));
     const criticalFound = critical.filter((x) => usedExpected.has(x.id)).length;
-    const agreed = run.matches.filter((m) => Math.abs(PRIORITIES.indexOf(m.priority) - PRIORITIES.indexOf(expected.get(m.expected).priority)) <= 1).length;
+    const agreed = (run.reportValid ? run.matches : []).filter((m) => Math.abs(PRIORITIES.indexOf(m.priority) - PRIORITIES.indexOf(expected.get(m.expected).priority)) <= 1).length;
     const delta = {
       runs: 1, valid: run.reportValid ? 1 : 0, critical: critical.length, criticalFound, expected: item.expected.length, expectedFound: usedExpected.size,
       correctFindings: usedFindings.size, findings: run.findingsTotal, decoySlots: decoyIds.size, decoysFlagged: run.decoysFlagged.length,
-      preserveSlots: preserveIds.size, preserveCovered: run.preserveCovered.length, matches: run.matches.length, priorityAgreed: agreed, unsupportedClaims: run.unsupportedClaims,
-      missed: item.expected.length - usedExpected.size, declaredGaps: declaredGaps.length,
+      preserveSlots: preserveIds.size, preserveCovered: run.reportValid ? run.preserveCovered.length : 0, matches: run.matches.length, priorityAgreed: agreed, unsupportedClaims: run.unsupportedClaims,
+      missed: item.expected.length - usedExpected.size, declaredGaps: run.reportValid ? declaredGaps.length : 0,
     };
     const caseStats = perCase[item.id] ??= { ...Object.fromEntries(Object.keys(totals).map((k) => [k, 0])), detection: Object.fromEntries(item.expected.map((x) => [x.id, 0])) };
     for (const [k, v] of Object.entries(delta)) { totals[k] += v; caseStats[k] += v; }
@@ -122,6 +127,10 @@ export function scoreAudit(data, runs) {
     runs: s.runs, ...metrics(s),
     detectionRate: Object.fromEntries(Object.entries(s.detection).map(([eid, n]) => [eid, ratio(n, s.runs)])),
   }]));
+  for (const [id, stats] of Object.entries(perCase)) {
+    if (t.requireCaseDetection && stats.expectedFound === 0) failures.push(`${id}: no expected issue detected across its repetitions`);
+    if (t.requireCaseCriticalDetection && stats.critical > 0 && stats.criticalFound === 0) failures.push(`${id}: no critical issue detected across its repetitions`);
+  }
   return { runs: totals.runs, overall, cases: cases_, failures, passed: failures.length === 0 };
 }
 

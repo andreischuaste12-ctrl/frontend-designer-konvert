@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import net from 'node:net';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import { resolvePinnedAddress, resolvePinnedAddresses, startPinningProxy, PinningBlocked } from '../scripts/_pinning.mjs';
 import { targetBlockReason } from '../scripts/_common.mjs';
 
@@ -104,4 +107,42 @@ test('CONNECT falls back after a refused TCP connection without another DNS look
   t.after(() => proxy.close());
   assert.deepEqual(await connectThrough(proxy.server, `dual.example.invalid:${port}`), { status: 200, body: 'echo:ping' });
   assert.equal(calls, 1);
+});
+
+
+test('incoming socket errors during delayed DNS cannot crash the process in CONNECT or plain HTTP', async () => {
+  const code = `
+    import net from 'node:net';
+    import { startPinningProxy } from './scripts/_pinning.mjs';
+    process.once('uncaughtException', () => process.exit(17));
+    let accepted, resets = 0;
+    const emit = net.Server.prototype.emit;
+    net.Server.prototype.emit = function (event, ...args) {
+      if (event === 'connection') accepted = args[0];
+      return emit.call(this, event, ...args);
+    };
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const proxy = await startPinningProxy({ lookup: async () => {
+      const socket = accepted;
+      queueMicrotask(() => { resets++; socket.emit('error', Object.assign(new Error('synthetic reset'), { code: 'ECONNRESET' })); });
+      await sleep(30);
+      return [{ address: '127.0.0.1' }];
+    }});
+    const target = new URL(proxy.server);
+    for (const request of [
+      'CONNECT reset.example.invalid:443 HTTP/1.1\\r\\nHost: reset.example.invalid\\r\\n\\r\\n',
+      'GET http://reset.example.invalid/ HTTP/1.1\\r\\nHost: reset.example.invalid\\r\\n\\r\\n',
+    ]) {
+      const client = net.connect({ host: target.hostname, port: Number(target.port) }, () => client.write(request));
+      client.on('error', () => {});
+      await sleep(80);
+      client.destroy();
+    }
+    await proxy.close();
+    console.log('handled=' + resets);
+  `;
+  const { stdout } = await promisify(execFile)(process.execPath, ['--input-type=module', '-e', code], {
+    cwd: fileURLToPath(new URL('../', import.meta.url)), timeout: 5000,
+  });
+  assert.match(stdout, /handled=2/);
 });

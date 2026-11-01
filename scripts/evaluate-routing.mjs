@@ -5,6 +5,22 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { redactText } from '../skills/design-por-referencia-konvert/scripts/_common.mjs';
 
+/** Sequence metadata is validated here, but scoring still measures lead selection only. */
+export function validateRoutingMetadata(cases, skillNames) {
+  const errors = [];
+  for (const item of cases) {
+    if (!item || typeof item !== 'object') continue;
+    const flow = item.expectedFlow;
+    if (flow !== undefined && (!Array.isArray(flow) || !flow.length || flow.some((skill) => !skillNames.includes(skill)) || new Set(flow).size !== flow.length)) {
+      errors.push(`${item.id}: expectedFlow must list known skills once in stage order`);
+    }
+    if (item.handoffRequiresUserApproval !== undefined && typeof item.handoffRequiresUserApproval !== 'boolean') errors.push(`${item.id}: handoffRequiresUserApproval must be a boolean`);
+    if (item.handoffRequiresUserApproval === true && (!Array.isArray(flow) || !flow.includes('design-por-referencia-konvert') || flow.length < 2)) errors.push(`${item.id}: approval handoff needs a multi-stage flow including the executor`);
+    if (Array.isArray(flow) && item.shouldTrigger === true && flow[0] !== item.skill) errors.push(`${item.id}: expectedFlow must start with the lead skill`);
+  }
+  return errors;
+}
+
 export function scoreRouting(cases, decisions) {
   const expected = new Map(cases.map((c) => [c.id, c]));
   if (expected.size !== cases.length) throw new Error('Duplicate evaluation case ID.');

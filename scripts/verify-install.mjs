@@ -2,6 +2,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { validateSkillContent } from './skill-directory-contract.mjs';
 
 export const REQUIRED_SKILLS = ['audit-frontend-designer-konvert', 'design-por-referencia-konvert', 'create-frontend-from-zero-konvert'];
 const TOOLING_FILES = [
@@ -44,6 +45,14 @@ export async function verifyInstall(skillsDir) {
     const description = front.match(/^description:\s*(.+)$/m)?.[1].trim();
     if (name !== skill) errors.push(`${skill}: frontmatter name must match directory`);
     if (!description || description.length > 1024) errors.push(`${skill}: description must contain 1–1024 characters`);
+    const supporting = [];
+    for (const folder of ['references', 'knowledge-base', 'examples']) {
+      let files;
+      try { files = await fs.readdir(path.join(dir, folder)); }
+      catch (error) { if (error.code === 'ENOENT') continue; throw error; }
+      for (const file of files) if (file.endsWith('.md')) supporting.push(`${folder}/${file}`);
+    }
+    errors.push(...validateSkillContent(skill, text, supporting).map((e) => `${skill}: ${e}`));
     for (const file of await walkMarkdown(dir)) {
       const prose = (await fs.readFile(file, 'utf8')).replace(/^```[^\n]*\n[\s\S]*?^```/gm, '').replace(/`[^`\n]+`/g, '');
       for (const match of prose.matchAll(/!?\[[^\]]*\]\(([^\s)]+)(?:\s+"[^"]*")?\)/g)) {

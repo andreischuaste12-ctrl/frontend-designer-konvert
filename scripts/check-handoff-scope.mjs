@@ -17,9 +17,9 @@ const toPosix = (p) => p.split(path.sep).join('/');
 export function validateHandoffCase(handoff, rawReport) {
   const errors = [];
   if (!handoff || handoff.schemaVersion !== 1 || typeof handoff.id !== 'string') return { errors: ['case needs schemaVersion 1 and an id'] };
-  const { errors: reportErrors, report } = validateAuditReport(rawReport);
+  const { errors: reportErrors, warnings, report } = validateAuditReport(rawReport);
   errors.push(...reportErrors.map((e) => `report: ${e}`));
-  if (reportErrors.length) return { errors };
+  if (reportErrors.length) return { errors, warnings };
   const paths = handoff.findingPaths ?? {};
   const owner = new Map();
   for (const finding of report.findings) {
@@ -37,9 +37,17 @@ export function validateHandoffCase(handoff, rawReport) {
   const protectedPaths = handoff.protectedPaths ?? [];
   if (!Array.isArray(protectedPaths)) errors.push('protectedPaths must be a list');
   else for (const p of protectedPaths) if (owner.has(p)) errors.push(`${p} cannot be both protected and mapped to ${owner.get(p)}`);
-  const ready = implementableFindings(report).map((f) => f.id).sort();
+  const authorized = handoff.authorizedIds;
+  if (!Array.isArray(authorized) || new Set(authorized).size !== authorized.length || authorized.some((id) => typeof id !== 'string' || !report.findings.some((f) => f.id === id))) {
+    errors.push('authorizedIds must list independently authorized finding IDs once');
+  }
+  if (typeof handoff.brief !== 'string' || !handoff.brief.trim() || (Array.isArray(authorized) && authorized.some((id) => typeof id === 'string' && !handoff.brief.includes(id)))) {
+    errors.push('brief must explicitly mention each independently authorized ID');
+  }
+  const approved = new Set(Array.isArray(authorized) ? authorized : []);
+  const ready = implementableFindings(report).filter((f) => approved.has(f.id)).map((f) => f.id).sort();
   if (JSON.stringify(ready) !== JSON.stringify([...(handoff.expectedImplementable ?? [])].sort())) errors.push(`expectedImplementable does not match the report (${ready.join(', ') || 'none'})`);
-  return { errors, report };
+  return { errors, warnings, report };
 }
 
 export async function hashTree(dir, base = dir, out = new Map()) {
@@ -61,7 +69,7 @@ export function changedFiles(before, after) {
 }
 
 /** Classifies changed files against the case; pass only with no violations and every implementable finding touched. */
-export function checkScope(handoff, report, changed, approvedIds = handoff.expectedImplementable ?? []) {
+export function checkScope(handoff, report, changed, approvedIds = handoff.authorizedIds ?? []) {
   if (!Array.isArray(approvedIds) || approvedIds.some((id) => typeof id !== 'string' || !report.findings.some((f) => f.id === id))) {
     throw new Error('approved IDs must be known finding IDs');
   }
@@ -89,8 +97,9 @@ async function main() {
   }
   const handoff = JSON.parse(await fs.readFile(a.case, 'utf8'));
   const rawReport = JSON.parse(await fs.readFile(path.resolve(root, handoff.report), 'utf8'));
-  const { errors, report } = validateHandoffCase(handoff, rawReport);
+  const { errors, warnings, report } = validateHandoffCase(handoff, rawReport);
   if (errors.length) { console.error(errors.join('\n')); process.exitCode = 2; return; }
+  for (const warning of warnings ?? []) console.error(`Warning: ${warning}`);
   const before = await hashTree(path.resolve(a.before ?? path.resolve(root, handoff.fixture)));
   const after = await hashTree(path.resolve(a.after));
   const result = { case: handoff.id, ...checkScope(handoff, report, changedFiles(before, after), a['approved-ids'] === undefined ? undefined : a['approved-ids'].split(',').map((s) => s.trim()).filter(Boolean)) };

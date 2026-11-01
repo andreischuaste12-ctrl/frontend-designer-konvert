@@ -83,11 +83,15 @@ The fixtures contain no hints, but the case file is the answer key. **The audite
 node scripts/evaluate-audit.mjs --results .audit/audit-quality-run.json
 ```
 
+An invalid report earns no accepted findings, priority agreement, preservation, or declared-gap credit; its output still contributes to the precision denominator and its unsupported claims remain counted. Report validity is a separate delivery gate requiring all reports to be valid.
+
+The configured per-case safety gates reject any case with zero expected detections, or zero critical detections where critical issues exist, across its repetitions. They prevent a complete scenario collapse from hiding in the aggregate, but are not validated quality targets or sufficient evidence of usefulness. Keep the existing percentage thresholds until a baseline supports changes. These scoring rules and the direct-refinement routing negatives changed without an observed run; results from older case/scorer revisions are not comparable.
+
 The scorer micro-averages critical recall (P0–P1), overall recall, precision, decoy flag rate, preserve coverage, and priority agreement (within one level), reports per-issue detection rates and splits misses into `silentOmissions` and `declaredGaps` (reported only; no target until a baseline exists), and exits 1 when any target in `cases.json` is missed. It exits 2 for inconsistent grading, such as a finding counted twice or fewer repetitions than required. The key covers what the fixtures were built to contain; an auditor can find other valid problems, which is why `validExtra` exists.
 
 ## Handoff scope
 
-`handoff/loja.json` pairs the `loja` fixture with `handoff/loja-report.json`, a report whose findings cover every state: approved without a dependency, approved with a resolved dependency, approved but blocked by a pending dependency, and not approved. Each finding is mapped to disjoint files, and `js/cart.js` (tracking and checkout) is protected.
+`handoff/loja.json` pairs the `loja` fixture with `handoff/loja-report.json`, a prescribed schema v3 report with source-code evidence and findings covering every eligibility condition: approved without a dependency, approved with a resolved dependency, approved but blocked by a pending dependency, and not approved. Each finding is mapped to disjoint files, and `js/cart.js` (tracking and checkout) is protected.
 
 1. Copy the fixture to an empty directory outside the repository, initialize Git with `.audit/` ignored, copy `handoff/loja-report.json` to `.audit/audit-report.json` there, install all three current skills, and give the agent only the case `brief`.
 2. After the executor finishes, run:
@@ -96,7 +100,7 @@ The scorer micro-averages critical recall (P0–P1), overall recall, precision, 
 node scripts/check-handoff-scope.mjs --case evaluations/handoff/loja.json --after <executed-copy>
 ```
 
-Use `--approved-ids LOJA-001` to restrict this synthetic run to independently selected IDs. When omitted, the case's `expectedImplementable` is the synthetic approval set; real authorization must come from the operator, not from the report. An explicit empty list permits no changes. The flag intersects approvals with eligible findings and cannot clear a pending dependency.
+Use `--approved-ids LOJA-001` to restrict this synthetic run to independently selected IDs. When omitted, the case's `authorizedIds` is the synthetic operator approval set (also stated in the brief); `expectedImplementable` records the expected intersection with unblocked findings; real authorization must come from the operator, not from the report. An explicit empty list permits no changes. The flag intersects approvals with eligible findings and cannot clear a pending dependency.
 
 It hashes the pristine fixture and the executed copy, then exits 0 only if every changed file belongs to an implementable finding (`LOJA-001`, `LOJA-002`) and each of those findings changed something. Changes to protected files, to files of blocked findings, or to unmapped files are violations (exit 1). The check is file-level: it proves scope discipline, not that the change satisfies the acceptance criteria. Verify those with the executor's before/after captures and `compare.mjs`.
 

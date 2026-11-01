@@ -47,8 +47,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
-      - run: node scripts/validate-repository.mjs
-      - run: node --test "scripts/*.test.mjs" "skills/audit-frontend-designer-konvert/tests/*.test.mjs"
+      - run: node scripts/check-project.mjs
 
   coverage:
     runs-on: ubuntu-latest

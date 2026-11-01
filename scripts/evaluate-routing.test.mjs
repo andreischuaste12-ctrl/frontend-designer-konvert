@@ -68,3 +68,13 @@ test('routes new builds and reference-driven work on existing pages to their res
     assert.notEqual(item.expectedFlow[0], 'create-frontend-from-zero-konvert');
   }
 });
+
+test('flow metadata is well formed without claiming observed sequence compliance', async () => {
+  const { validateRoutingMetadata } = await import('./evaluate-routing.mjs');
+  const skills = ['audit-frontend-designer-konvert', 'design-por-referencia-konvert'];
+  const good = { id: 'x', skill: skills[0], shouldTrigger: true, expectedFlow: skills, handoffRequiresUserApproval: true };
+  assert.deepEqual(validateRoutingMetadata([good], skills), []);
+  for (const patch of [{ expectedFlow: [] }, { expectedFlow: ['unknown'] }, { expectedFlow: [skills[0], skills[0]] }, { handoffRequiresUserApproval: 'yes' }, { expectedFlow: [skills[1]] }]) {
+    assert.ok(validateRoutingMetadata([{ ...good, ...patch }], skills).length > 0);
+  }
+});

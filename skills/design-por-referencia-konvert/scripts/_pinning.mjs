@@ -61,7 +61,7 @@ async function connectFirstReachable(addresses, port, track, active) {
       return await new Promise((resolve, reject) => {
         const socket = net.connect({ host, port });
         track(socket);
-        const timer = setTimeout(() => socket.destroy(new Error('Pinned connection timed out')), Math.min(1500, deadline - Date.now()));
+        const timer = setTimeout(() => socket.destroy(new Error('Pinned connection timed out')), Math.max(1, Math.min(1500, deadline - Date.now())));
         const onClose = () => fail(new Error('Connection closed'));
         const fail = (error) => { clearTimeout(timer); socket.removeListener('close', onClose); socket.destroy(); reject(error); };
         socket.once('error', fail);
@@ -86,11 +86,18 @@ export async function startPinningProxy(initial = {}) {
   let policy = { allowPrivate: false, allowUnresolvedDns: false, lookup: dnsLookup, timeout: 2000, targetCheck: () => null, onBlocked: () => {}, ...initial };
   let closed = false;
   const sockets = new Set();
-  const track = (socket) => { sockets.add(socket); socket.unref?.(); socket.on('close', () => sockets.delete(socket)); };
+  const track = (socket) => {
+    sockets.add(socket); socket.unref?.();
+    // Installed on acceptance, before DNS/TCP awaits or tunnel handlers take over.
+    // Error objects can contain target details: close without logging them.
+    socket.on('error', () => socket.destroy());
+    socket.on('close', () => sockets.delete(socket));
+  };
   const pin = (host) => resolvePinnedAddresses(host, policy);
   const refuse = (host, reason) => { try { policy.onBlocked(networkHost(host) || 'invalid-host', reason); } catch { /* reporting must not break the proxy */ } };
 
   const server = http.createServer(async (req, res) => {
+    req.on('error', () => res.destroy());
     // Absolute-form plain HTTP, for clients that do not tunnel http:// through CONNECT.
     let target;
     try { target = new URL(req.url); } catch { res.writeHead(400).end(); return; }
@@ -117,6 +124,7 @@ export async function startPinningProxy(initial = {}) {
   });
   server.on('connection', track);
   server.on('connect', async (req, client, head) => {
+    req.on('error', () => client.destroy());
     const match = /^\[?([^\]]+?)\]?:(\d{1,5})$/.exec(String(req.url));
     const port = Number(match?.[2]);
     if (!match || port < 1 || port > 65535) { client.end('HTTP/1.1 400 Bad Request\r\n\r\n'); return; }

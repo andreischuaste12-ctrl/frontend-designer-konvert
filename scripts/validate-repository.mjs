@@ -7,6 +7,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { validateSkillDirectories, validateWorkflowTriggers, validateSkillContent } from './skill-directory-contract.mjs';
 import { validateAuditReport, compareMarkdownIds } from '../skills/audit-frontend-designer-konvert/scripts/validate-report.mjs';
 import { validateExecutionRecord } from '../skills/audit-frontend-designer-konvert/scripts/validate-execution-record.mjs';
+import { validateRoutingMetadata } from './evaluate-routing.mjs';
 import { validateAuditCases } from './evaluate-audit.mjs';
 import { validateHandoffCase } from './check-handoff-scope.mjs';
 import { checkKnowledge } from './check-knowledge-units.mjs';
@@ -94,6 +95,7 @@ for (const skill of skillNames) {
   if (cases.filter((c) => c.shouldTrigger === true).length < 6 || cases.filter((c) => c.shouldTrigger === false).length < 6) errors.push(`${skill}: requires at least 6 positive and 6 negative routing cases.`);
 }
 if (routingCases.some((c) => !c || !c.id || typeof c.prompt !== 'string' || !c.prompt.trim() || typeof c.shouldTrigger !== 'boolean' || !skillNames.includes(c.skill))) errors.push('Invalid routing case.');
+errors.push(...validateRoutingMetadata(routingCases, skillNames));
 const capture = jsonFiles.get(path.join(tooling, 'examples/capture-index.example.json'));
 if (!capture || capture.tool !== 'capture.mjs' || !Array.isArray(capture.widths) || !capture.widths.every((n) => Number.isInteger(n) && n > 0) || !Array.isArray(capture.pages) || !Array.isArray(capture.files) || !capture.files.every((f) => f && typeof f.file === 'string' && path.basename(f.file) === f.file && Number.isInteger(f.width) && ['light', 'dark'].includes(f.scheme))) errors.push('Invalid capture-index example shape.');
 const images = jsonFiles.get(path.join(tooling, 'examples/image-manifest.example.json'));

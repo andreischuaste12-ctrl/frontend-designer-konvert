@@ -75,3 +75,30 @@ test('misses are split into declared coverage gaps and silent omissions', () => 
   assert.throws(() => scoreAudit(data, [{ ...runs[0], declaredGaps: [kept.expected] }, ...runs.slice(1)]), /declaredGaps/, 'a matched issue cannot also be a gap');
   assert.throws(() => scoreAudit(data, [{ ...runs[0], declaredGaps: ['NOPE'] }, ...runs.slice(1)]), /declaredGaps/);
 });
+
+test('invalid reports fail delivery and cannot earn findings or preserve credit', () => {
+  const runs = perfectRuns();
+  runs[0].reportValid = false;
+  const result = scoreAudit(data, runs);
+  assert.equal(result.passed, false);
+  assert.ok(result.failures.some((f) => f.includes('reportValidRate')));
+  assert.ok(result.overall.overallRecall < 1);
+  assert.ok(result.overall.precision < 1);
+  assert.ok(result.overall.preserveCoverage < 1);
+});
+
+test('one collapsed case cannot hide behind perfect results in other cases', () => {
+  const runs = perfectRuns();
+  for (const run of runs.filter((r) => r.caseId === 'react-preview')) {
+    run.matches = []; run.findingsTotal = 0;
+  }
+  const result = scoreAudit(data, runs);
+  assert.ok(result.overall.overallRecall >= data.targets.overallRecall);
+  assert.equal(result.cases['react-preview'].overallRecall, 0);
+  assert.equal(result.passed, false);
+  assert.ok(result.failures.some((f) => f.startsWith('react-preview:')));
+  const criticalOnly = perfectRuns();
+  for (const run of criticalOnly.filter((r) => r.caseId === 'react-preview')) run.matches = run.matches.filter((m) => m.priority !== 'P1' && m.priority !== 'P0');
+  assert.ok(scoreAudit(data, criticalOnly).failures.some((f) => f === 'react-preview: no critical issue detected across its repetitions'));
+  assert.ok(validateAuditCases({ ...data, targets: { ...data.targets, requireCaseDetection: 'yes' } }).some((e) => e.includes('requireCaseDetection')));
+});

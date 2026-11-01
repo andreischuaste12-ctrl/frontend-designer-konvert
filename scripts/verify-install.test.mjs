@@ -72,3 +72,15 @@ test('reports a missing creation skill', async () => {
     assert.ok((await verifyInstall(dir)).includes('create-frontend-from-zero-konvert: SKILL.md not found'));
   } finally { await fs.rm(dir, { recursive: true, force: true }); }
 });
+
+test('installed skill sections and discoverable support files obey the repository contract', async () => {
+  const dir = await installCopy();
+  try {
+    const entry = path.join(dir, 'design-por-referencia-konvert/SKILL.md');
+    const text = await fs.readFile(entry, 'utf8');
+    await fs.writeFile(entry, text.replace('## Fluxo', '## Removed heading').replace('[modelo de DESIGN.md](references/modelo-design-md.md)', 'modelo de DESIGN.md'));
+    const errors = await verifyInstall(dir);
+    assert.ok(errors.some((e) => e.includes('missing Fluxo section')));
+    assert.ok(errors.some((e) => e.includes('supporting file must be linked: references/modelo-design-md.md')));
+  } finally { await fs.rm(dir, { recursive: true, force: true }); }
+});

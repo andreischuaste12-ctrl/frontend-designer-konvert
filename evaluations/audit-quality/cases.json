@@ -9,7 +9,9 @@
     "decoyFlagRate": 0.1,
     "preserveCoverage": 0.67,
     "priorityAgreement": 0.7,
-    "unsupportedClaims": 0
+    "unsupportedClaims": 0,
+    "requireCaseDetection": true,
+    "requireCaseCriticalDetection": true
   },
   "cases": [
     {

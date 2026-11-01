@@ -216,8 +216,11 @@ const data = await page.evaluate(
         const opacityUncertain = hasAncestorOpacity(el);
         const fgOpaque = fg ? (fg[3] < 1 ? over(fg, bg.color) : fg) : null;
         const sig = [s.fontSize, s.fontWeight, s.lineHeight, s.fontFamily, s.color, hex(bg.color), bg.uncertain, opacityUncertain, Boolean((el.innerText || '').trim()), s.borderRadius].join('|');
-        bump(typeScale, `${s.fontSize} / ${s.fontWeight} / ${s.lineHeight}`);
-        bump(textColors, hex(fgOpaque) ?? s.color);
+        // Controls without rendered text stay inspectable but do not describe typography.
+        if ((el.innerText || '').trim()) {
+          bump(typeScale, `${s.fontSize} / ${s.fontWeight} / ${s.lineHeight}`);
+          bump(textColors, hex(fgOpaque) ?? s.color);
+        }
         bump(backgrounds, hex(bg.color) + (bg.uncertain ? ' (imagem/gradiente no caminho)' : ''));
         if (s.borderRadius !== '0px') bump(radii, s.borderRadius);
         if (s.boxShadow !== 'none') bump(shadows, s.boxShadow.slice(0, 90));

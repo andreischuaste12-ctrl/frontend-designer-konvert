@@ -4,6 +4,13 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+- Handle incoming proxy socket errors before DNS/TCP waits, clamp connection timeout bounds, and add a process-isolated regression covering CONNECT and plain HTTP resets.
+- Exclude controls without rendered text from typography/color summaries while retaining them for inspection.
+- Supply independent handoff IDs in the synthetic brief, validate its authorization set, migrate the prescribed report to schema v3, and expose legacy warnings.
+- Exclude invalid audit deliveries from accepted-evidence credit and reject total detection collapse per case; keep existing percentage targets pending a measured baseline.
+- Add direct-refinement negatives and validate routing flow metadata, align installed skill checks with repository content rules, discover executor tests dynamically, and run the local entry point in CI. No real agent evaluations or source reviews are claimed.
+
+
 - Correct visual sampling of icon controls and distinguish uncertain backgrounds/opacity from solid-background contrast observations; icon labels are hints, not rendered text contrast measurements.
 - Retry TCP setup against other addresses from the same fully validated DNS answer, within a bounded time budget, without replaying HTTP data or relaxing network policy.
 - Intersect handoff eligibility with operator-supplied IDs, validate supporting Markdown links for all skills, and move the unexecuted vision proposal to `evaluations/vision-proposal.json`.
