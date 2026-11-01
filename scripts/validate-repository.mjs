@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { isDeepStrictEqual } from 'node:util';
-import { validateSkillDirectories, validateWorkflowTriggers } from './skill-directory-contract.mjs';
+import { validateSkillDirectories, validateWorkflowTriggers, validateSkillContent } from './skill-directory-contract.mjs';
 import { validateAuditReport, compareMarkdownIds } from '../skills/audit-frontend-designer-konvert/scripts/validate-report.mjs';
 import { validateExecutionRecord } from '../skills/audit-frontend-designer-konvert/scripts/validate-execution-record.mjs';
 import { validateAuditCases } from './evaluate-audit.mjs';
@@ -58,24 +58,14 @@ async function walk(dir) {
       if (name !== path.basename(dir)) errors.push(`${relative}: name must match directory`);
       if (!description || description.length > 1024) errors.push(`${relative}: description must contain 1–1024 characters`);
       if (text.split('\n').length > 500) errors.push(`${relative}: exceeds 500 lines`);
-      if (name === 'create-frontend-from-zero-konvert') {
-        for (const section of ['Fronteiras e colaboração', 'Fluxo', 'Definição de pronto', 'Referências e exemplos']) {
-          if (!text.includes(`## ${section}`)) errors.push(`${relative}: missing ${section} section`);
-        }
-        for (const folder of ['references', 'examples']) {
-          for (const file of await fs.readdir(path.join(dir, folder))) {
-            if (file.endsWith('.md') && !text.includes(`](${folder}/${file})`)) errors.push(`${relative}: ${folder} file must be linked: ${file}`);
-          }
-        }
+      const supporting = [];
+      for (const folder of ['references', 'knowledge-base', 'examples']) {
+        let entries;
+        try { entries = await fs.readdir(path.join(dir, folder)); }
+        catch (error) { if (error.code === 'ENOENT') continue; throw error; }
+        for (const file of entries) if (file.endsWith('.md')) supporting.push(`${folder}/${file}`);
       }
-      if (name === 'audit-frontend-designer-konvert') {
-        for (const section of ['Fluxo', 'Princípios de design', 'Catálogo de referências', 'Formato do relatório']) {
-          if (!text.includes(`## ${section}`)) errors.push(`${relative}: missing ${section} section`);
-        }
-        for (const module of await fs.readdir(path.join(dir, 'knowledge-base'))) {
-          if (module.endsWith('.md') && !text.includes(`](knowledge-base/${module})`)) errors.push(`${relative}: knowledge module must be linked: ${module}`);
-        }
-      }
+      errors.push(...validateSkillContent(name, text, supporting).map((e) => `${relative}: ${e}`));
     }
     // Check authored Markdown links, excluding code examples and remote URLs.
     const prose = text.replace(/^```[^\n]*\n[\s\S]*?^```/gm, '').replace(/`[^`\n]+`/g, '');

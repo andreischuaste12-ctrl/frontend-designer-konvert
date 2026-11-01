@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateSkillDirectories, validateWorkflowTriggers, workflowTriggerPaths } from './skill-directory-contract.mjs';
+import { validateSkillDirectories, validateWorkflowTriggers, workflowTriggerPaths, validateSkillContent } from './skill-directory-contract.mjs';
 
 test('accepts skill directories ending in -konvert with matching frontmatter names', () => {
   assert.deepEqual(validateSkillDirectories([
@@ -31,4 +31,13 @@ test('every skill directory must trigger CI on push and pull_request', () => {
     'workflow: pull_request paths must include skills/b-konvert/**',
   ]);
   assert.deepEqual(validateWorkflowTriggers('on:\n  workflow_dispatch:\n', ['a-konvert']), ['workflow: missing push trigger', 'workflow: missing pull_request trigger']);
+});
+
+
+test('every skill must link its supporting Markdown; a code sample is not navigation', () => {
+  for (const name of ['audit-frontend-designer-konvert', 'design-por-referencia-konvert', 'create-frontend-from-zero-konvert']) {
+    assert.ok(validateSkillContent(name, '```md\n[x](references/a.md)\n```', ['references/a.md']).some((e) => e.includes('supporting file')));
+    assert.ok(!validateSkillContent(name, '[x](references/a.md#example)', ['references/a.md']).some((e) => e.includes('supporting file')));
+    assert.ok(validateSkillContent(name, '', []).some((e) => e.includes('section')));
+  }
 });

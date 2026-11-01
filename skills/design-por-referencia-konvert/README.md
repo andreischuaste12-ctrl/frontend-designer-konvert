@@ -26,7 +26,6 @@ A coding-agent skill for implementing approved audit findings, adapting a visual
 | `scripts/image-manifest.mjs` | Static and rendered image inventory plus a visual-review guide. |
 | `scripts/_common.mjs` | Shared script utilities. |
 | `scripts/compare.mjs` | Measured-style differences and optional PNG comparison with diff images. |
-| `evals/evals-visao.proposta.json` | Proposed manual evaluation scenarios; not an executable test suite. |
 | `tests/` | Unit tests and local smoke tests for the three scripts. |
 | `package.json` and `package-lock.json` | Minimal runtime, pinned Playwright dependency, and reproducible checks. |
 
@@ -71,7 +70,7 @@ node <skill>/scripts/compare.mjs --before .audit/before --after .audit/after --c
 
 ## Installation
 
-Copy this folder, including `references/`, `scripts/`, `tests/`, and `examples/`, to your agent's skills directory. `evals-visao.proposta.json` is a proposal, not a runner.
+Copy this folder, including `references/`, `scripts/`, `tests/`, and `examples/`, to your agent's skills directory. Evaluation proposals stay in the source repository under `evaluations/`; they are not installed with this skill.
 
 | Tool | Project-level path | User-level path |
 | --- | --- | --- |

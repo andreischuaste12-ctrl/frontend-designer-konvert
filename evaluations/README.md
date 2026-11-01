@@ -12,6 +12,8 @@ Do not score a run in a context that has seen the case labels or planted-issue a
 
 Use the same agent configuration, installed skills, and source commit for every case in a run. Keep run artifacts under `.audit/` and record the source commit; scores from different case sets are not comparable.
 
+See [evaluation priorities](../docs/evaluation-priorities.md) for the baseline, independent grading, creation rubric, and workflow observations. The [vision proposal](vision-proposal.json) is a manual proposal, not a runner or a recorded result.
+
 ## Reference availability
 
 The weekly `Reference availability` workflow checks public catalog and study links with HTTP HEAD, retries once with a one-byte GET when a server answers 405 or 501, and records each check time in the job summary. A successful response does not verify the content, publication details, or scientific claims. A 403 or 429 means restricted, not definitively broken; connection errors and unsupported network environments are inconclusive. Only a 404 or 410 fails the job, so the maintainer is notified to review the reference manually; it never deletes or changes links. The checker refuses to run when a proxy is configured because it cannot safely enforce its connection policy through a proxy.
@@ -93,6 +95,8 @@ The scorer micro-averages critical recall (P0–P1), overall recall, precision, 
 ```bash
 node scripts/check-handoff-scope.mjs --case evaluations/handoff/loja.json --after <executed-copy>
 ```
+
+Use `--approved-ids LOJA-001` to restrict this synthetic run to independently selected IDs. When omitted, the case's `expectedImplementable` is the synthetic approval set; real authorization must come from the operator, not from the report. An explicit empty list permits no changes. The flag intersects approvals with eligible findings and cannot clear a pending dependency.
 
 It hashes the pristine fixture and the executed copy, then exits 0 only if every changed file belongs to an implementable finding (`LOJA-001`, `LOJA-002`) and each of those findings changed something. Changes to protected files, to files of blocked findings, or to unmapped files are violations (exit 1). The check is file-level: it proves scope discipline, not that the change satisfies the acceptance criteria. Verify those with the executor's before/after captures and `compare.mjs`.
 

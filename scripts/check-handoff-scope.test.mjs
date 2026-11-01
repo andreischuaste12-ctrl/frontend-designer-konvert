@@ -90,3 +90,16 @@ test('the CLI exits 0 on a clean run, 1 on a scope violation', async (t) => {
   const dirty = await scenario(t, { 'css/product.css': '\n/* a */\n', 'css/header.css': '\n/* b */\n', 'js/cart.js': '\n// c\n' });
   await assert.rejects(run(process.execPath, [script, '--case', casePath, '--after', dirty.dir]), (err) => err.code === 1 && JSON.parse(err.stdout).violations[0].path === 'js/cart.js');
 });
+
+test('operator approvals narrow the fixture scope and an empty approval permits no edits', async () => {
+  const { handoff, rawReport } = await loadCase();
+  const single = checkScope(handoff, rawReport, ['css/product.css'], ['LOJA-001']);
+  assert.equal(single.passed, true);
+  assert.deepEqual(single.implementable, ['LOJA-001']);
+  assert.equal(checkScope(handoff, rawReport, ['css/header.css'], ['LOJA-001']).passed, false);
+  assert.equal(checkScope(handoff, rawReport, [], []).passed, true);
+  assert.equal(checkScope(handoff, rawReport, ['css/product.css'], []).passed, false);
+  assert.throws(() => checkScope(handoff, rawReport, [], ['UNKNOWN-001']), /known finding/);
+  assert.deepEqual(checkScope(handoff, rawReport, [], ['LOJA-003']).implementable, [], 'approval cannot unblock a pending dependency');
+  assert.deepEqual(checkScope({ ...handoff, expectedImplementable: undefined }, rawReport, []).implementable, [], 'missing approval fails closed');
+});

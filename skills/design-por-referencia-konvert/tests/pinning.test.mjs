@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import net from 'node:net';
-import { resolvePinnedAddress, startPinningProxy, PinningBlocked } from '../scripts/_pinning.mjs';
+import { resolvePinnedAddress, resolvePinnedAddresses, startPinningProxy, PinningBlocked } from '../scripts/_pinning.mjs';
 import { targetBlockReason } from '../scripts/_common.mjs';
 
 const targetCheck = (raw) => targetBlockReason(raw);
@@ -73,7 +73,7 @@ test('absolute-form HTTP is forwarded to the validated address and refused other
   await new Promise((resolve) => origin.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise((resolve) => origin.close(resolve)));
   const lookup = async (host) => {
-    if (host === 'plain.example.invalid') return [{ address: '127.0.0.1', family: 4 }];
+    if (host === 'plain.example.invalid') return [{ address: '127.0.0.2', family: 4 }, { address: '127.0.0.1', family: 4 }];
     if (host === 'private.example.invalid') return [{ address: '10.0.0.5', family: 4 }];
     throw new Error('ENOTFOUND');
   };
@@ -89,4 +89,19 @@ test('absolute-form HTTP is forwarded to the validated address and refused other
   const port = origin.address().port;
   assert.deepEqual(await get(`http://plain.example.invalid:${port}/path?x=1`), { status: 200, body: `origin:plain.example.invalid:${port}:/path?x=1` });
   await assert.rejects(get(`http://private.example.invalid:${port}/`), /socket hang up|ECONNRESET/, 'a refused request gets no HTTP response that could pass for the origin');
+});
+
+
+test('all fallback addresses come from one fully validated answer set', async () => {
+  assert.deepEqual(await resolvePinnedAddresses('dual.example.invalid', { lookup: answers('127.0.0.2', '127.0.0.1', '127.0.0.1'), targetCheck }), ['127.0.0.2', '127.0.0.1']);
+  await assert.rejects(resolvePinnedAddresses('mixed.example.invalid', { lookup: answers('127.0.0.1', '169.254.169.254'), targetCheck }), PinningBlocked);
+});
+
+test('CONNECT falls back after a refused TCP connection without another DNS lookup', async (t) => {
+  const port = await echoServer(t);
+  let calls = 0;
+  const proxy = await startPinningProxy({ targetCheck, lookup: async () => { calls++; return [{ address: '127.0.0.2' }, { address: '127.0.0.1' }]; } });
+  t.after(() => proxy.close());
+  assert.deepEqual(await connectThrough(proxy.server, `dual.example.invalid:${port}`), { status: 200, body: 'echo:ping' });
+  assert.equal(calls, 1);
 });

@@ -4,6 +4,12 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+- Correct visual sampling of icon controls and distinguish uncertain backgrounds/opacity from solid-background contrast observations; icon labels are hints, not rendered text contrast measurements.
+- Retry TCP setup against other addresses from the same fully validated DNS answer, within a bounded time budget, without replaying HTTP data or relaxing network policy.
+- Intersect handoff eligibility with operator-supplied IDs, validate supporting Markdown links for all skills, and move the unexecuted vision proposal to `evaluations/vision-proposal.json`.
+- Add a unified local check command, a computed knowledge inventory, and an evidence-first evaluation plan. No blind agent runs or new source reviews are claimed.
+
+
 ### Added
 
 - Add original visual-inspection guidance to the auditor, scoped UI-refinement guidance to the executor, and direction exploration to the creation skill; route directly requested existing-interface refinements to the executor without bypassing audit-report approval.

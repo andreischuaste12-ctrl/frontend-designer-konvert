@@ -38,6 +38,8 @@ Para selecionar fontes e adaptar padrões ao público e à tarefa, use o [guia d
 
 Para referência visual, preencha a tabela de papéis de [papéis e tokens](references/papeis-e-tokens.md): cor, tipografia, espaçamento, forma, elevação, movimento, composição, imagens e ícones, responsividade e componentes. Marque cada valor como **extraído** (lido da fonte), **medido** (obtido do render por script), **inferido** (deduzido de pixels), **decidido por você** ou **ausente**. O que a fonte não informa fica como **ausente**, nunca preenchido por palpite. Prefira **medido** a **inferido** sempre que o render estiver acessível. Em refinamento direto, registre somente os papéis afetados e o estado anterior da interface.
 
+Organize os valores no [modelo de DESIGN.md](references/modelo-design-md.md); consulte o [exemplo de brief](examples/design-brief.example.md) e os [limites dos exemplos sintéticos](examples/README.md).
+
 ### 4. Mapear para o projeto
 
 Associe cada papel ao token, à variável ou ao componente que já existe. Crie um token novo só quando nenhum existente cumprir o papel e a referência exigir a diferença. Não monte um sistema paralelo nem sobrescreva a fonte de verdade de tokens do projeto.

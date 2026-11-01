@@ -86,6 +86,12 @@ See the [installation guide](docs/installation.md) for PowerShell, Claude Code p
 - Do not put credentials, private URLs, customer data, or session identifiers in committed files, screenshots, issue text, reports, or execution records.
 - The audit scripts are intended for sites and local projects you are authorized to inspect. Review outputs before sharing them.
 
+## Run local checks
+
+From the repository root, run `node scripts/check-project.mjs` for structural validation and all root, auditor, and executor unit tests. Add `--browser` to include smoke tests: `node scripts/check-project.mjs --browser`. Browser checks require installed executor dependencies and a working Chromium; the command detects an existing system browser and never installs dependencies. See the [installation guide](docs/installation.md).
+
+Run `node scripts/check-knowledge-units.mjs` for the current knowledge inventory. Recorded source consultation, technical execution, and demonstrated user outcomes are separate evidence levels; the inventory measures only the first. The [evaluation priorities](docs/evaluation-priorities.md) describe the next observed runs and their limits.
+
 ## Validate the reference tooling
 
 The browser tools are maintained as a package inside the reference-driven skill, not at the repository root:

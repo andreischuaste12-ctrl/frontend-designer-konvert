@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export const REQUIRED = ['Contexto', 'Estados', 'Quando se aplica', 'Exceções', 'Evidência a coletar', 'Método', 'Prioridade padrão', 'Recomendação', 'Critério de aceite', 'Preservar', 'Dependência externa', 'Métrica a monitorar', 'Fonte'];
 /** Free-text fields that must be written for the specific problem, never copied between units. */
@@ -141,4 +142,30 @@ export async function checkKnowledge(root) {
   errors.push(...checkCoverageMap(await fs.readFile(path.join(root, 'docs/coverage-map.md'), 'utf8'), known));
   errors.push(...checkUnitReferences(await markdownOutsideKnowledgeBase(root), known));
   return errors;
+}
+
+/** Inventory only: a recorded source is not proof of user outcomes or platform execution. */
+export function summarizeKnowledge(units) {
+  const summary = { totalUnique: units.size, sourceReferenceRecorded: 0, editorialUnverified: 0, humanReviewPending: 0 };
+  for (const fields of units.values()) {
+    const source = fields.get('Fonte') ?? '';
+    if (isVerifiedSource(source)) summary.sourceReferenceRecorded++;
+    else summary.editorialUnverified++;
+    if (/pendente de revisão humana|revisão humana pendente/i.test(source)) summary.humanReviewPending++;
+  }
+  return summary;
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const errors = await checkKnowledge(root);
+  if (errors.length) { console.error(errors.join('\n')); process.exitCode = 1; }
+  else {
+    const dir = path.join(root, 'skills/audit-frontend-designer-konvert/knowledge-base');
+    const units = new Map();
+    for (const name of (await fs.readdir(dir)).filter((n) => n.endsWith('.md'))) {
+      for (const [id, fields] of checkUnits(await fs.readFile(path.join(dir, name), 'utf8')).units) units.set(id, fields);
+    }
+    console.log(JSON.stringify(summarizeKnowledge(units), null, 2));
+  }
 }

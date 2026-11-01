@@ -2,6 +2,8 @@
 
 The map records **guidance**, not validated behavior, accessibility conformance, platform integration, or an agent score. Every non-empty cell cites existing knowledge units, and `scripts/check-knowledge-units.mjs` enforces the rules below.
 
+For current counts, run `node scripts/check-knowledge-units.mjs`. Do not infer current totals from historical changelog entries. A recorded source consultation can still be pending human review; the inventory reports that separately. No cell demonstrates agent efficacy or an integration test unless a corresponding execution was actually recorded.
+
 ## Cell labels
 
 | Label | Meaning | Enforced rule |

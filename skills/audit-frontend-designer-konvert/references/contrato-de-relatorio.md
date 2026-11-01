@@ -96,3 +96,7 @@ O Markdown e o JSON são verificados por ID, prioridade, aprovação, dependênc
 As [unidades de conhecimento](unidades-de-conhecimento.md) orientam a inspeção e a correspondência com os campos; apenas evidência efetivamente coletada pode integrar um achado.
 
 O campo opcional de nível superior `stack` tem `name` e `reason` não vazios e `level` igual a `signal`, `likely` ou `confirmed`. Confirme apenas por inspeção real do projeto; o detector nunca confirma e a justificativa deve indicar evidência, sem dados privados. Relatórios v2 sem esse campo continuam válidos.
+
+## Síntese para decisão
+
+Antes dos achados detalhados no Markdown, resuma a tarefa e o público conhecidos ou assumidos, o escopo realmente observado, até três prioridades com seus IDs, o que preservar, as aprovações pendentes e os limites da conclusão. Derive a síntese dos campos do JSON; não acrescente gravidade, evidência ou autorização que ele não contém. A validação estrutural não confirma a equivalência semântica dessa síntese. Não transforme uma nota geral de UX em medida objetiva sem método validado.

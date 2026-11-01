@@ -12,16 +12,16 @@ import { networkHost, ipBlockReason } from './_network.mjs';
 export class PinningBlocked extends Error {}
 
 /**
- * Resolves `hostname` once and returns the address to connect to, or throws PinningBlocked.
+ * Resolves `hostname` once and returns every validated candidate, or throws PinningBlocked.
  * Every returned address must pass the IP policy; one forbidden answer blocks the name.
- * With `allowUnresolvedDns`, a failed lookup returns the hostname (no validation, no pinning).
+ * With `allowUnresolvedDns`, a failed lookup returns [hostname] (no validation, no pinning).
  */
-export async function resolvePinnedAddress(hostname, { allowPrivate = false, allowUnresolvedDns = false, lookup = dnsLookup, timeout = 2000, targetCheck = () => null } = {}) {
+export async function resolvePinnedAddresses(hostname, { allowPrivate = false, allowUnresolvedDns = false, lookup = dnsLookup, timeout = 2000, targetCheck = () => null } = {}) {
   const host = networkHost(hostname);
   const literal = net.isIP(host) ? host : '';
   const reason = targetCheck(`https://${literal.includes(':') ? `[${literal}]` : host}/`);
   if (reason) throw new PinningBlocked(reason);
-  if (literal) return literal;
+  if (literal) return [literal];
   let addresses, timer;
   try {
     addresses = await Promise.race([
@@ -31,7 +31,7 @@ export async function resolvePinnedAddress(hostname, { allowPrivate = false, all
   } catch { addresses = null; }
   finally { clearTimeout(timer); }
   if (!Array.isArray(addresses) || !addresses.length) {
-    if (allowUnresolvedDns) return host;
+    if (allowUnresolvedDns) return [host];
     throw new PinningBlocked('DNS resolution failed; blocked by policy');
   }
   const accepted = [];
@@ -44,7 +44,37 @@ export async function resolvePinnedAddress(hostname, { allowPrivate = false, all
     if (blocked) throw new PinningBlocked(`${blocked} (resolved address)`);
     accepted.push(raw);
   }
-  return accepted[0];
+  return [...new Set(accepted)];
+}
+
+/** Compatibility API for callers that only need the first validated address. */
+export async function resolvePinnedAddress(hostname, options) {
+  return (await resolvePinnedAddresses(hostname, options))[0];
+}
+
+// Retry TCP setup only, using the original validated answer set. Never replay HTTP data.
+async function connectFirstReachable(addresses, port, track, active) {
+  const deadline = Date.now() + 5000;
+  for (const host of addresses) {
+    if (!active() || Date.now() >= deadline) break;
+    try {
+      return await new Promise((resolve, reject) => {
+        const socket = net.connect({ host, port });
+        track(socket);
+        const timer = setTimeout(() => socket.destroy(new Error('Pinned connection timed out')), Math.min(1500, deadline - Date.now()));
+        const onClose = () => fail(new Error('Connection closed'));
+        const fail = (error) => { clearTimeout(timer); socket.removeListener('close', onClose); socket.destroy(); reject(error); };
+        socket.once('error', fail);
+        socket.once('close', onClose);
+        socket.once('connect', () => {
+          clearTimeout(timer); socket.removeListener('error', fail); socket.removeListener('close', onClose);
+          if (!active()) { socket.destroy(); reject(new Error('Connection cancelled')); }
+          else resolve(socket);
+        });
+      });
+    } catch { /* try another validated address within the shared time budget */ }
+  }
+  throw new Error('No validated address could be reached');
 }
 
 /**
@@ -54,9 +84,10 @@ export async function resolvePinnedAddress(hostname, { allowPrivate = false, all
  */
 export async function startPinningProxy(initial = {}) {
   let policy = { allowPrivate: false, allowUnresolvedDns: false, lookup: dnsLookup, timeout: 2000, targetCheck: () => null, onBlocked: () => {}, ...initial };
+  let closed = false;
   const sockets = new Set();
   const track = (socket) => { sockets.add(socket); socket.unref?.(); socket.on('close', () => sockets.delete(socket)); };
-  const pin = (host) => resolvePinnedAddress(host, policy);
+  const pin = (host) => resolvePinnedAddresses(host, policy);
   const refuse = (host, reason) => { try { policy.onBlocked(networkHost(host) || 'invalid-host', reason); } catch { /* reporting must not break the proxy */ } };
 
   const server = http.createServer(async (req, res) => {
@@ -71,7 +102,12 @@ export async function startPinningProxy(initial = {}) {
     catch (error) { refuse(target.hostname, error.message); req.socket.destroy(); return; }
     const headers = { ...req.headers };
     delete headers['proxy-connection']; delete headers['proxy-authorization'];
-    const upstream = http.request({ host: address, port: Number(target.port || 80), method: req.method, path: `${target.pathname}${target.search}`, headers, setHost: false }, (response) => {
+    const upstream = http.request({ host: address[0], port: Number(target.port || 80), createConnection: (_options, callback) => {
+      connectFirstReachable(address, Number(target.port || 80), track, () => !closed && !req.socket.destroyed).then((socket) => {
+        if (upstream.destroyed) { socket.destroy(); return; }
+        callback(null, socket);
+      }, (error) => callback(error));
+    }, method: req.method, path: `${target.pathname}${target.search}`, headers, setHost: false }, (response) => {
       res.writeHead(response.statusCode ?? 502, response.headers);
       response.pipe(res);
     });
@@ -87,14 +123,15 @@ export async function startPinningProxy(initial = {}) {
     let address;
     try { address = await pin(match[1]); }
     catch (error) { refuse(match[1], error.message); client.end('HTTP/1.1 403 Forbidden\r\n\r\n'); return; }
-    const upstream = net.connect({ host: address, port }, () => {
-      client.write('HTTP/1.1 200 Connection Established\r\n\r\n');
-      if (head?.length) upstream.write(head);
-      upstream.pipe(client); client.pipe(upstream);
-    });
-    track(upstream);
+    let upstream;
+    try { upstream = await connectFirstReachable(address, port, track, () => !closed && !client.destroyed); }
+    catch { client.destroy(); return; }
     upstream.on('error', () => client.destroy());
     client.on('error', () => upstream.destroy());
+    client.on('close', () => upstream.destroy());
+    client.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+    if (head?.length) upstream.write(head);
+    upstream.pipe(client); client.pipe(upstream);
   });
   // Absolute-form upgrades are not used by Chromium through an HTTP proxy; refuse them.
   server.on('upgrade', (_req, socket) => socket.end('HTTP/1.1 403 Forbidden\r\n\r\n'));
@@ -104,6 +141,7 @@ export async function startPinningProxy(initial = {}) {
     server: `http://127.0.0.1:${server.address().port}`,
     configure(next) { policy = { ...policy, ...next }; },
     async close() {
+      closed = true;
       for (const socket of sockets) socket.destroy();
       await new Promise((resolve) => server.close(() => resolve()));
     },

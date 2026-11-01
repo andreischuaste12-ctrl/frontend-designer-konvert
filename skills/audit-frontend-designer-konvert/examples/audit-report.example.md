@@ -10,6 +10,10 @@
 - Escopo: comparar opções de produto e adicionar um item ao carrinho; revisão visual em mobile e desktop
 - Limites de evidência: apenas briefing sintético e exemplo renderizado; sem pesquisa com usuários representativos
 
+## Decisão recomendada
+
+Para a tarefa sintética de comparar opções e adicionar ao carrinho, a prioridade é esclarecer a apresentação do frete (UX-001), após decisão do responsável pelo produto. A compreensão dos códigos das opções exige validação (UX-002). Apenas o refinamento UX-003 está aprovado e desbloqueado. Preserve regras comerciais e o contrato de compra. O público é uma hipótese do briefing; sem pesquisa representativa, não há conclusão sobre conversão. A matriz abaixo explicita os estados observados e as lacunas.
+
 ## Cobertura
 
 Somente o que estava no escopo. Lacunas ficam explícitas; o catálogo de conhecimento não é uma checklist obrigatória.

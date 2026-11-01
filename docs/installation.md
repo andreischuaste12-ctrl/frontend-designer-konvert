@@ -52,6 +52,10 @@ Then try a synthetic reference request: “Use design-por-referencia-konvert to 
 
 Add `.audit/` to the target project's `.gitignore`. For a read-only audit, use the auditor's [isolated browser preparation](../skills/audit-frontend-designer-konvert/references/preparo-do-navegador.md); it can install the pinned tooling in a temporary directory outside the target checkout and use an existing system Chromium. For executor development, install tooling inside its own package with `npm ci` and `npm run setup:browser`. A system Chromium can be selected with `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`; results may differ from the pinned Playwright browser.
 
+## Checks from the source clone
+
+`node scripts/check-project.mjs` runs structural and unit checks from the repository root. `node scripts/check-project.mjs --browser` also runs the browser smoke suite, reusing a working system Chromium when present. Install the executor dependencies first; this check command does not install anything. These checks validate tooling, not the quality of agent decisions.
+
 ## Troubleshooting and removal
 
 - Skill missing: check the configured skill directory and refresh the agent.

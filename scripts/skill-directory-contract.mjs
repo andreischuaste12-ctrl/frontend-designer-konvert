@@ -41,3 +41,18 @@ export function validateWorkflowTriggers(text, skillDirectories, file = 'workflo
   }
   return errors;
 }
+
+/** Every installed reference must be discoverable from its skill entry point. */
+export function validateSkillContent(name, text, files) {
+  const sections = {
+    'audit-frontend-designer-konvert': ['Fluxo', 'Princípios de design', 'Catálogo de referências', 'Formato do relatório'],
+    'design-por-referencia-konvert': ['Ordem de precedência', 'Fluxo', 'Evidência visual e privacidade', 'Limites'],
+    'create-frontend-from-zero-konvert': ['Fronteiras e colaboração', 'Fluxo', 'Definição de pronto', 'Referências e exemplos'],
+  };
+  const errors = [];
+  for (const section of sections[name] ?? []) if (!text.includes(`## ${section}`)) errors.push(`missing ${section} section`);
+  const prose = text.replace(/^```[^\n]*\n[\s\S]*?^```/gm, '').replace(/`[^`\n]+`/g, '');
+  const links = new Set([...prose.matchAll(/\]\(([^\s)]+)\)/g)].map((m) => m[1].split('#')[0]));
+  for (const file of files) if (!links.has(file)) errors.push(`supporting file must be linked: ${file}`);
+  return errors;
+}

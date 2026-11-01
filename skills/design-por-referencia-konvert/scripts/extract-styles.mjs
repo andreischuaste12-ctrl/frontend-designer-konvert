@@ -166,12 +166,17 @@ const data = await page.evaluate(
       return s.slice(0, 80);
     };
     const isEditable = (el) => /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable || ['textbox', 'searchbox', 'combobox', 'spinbutton'].includes(el.getAttribute('role'));
+    // Sampling hint only, not a full accessible-name computation. Never read field values.
+    const labelHint = (el) => [
+      el.getAttribute('aria-label'), el.innerText, el.getAttribute('title'),
+      el.querySelector('img[alt]')?.getAttribute('alt'),
+    ].map((value) => (value || '').trim().replace(/\s+/g, ' ')).find(Boolean) || '';
     const safeText = (el, max = 40) => {
       if (isEditable(el)) {
         const type = el.tagName === 'INPUT' ? ` ${el.type || 'text'}` : '';
         return `[${el.tagName.toLowerCase()}${type}]`;
       }
-      return (el.innerText || '').trim().replace(/\s+/g, ' ').slice(0, max);
+      return labelHint(el).slice(0, max);
     };
     const bump = (map, key) => map.set(key, (map.get(key) || 0) + 1);
 
@@ -203,14 +208,14 @@ const data = await page.evaluate(
         continue; // seletor extra inválido
       }
       for (const el of list) {
-        if (!(el.innerText || '').trim() && !/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) continue;
+        if (!labelHint(el) && !['button', 'a', 'input'].includes(cat) && !isEditable(el)) continue;
         scanned += 1;
         const s = getComputedStyle(el);
         const fg = parse(s.color);
         const bg = bgOf(el);
         const opacityUncertain = hasAncestorOpacity(el);
         const fgOpaque = fg ? (fg[3] < 1 ? over(fg, bg.color) : fg) : null;
-        const sig = [s.fontSize, s.fontWeight, s.lineHeight, s.fontFamily, s.color, hex(bg.color), s.borderRadius].join('|');
+        const sig = [s.fontSize, s.fontWeight, s.lineHeight, s.fontFamily, s.color, hex(bg.color), bg.uncertain, opacityUncertain, Boolean((el.innerText || '').trim()), s.borderRadius].join('|');
         bump(typeScale, `${s.fontSize} / ${s.fontWeight} / ${s.lineHeight}`);
         bump(textColors, hex(fgOpaque) ?? s.color);
         bump(backgrounds, hex(bg.color) + (bg.uncertain ? ' (imagem/gradiente no caminho)' : ''));
@@ -242,7 +247,7 @@ const data = await page.evaluate(
           backgroundIndeterminate: bg.uncertain,
           contrast: cr ? Number(cr.toFixed(2)) : null,
           contrastRequired: required,
-          contrastStatus: cr === null ? 'indeterminado' : bg.uncertain || opacityUncertain ? 'indeterminado' : cr >= required ? 'ok' : 'falha',
+          contrastStatus: cr === null || !(el.innerText || '').trim() ? 'indeterminado' : bg.uncertain || opacityUncertain ? 'indeterminado' : cr >= required ? 'ok' : 'falha',
           contrastOpacityIndeterminate: opacityUncertain,
           padding: s.padding,
           borderRadius: s.borderRadius,

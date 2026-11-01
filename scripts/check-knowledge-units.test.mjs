@@ -85,3 +85,13 @@ test('unit IDs cited in skills and docs must exist', () => {
   assert.deepEqual(checkUnitReferences([['skill.md', 'Use UXK-DSH-052.']], known), ['skill.md: cites unknown unit UXK-DSH-052']);
   assert.deepEqual(checkUnitReferences([['skill.md', 'Use UXK-UTL-001.']], known), ['skill.md: cites unknown unit UXK-UTL-001']);
 });
+
+
+test('inventory distinguishes recorded sources from editorial guidance and human review', async () => {
+  const { summarizeKnowledge } = await import('./check-knowledge-units.mjs');
+  const units = new Map([
+    ['UXK-GEN-001', new Map([['Fonte', 'verificado em 2026-10-31 https://example.invalid — pendente de revisão humana']])],
+    ['UXK-GEN-002', new Map([['Fonte', 'heurística editorial não verificada']])],
+  ]);
+  assert.deepEqual(summarizeKnowledge(units), { totalUnique: 2, sourceReferenceRecorded: 1, editorialUnverified: 1, humanReviewPending: 1 });
+});
