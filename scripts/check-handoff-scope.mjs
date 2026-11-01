@@ -38,10 +38,11 @@ export function validateHandoffCase(handoff, rawReport) {
   if (!Array.isArray(protectedPaths)) errors.push('protectedPaths must be a list');
   else for (const p of protectedPaths) if (owner.has(p)) errors.push(`${p} cannot be both protected and mapped to ${owner.get(p)}`);
   const authorized = handoff.authorizedIds;
-  if (!Array.isArray(authorized) || new Set(authorized).size !== authorized.length || authorized.some((id) => typeof id !== 'string' || !report.findings.some((f) => f.id === id))) {
+  const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (!Array.isArray(authorized) || !authorized.length || new Set(authorized).size !== authorized.length || authorized.some((id) => typeof id !== 'string' || !report.findings.some((f) => f.id === id))) {
     errors.push('authorizedIds must list independently authorized finding IDs once');
   }
-  if (typeof handoff.brief !== 'string' || !handoff.brief.trim() || (Array.isArray(authorized) && authorized.some((id) => typeof id === 'string' && !handoff.brief.includes(id)))) {
+  if (typeof handoff.brief !== 'string' || !handoff.brief.trim() || (Array.isArray(authorized) && authorized.some((id) => typeof id === 'string' && !new RegExp(`(?<![A-Za-z0-9-])${escapeRegExp(id)}(?![A-Za-z0-9-])`).test(handoff.brief)))) {
     errors.push('brief must explicitly mention each independently authorized ID');
   }
   const approved = new Set(Array.isArray(authorized) ? authorized : []);

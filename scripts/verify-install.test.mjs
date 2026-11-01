@@ -78,9 +78,11 @@ test('installed skill sections and discoverable support files obey the repositor
   try {
     const entry = path.join(dir, 'design-por-referencia-konvert/SKILL.md');
     const text = await fs.readFile(entry, 'utf8');
-    await fs.writeFile(entry, text.replace('## Fluxo', '## Removed heading').replace('[modelo de DESIGN.md](references/modelo-design-md.md)', 'modelo de DESIGN.md'));
+    await fs.writeFile(entry, text.replace('## Fluxo', '## Removed heading').replace('[modelo de DESIGN.md](references/modelo-design-md.md)', 'modelo de DESIGN.md') + '\n[escape](../README.md) [bad](100%)\n');
     const errors = await verifyInstall(dir);
     assert.ok(errors.some((e) => e.includes('missing Fluxo section')));
     assert.ok(errors.some((e) => e.includes('supporting file must be linked: references/modelo-design-md.md')));
+    assert.ok(errors.some((e) => e.includes('missing relative link ../README.md')));
+    assert.ok(errors.some((e) => e.includes('malformed relative link 100%')));
   } finally { await fs.rm(dir, { recursive: true, force: true }); }
 });

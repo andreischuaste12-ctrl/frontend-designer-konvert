@@ -4,6 +4,10 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+- Align execution-record acceptance with intersected handoff approvals so authorized findings blocked by pending external dependencies are recorded as `blocked` rather than rejected or marked `passed`.
+- Disambiguate extracted style selectors by semantic/classed container and occurrence so `compare.mjs` does not fail on unclassed links or paragraphs across sections, and include form controls in focus crops without reading field values.
+- Make proxy socket tracking idempotent, close CONNECT tunnels symmetrically when upstream closes, and abort plain-HTTP forwarding if the client disconnects during DNS resolution.
+- Account for planted `.muted` low-contrast text in preview evaluation keys, render the initial empty-result state in the React/Tailwind fixture, and add secondary `likely` stack signals for React and Next.js.
 - Handle incoming proxy socket errors before DNS/TCP waits, clamp connection timeout bounds, and add a process-isolated regression covering CONNECT and plain HTTP resets.
 - Exclude controls without rendered text from typography/color summaries while retaining them for inspection.
 - Supply independent handoff IDs in the synthetic brief, validate its authorization set, migrate the prescribed report to schema v3, and expose legacy warnings.

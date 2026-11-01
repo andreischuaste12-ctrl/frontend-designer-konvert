@@ -40,4 +40,9 @@ test('reports signal for one marker and likely for two without confirming a plat
   shopify = (await detectStacks(dir)).results.find(x => x.stack === 'Shopify theme');
   assert.equal(shopify.confidence, 'likely');
   assert.notEqual(shopify.confidence, 'confirmed');
+  await fs.writeFile(path.join(dir, 'package.json'), JSON.stringify({ dependencies: { react: '1', 'react-dom': '1', next: '1' } }));
+  await fs.writeFile(path.join(dir, 'next.config.mjs'), 'export default {};');
+  const stacks = (await detectStacks(dir)).results;
+  assert.equal(stacks.find((x) => x.stack === 'React').confidence, 'likely');
+  assert.equal(stacks.find((x) => x.stack === 'Next.js').confidence, 'likely');
 });

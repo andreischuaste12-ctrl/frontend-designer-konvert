@@ -92,7 +92,7 @@ const timeout = Number(a.timeout) || 30000;
 if (!widths.length || !schemes.length) fail('--widths ou --schemes sem valores válidos.');
 
 const OVERLAP = 100;
-const CONTROL_SEL = 'a[href], button, [role="button"], input[type="submit"], input[type="button"], summary';
+const CONTROL_SEL = 'a[href], button, [role="button"], input:not([type="hidden"]), select, textarea, summary';
 const MASK_SEL =
   'input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), textarea';
 
@@ -245,7 +245,8 @@ async function captureRoute(ctx, route, width, scheme, routeIndex) {
             const r = el.getBoundingClientRect();
             const s = getComputedStyle(el);
             if (r.width < 24 || r.height < 16 || s.visibility === 'hidden' || s.display === 'none') return;
-            const label = (el.innerText || el.value || el.getAttribute('aria-label') || '').trim().slice(0, 40);
+            const editable = (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && !['submit', 'button'].includes(el.type)) || el.isContentEditable;
+            const label = (editable ? `[${el.tagName.toLowerCase()}]` : (el.getAttribute('aria-label') || el.innerText || el.getAttribute('title') || '')).trim().replace(/\s+/g, ' ').slice(0, 40);
             cand.push({ i, label, score: (r.top + scrollY < innerHeight * 1.5 ? 1e6 : 0) + r.width * r.height });
           });
           return cand.sort((x, y2) => y2.score - x.score).slice(0, n).sort((x, y2) => x.i - y2.i);

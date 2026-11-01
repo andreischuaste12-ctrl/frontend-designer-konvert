@@ -87,6 +87,7 @@ export async function startPinningProxy(initial = {}) {
   let closed = false;
   const sockets = new Set();
   const track = (socket) => {
+    if (sockets.has(socket)) return;
     sockets.add(socket); socket.unref?.();
     // Installed on acceptance, before DNS/TCP awaits or tunnel handlers take over.
     // Error objects can contain target details: close without logging them.
@@ -107,6 +108,7 @@ export async function startPinningProxy(initial = {}) {
     // Drop the connection instead of answering: a proxy-generated HTTP status could be
     // mistaken for the origin's response by the client.
     catch (error) { refuse(target.hostname, error.message); req.socket.destroy(); return; }
+    if (closed || req.socket.destroyed || res.destroyed) return;
     const headers = { ...req.headers };
     delete headers['proxy-connection']; delete headers['proxy-authorization'];
     const upstream = http.request({ host: address[0], port: Number(target.port || 80), createConnection: (_options, callback) => {
@@ -118,8 +120,8 @@ export async function startPinningProxy(initial = {}) {
       res.writeHead(response.statusCode ?? 502, response.headers);
       response.pipe(res);
     });
-    upstream.on('socket', track);
     upstream.on('error', () => { if (!res.headersSent) res.writeHead(502); res.end(); });
+    res.on('close', () => { if (!res.writableEnded) upstream.destroy(); });
     req.pipe(upstream);
   });
   server.on('connection', track);
@@ -134,6 +136,7 @@ export async function startPinningProxy(initial = {}) {
     let upstream;
     try { upstream = await connectFirstReachable(address, port, track, () => !closed && !client.destroyed); }
     catch { client.destroy(); return; }
+    if (closed || client.destroyed) { upstream.destroy(); return; }
     upstream.on('error', () => client.destroy());
     client.on('error', () => upstream.destroy());
     client.on('close', () => upstream.destroy());

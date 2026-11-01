@@ -37,4 +37,10 @@ test('acceptance gate rejects missing, blocked and unapproved findings', async (
   assert.ok(validateAcceptance(record, report, ['UX-003']).some((e) => /lacks a passed/.test(e)));
   record.verification[0].criterion_id = 'UX-001';
   assert.ok(validateAcceptance(record, report, ['UX-003']).some((e) => /unapproved/.test(e)));
+  const mixed = await load(recordUrl);
+  mixed.verification.push({ criterion_id: 'UX-001', status: 'blocked', reason: 'Pending shipping rules from product owner' });
+  assert.deepEqual(validateAcceptance(mixed, report, ['UX-003', 'UX-001']), []);
+  mixed.verification[1].status = 'passed';
+  mixed.verification[1].evidence = 'Claimed pass despite pending dependency';
+  assert.ok(validateAcceptance(mixed, report, ['UX-003', 'UX-001']).some((e) => /UX-001 is not implementable/.test(e)));
 });

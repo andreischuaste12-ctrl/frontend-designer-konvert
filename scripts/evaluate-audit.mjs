@@ -92,7 +92,7 @@ export function scoreAudit(data, runs) {
     const delta = {
       runs: 1, valid: run.reportValid ? 1 : 0, critical: critical.length, criticalFound, expected: item.expected.length, expectedFound: usedExpected.size,
       correctFindings: usedFindings.size, findings: run.findingsTotal, decoySlots: decoyIds.size, decoysFlagged: run.decoysFlagged.length,
-      preserveSlots: preserveIds.size, preserveCovered: run.reportValid ? run.preserveCovered.length : 0, matches: run.matches.length, priorityAgreed: agreed, unsupportedClaims: run.unsupportedClaims,
+      preserveSlots: preserveIds.size, preserveCovered: run.reportValid ? run.preserveCovered.length : 0, matches: run.reportValid ? run.matches.length : 0, priorityAgreed: agreed, unsupportedClaims: run.unsupportedClaims,
       missed: item.expected.length - usedExpected.size, declaredGaps: run.reportValid ? declaredGaps.length : 0,
     };
     const caseStats = perCase[item.id] ??= { ...Object.fromEntries(Object.keys(totals).map((k) => [k, 0])), detection: Object.fromEntries(item.expected.map((x) => [x.id, 0])) };

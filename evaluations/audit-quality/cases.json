@@ -106,6 +106,12 @@
           "priority": "P2",
           "summary": "O custo de entrega só aparece depois da compra.",
           "evidence": "index.html: texto \"Entrega informada depois da compra.\""
+        },
+        {
+          "id": "E4",
+          "priority": "P2",
+          "summary": "Aviso de entrega exibido com contraste insuficiente.",
+          "evidence": "index.html: .muted #aaa sobre #fff (2,32:1)."
         }
       ],
       "decoys": [
@@ -143,6 +149,12 @@
           "priority": "P2",
           "summary": "O formulário não informa prazo de resposta.",
           "evidence": "index.html: texto \"Prazo de resposta não informado.\""
+        },
+        {
+          "id": "E4",
+          "priority": "P2",
+          "summary": "Nota de prazo exibida com contraste insuficiente.",
+          "evidence": "index.html: .muted #aaa sobre #fff (2,32:1)."
         }
       ],
       "decoys": [
@@ -180,6 +192,12 @@
           "priority": "P2",
           "summary": "O estado vazio não explica como alterar a busca nem oferece ação contextual.",
           "evidence": "index.html: mensagem \"Nenhum compromisso encontrado.\" sem orientação junto ao resultado."
+        },
+        {
+          "id": "E4",
+          "priority": "P2",
+          "summary": "Mensagem de estado vazio exibida com contraste insuficiente.",
+          "evidence": "index.html: .muted #aaa sobre #fff (2,32:1)."
         }
       ],
       "decoys": [

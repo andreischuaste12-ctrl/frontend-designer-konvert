@@ -109,8 +109,10 @@ test('handoff approvals are independent of report flags and legacy warnings rema
   const { handoff, rawReport } = await loadCase();
   assert.deepEqual(handoff.authorizedIds, ['LOJA-001', 'LOJA-002', 'LOJA-003']);
   assert.ok(validateHandoffCase({ ...handoff, brief: 'Implemente os achados aprovados.' }, rawReport).errors.some((e) => e.includes('brief must explicitly')));
+  assert.ok(validateHandoffCase({ ...handoff, brief: 'Autorizo LOJA-0010, LOJA-002 e LOJA-003.' }, rawReport).errors.some((e) => e.includes('brief must explicitly')));
   assert.ok(handoff.authorizedIds.every((id) => handoff.brief.includes(id)));
   assert.ok(validateHandoffCase({ ...handoff, authorizedIds: undefined }, rawReport).errors.some((e) => e.includes('authorizedIds')));
+  assert.ok(validateHandoffCase({ ...handoff, authorizedIds: [] }, rawReport).errors.some((e) => e.includes('authorizedIds')));
   assert.ok(validateHandoffCase({ ...handoff, authorizedIds: ['LOJA-001'] }, rawReport).errors.some((e) => e.includes('expectedImplementable')));
   const legacy = validateHandoffCase(handoff, { ...rawReport, schema_version: 2 });
   assert.deepEqual(legacy.errors, []);

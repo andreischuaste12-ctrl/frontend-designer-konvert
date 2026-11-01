@@ -48,10 +48,21 @@ export async function detectStacks(directory) {
     ['woocommerce template directory', () => marker('woocommerce', 'directory')],
     ['WooCommerce plugin directory', () => marker('wp-content/plugins/woocommerce', 'directory')],
   ]));
-  add('Next.js', await signals([['next dependency', async () => typeof deps.next === 'string']]));
-  add('React', await signals([['react dependency', async () => typeof deps.react === 'string']]));
+  add('Next.js', await signals([
+    ['next dependency', async () => typeof deps.next === 'string'],
+    ['next config or router directory', async () => (await Promise.all([
+      ...['next.config.js', 'next.config.mjs', 'next.config.cjs', 'next.config.ts'].map((p) => marker(p, 'file')),
+      ...['app', 'pages', 'src/app', 'src/pages'].map((p) => marker(p, 'directory')),
+    ])).some(Boolean)],
+  ]));
+  add('React', await signals([
+    ['react dependency', async () => typeof deps.react === 'string'],
+    ['react-dom dependency or JSX entry', async () => typeof deps['react-dom'] === 'string' || (await Promise.all([
+      'src/main.jsx', 'src/main.tsx', 'src/App.jsx', 'src/App.tsx', 'src/index.jsx', 'src/index.tsx',
+    ].map((p) => marker(p, 'file')))).some(Boolean)],
+  ]));
   add('Tailwind CSS', await signals([
-    ['tailwindcss dependency', async () => typeof deps.tailwindcss === 'string'],
+    ['tailwindcss dependency', async () => typeof deps.tailwindcss === 'string' || typeof deps['@tailwindcss/vite'] === 'string' || typeof deps['@tailwindcss/postcss'] === 'string'],
     ['tailwind config', async () => (await Promise.all(['tailwind.config.js','tailwind.config.cjs','tailwind.config.mjs','tailwind.config.ts'].map((p) => marker(p, 'file')))).some(Boolean)],
   ]));
   add('HTML entry', await signals([['index.html', () => marker('index.html', 'file')]]));

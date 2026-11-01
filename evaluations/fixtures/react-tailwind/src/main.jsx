@@ -4,7 +4,7 @@ import './style.css';
 
 function App() {
   const [query, setQuery] = useState('');
-  const [searched, setSearched] = useState(false);
+  const [searched, setSearched] = useState(true);
   return <main className="mx-auto max-w-2xl p-6 font-sans">
     <h1 className="text-3xl font-bold">Agenda fictícia</h1>
     <p className="mt-4">Encontre um compromisso da equipe.</p>

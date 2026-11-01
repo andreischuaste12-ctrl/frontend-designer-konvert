@@ -45,6 +45,7 @@ export async function verifyInstall(skillsDir) {
     const description = front.match(/^description:\s*(.+)$/m)?.[1].trim();
     if (name !== skill) errors.push(`${skill}: frontmatter name must match directory`);
     if (!description || description.length > 1024) errors.push(`${skill}: description must contain 1–1024 characters`);
+    if (text.split('\n').length > 500) errors.push(`${skill}: exceeds 500 lines`);
     const supporting = [];
     for (const folder of ['references', 'knowledge-base', 'examples']) {
       let files;
@@ -58,7 +59,12 @@ export async function verifyInstall(skillsDir) {
       for (const match of prose.matchAll(/!?\[[^\]]*\]\(([^\s)]+)(?:\s+"[^"]*")?\)/g)) {
         const target = match[1].replace(/^<|>$/g, '').split('#')[0];
         if (!target || /^(?:[a-z]+:|\/)/i.test(target)) continue;
-        if (!(await exists(path.resolve(path.dirname(file), decodeURIComponent(target))))) {
+        let decoded;
+        try { decoded = decodeURIComponent(target); }
+        catch { errors.push(`${skill}: ${path.relative(dir, file)} has a malformed relative link ${target}`); continue; }
+        const resolved = path.resolve(path.dirname(file), decoded);
+        const relToSkills = path.relative(skillsDir, resolved);
+        if (relToSkills === '..' || relToSkills.startsWith(`..${path.sep}`) || path.isAbsolute(relToSkills) || !(await exists(resolved))) {
           errors.push(`${skill}: ${path.relative(dir, file)} has a missing relative link ${target}`);
         }
       }

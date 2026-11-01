@@ -70,10 +70,14 @@ export function validateAcceptance(record, report, approvedIds) {
   const ready = new Set(implementableFindings(report).map((finding) => finding.id));
   const checks = Array.isArray(record?.verification) ? record.verification : [];
   for (const id of approved) {
-    if (!ready.has(id)) { errors.push(`${id} is not implementable`); continue; }
     const result = checks.find((row) => row?.criterion_id === id);
+    if (!ready.has(id)) {
+      if (!result || result.status !== 'blocked' || !isText(result.reason)) errors.push(`${id} is not implementable and must be recorded as blocked`);
+      continue;
+    }
     if (!result || result.status !== 'passed' || !isText(result.evidence)) errors.push(`${id} lacks a passed acceptance check with evidence`);
   }
+  if (![...approved].some((id) => ready.has(id))) errors.push('at least one approved finding must be implementable');
   for (const row of checks) if (reportIds.has(row?.criterion_id) && !approved.has(row.criterion_id)) errors.push(`${row.criterion_id} was checked as an unapproved finding`);
   return errors;
 }

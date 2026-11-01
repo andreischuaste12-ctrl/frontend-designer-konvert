@@ -85,6 +85,7 @@ test('invalid reports fail delivery and cannot earn findings or preserve credit'
   assert.ok(result.overall.overallRecall < 1);
   assert.ok(result.overall.precision < 1);
   assert.ok(result.overall.preserveCoverage < 1);
+  assert.equal(result.overall.priorityAgreement, 1, 'invalid deliveries do not skew priorityAgreement denominator');
 });
 
 test('one collapsed case cannot hide behind perfect results in other cases', () => {

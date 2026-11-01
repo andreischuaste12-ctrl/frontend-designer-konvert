@@ -158,12 +158,23 @@ const data = await page.evaluate(
       }
       return false;
     };
-    const hint = (el) => {
+    const nodeHint = (el) => {
       let s = el.tagName.toLowerCase();
       if (el.id) s += '#' + el.id;
       const c = typeof el.className === 'string' ? el.className.trim().split(/\s+/).filter(Boolean).slice(0, 3) : [];
       if (c.length) s += '.' + c.join('.');
-      return s.slice(0, 80);
+      return s;
+    };
+    const hint = (el) => {
+      const own = nodeHint(el);
+      if (el.id || own.includes('.')) return own.slice(0, 80);
+      for (let p = el.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
+        const anc = nodeHint(p);
+        if (p.id || anc.includes('.') || /^(header|nav|main|section|article|aside|footer|form|fieldset|dialog|table)$/.test(anc)) {
+          return `${anc} ${own}`.slice(0, 80);
+        }
+      }
+      return own.slice(0, 80);
     };
     const isEditable = (el) => /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable || ['textbox', 'searchbox', 'combobox', 'spinbutton'].includes(el.getAttribute('role'));
     // Sampling hint only, not a full accessible-name computation. Never read field values.
@@ -199,6 +210,7 @@ const data = await page.evaluate(
 
     for (const [cat, sel] of Object.entries(cats)) {
       const seen = new Map();
+      const usedSelectors = new Map();
       let list = [];
       try {
         const candidates = [...document.querySelectorAll(sel)].filter(visible);
@@ -234,9 +246,12 @@ const data = await page.evaluate(
         const required = large ? 3 : 4.5;
         const cr = fgOpaque ? ratio(fgOpaque, bg.color) : null;
         const r = el.getBoundingClientRect();
+        const baseSelector = hint(el);
+        const occurrence = (usedSelectors.get(baseSelector) || 0) + 1;
+        usedSelectors.set(baseSelector, occurrence);
         const entry = {
           category: cat,
-          selector: hint(el),
+          selector: occurrence === 1 ? baseSelector : `${baseSelector} [${occurrence}]`,
           text: safeText(el),
           rect: { x: Math.round(r.x + scrollX), y: Math.round(r.y + scrollY), w: Math.round(r.width), h: Math.round(r.height) },
           fontFamily: s.fontFamily.slice(0, 90),
