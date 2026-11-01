@@ -57,6 +57,14 @@ test('reports a missing execution record validator', async () => {
   } finally { await fs.rm(dir, { recursive: true, force: true }); }
 });
 
+test('reports a missing browser preflight', async () => {
+  const dir = await installCopy();
+  try {
+    await fs.rm(path.join(dir, 'audit-frontend-designer-konvert/scripts/prepare-browser.mjs'));
+    assert.ok((await verifyInstall(dir)).includes('audit-frontend-designer-konvert: missing scripts/prepare-browser.mjs'));
+  } finally { await fs.rm(dir, { recursive: true, force: true }); }
+});
+
 test('reports a missing creation skill', async () => {
   const dir = await installCopy();
   try {

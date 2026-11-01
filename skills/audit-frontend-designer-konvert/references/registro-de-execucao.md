@@ -4,6 +4,8 @@ Each skill records only what it actually inspected, decided, could not do, and v
 
 The record has `schema_version: 1`, the selected `skill`, the source repository `source_commit` (or `unavailable` if it cannot be determined), `scope.tasks` and `scope.areas`, plus lists named `inspections`, `decisions`, `blocked_actions`, `verification`, and `limitations`. An inspection records area, state, viewport, `observed`/`blocked`/`not_observed`, and evidence or the reason for a gap. A decision records its basis. A verification records a `criterion_id`, `passed`/`failed`/`blocked`/`not_run`, and evidence or reason. See the synthetic [example](../examples/execution-record.example.json).
 
+For the auditor, record a failed browser preflight as a limitation and mark affected visual inspections `blocked` or `not_observed`; do not write temporary runtime paths into the record. A successful preflight alone is not evidence that a page or state was inspected.
+
 Validate the record before delivery:
 
 ```bash

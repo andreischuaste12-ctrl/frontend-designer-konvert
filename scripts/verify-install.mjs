@@ -61,6 +61,9 @@ export async function verifyInstall(skillsDir) {
   if (!(await exists(path.join(skillsDir, 'audit-frontend-designer-konvert/scripts/validate-execution-record.mjs')))) {
     errors.push('audit-frontend-designer-konvert: missing scripts/validate-execution-record.mjs');
   }
+  if (!(await exists(path.join(skillsDir, 'audit-frontend-designer-konvert/scripts/prepare-browser.mjs')))) {
+    errors.push('audit-frontend-designer-konvert: missing scripts/prepare-browser.mjs');
+  }
   // The audit skill links into the executor, so both must be installed side by side.
   const executor = path.join(skillsDir, 'design-por-referencia-konvert');
   for (const file of TOOLING_FILES) {

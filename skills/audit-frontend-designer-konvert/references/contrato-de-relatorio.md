@@ -63,7 +63,7 @@ Execute na raiz do projeto auditado, trocando `.agents/skills` pela pasta onde a
 
 ## Matriz de cobertura
 
-`scope` diz o que a auditoria pretendia cobrir; `coverage` registra o que foi **realmente examinado**, para que lacunas e omissões fiquem demonstráveis. É proporcional ao escopo combinado: inclua só as combinações de página ou fluxo, tarefa, estado e viewport que estavam no escopo, nunca o catálogo inteiro. Ausente, o relatório continua válido em `schema_version: 2`.
+`scope` diz o que a auditoria pretendia cobrir; `coverage` registra o que foi **realmente examinado**, para que lacunas e omissões fiquem demonstráveis. É proporcional ao escopo combinado: inclua só as combinações de página ou fluxo, tarefa, estado e viewport que estavam no escopo, nunca o catálogo inteiro. Em `schema_version: 3`, `coverage` é obrigatória e cada achado precisa ser citado por uma linha `observed` cujo estado e viewport correspondem à evidência estruturada. Relatórios legados `schema_version: 2` sem cobertura continuam válidos.
 
 | Campo | Valor |
 | --- | --- |

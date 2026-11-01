@@ -11,6 +11,7 @@ Notable changes to the repository are recorded here. The automation package vers
 - Add original Next.js interface guidance to the executor and creation skill, scoped to router, rendering, UI states, assets, and verification.
 - Add original guidance for interface motion, safe browser-flow checks, measured UI performance, and task-based content/navigation structure without importing external recipes or tooling.
 - Add schema v3 audit findings with structured evidence and explicit observation/inference/hypothesis separation, plus a privacy-conscious execution record and structural acceptance gate. Preserve v1/v2 report compatibility and keep agent evaluation outcomes unmeasured until blind runs are recorded.
+- Allow the read-only auditor to prepare Playwright/Chromium in an isolated temporary runtime, and require v3 findings to link to observed coverage at the matching state and viewport.
 
 - Add frontend security and localization guidance to the creation skill, with conditional checks in its delivery criteria.
 

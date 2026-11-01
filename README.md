@@ -16,7 +16,7 @@ Use it as the executor when implementing explicitly approved audit findings, ada
 
 Use this skill directly when a visual reference must be reproduced or the user names a concrete existing UI change, such as a typography, motion, or responsive fix. For “audit and fix” requests, start with `audit-frontend-designer-konvert`; pass its report to this executor only after the user approves findings. A finding is implementable only when it is approved and its `external_dependency.status` is not `pending`. Do not use a gallery example as proof of usability.
 
-The auditor uses the executor's browser scripts for rendered evidence, so install both skills together; without them the auditor still works read-only but reports the missing evidence.
+The auditor uses the executor's browser scripts for rendered evidence, so install both skills together. If Playwright/Chromium is missing, its [isolated browser preparation](skills/audit-frontend-designer-konvert/references/preparo-do-navegador.md) can set up a temporary copy of the pinned tools outside the audited project. It reports missing visual evidence only after that check fails; the audited source remains read-only.
 
 The [capability map](docs/experience-capabilities.md) shows how visual evaluation, creation, and refinement are divided across the three skills and which browser interactions are not implemented. The [execution record](skills/audit-frontend-designer-konvert/references/registro-de-execucao.md) captures inspected states, decisions, blocked actions, and acceptance checks without retaining raw prompts or URLs. For report-driven implementation, a structural gate requires a passed, evidenced check for each independently approved finding; human review of the result remains necessary.
 
@@ -46,9 +46,9 @@ The verifier checks the installed structure, not agent activation. Node.js 20+ i
 
 ## First audit
 
-1. Install both skills using the commands below; Node.js 20+ is required for validation and the browser tools.
+1. Install the current three-skill version from `main` using the command above; Node.js 20+ is required for validation and the browser tools. The older `v0.1.0` release below does not include isolated browser preparation.
 2. In the project to inspect, ensure `.audit/` is ignored by Git or select a separate authorized output directory. Use synthetic data.
-3. The installation commands verify the installed copies. Install browser dependencies as described in the installation guide.
+3. The installation commands verify the installed copies. The auditor checks its browser tools and can prepare an isolated runtime when needed; see the installation guide.
 4. Ask: “Use audit-frontend-designer-konvert to audit this interface without editing the project.” Review the Markdown, JSON and captures in the authorized output directory before sharing. The verification command checks structure, not agent activation.
 
 ## Install the two released skills (v0.1.0)

@@ -152,6 +152,17 @@ export function validateAuditReport(input) {
     if (duplicates.length) errors.push(`finding IDs must be unique: ${duplicates.join(', ')}`);
   }
   validateCoverage(report.coverage, new Set((Array.isArray(report.findings) ? report.findings : []).map((f) => f?.id).filter(Boolean)), errors);
+  if (input.schema_version === CURRENT_SCHEMA_VERSION) {
+    if (!Array.isArray(report.coverage) || !report.coverage.length) errors.push('schema_version 3 requires a coverage matrix');
+    for (const finding of Array.isArray(report.findings) ? report.findings : []) {
+      if (!finding?.id) continue;
+      const rows = (Array.isArray(report.coverage) ? report.coverage : []).filter((row) => row?.result === 'observed' && Array.isArray(row.findings) && row.findings.includes(finding.id));
+      if (!rows.length) { errors.push(`${finding.id} needs at least one observed coverage row citing its ID`); continue; }
+      if (!rows.some((row) => row.state === finding.evidence?.state && (row.viewport === finding.evidence?.viewport || row.viewport === 'todos' || finding.evidence?.viewport === 'todos'))) {
+        errors.push(`${finding.id} evidence state and viewport must match an observed coverage row`);
+      }
+    }
+  }
   const handoff = report.handoff;
   if (!handoff || typeof handoff !== 'object') errors.push('handoff must be an object');
   else {

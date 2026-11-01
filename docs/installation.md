@@ -50,7 +50,7 @@ Confirm that the installed folders contain SKILL.md and supporting files. Ask th
 
 Then try a synthetic reference request: “Use design-por-referencia-konvert to apply this DESIGN.md to the sample page.” It should establish scope, respect project tokens, implement the reference, and report actual visual checks. These manual checks are useful examples, not measured activation accuracy.
 
-Add `.audit/` to the target project's `.gitignore`. Install the optional browser tooling inside the copied reference skill using `npm ci` and `npm run setup:browser`. A system Chromium can be selected with `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`; results may differ from the pinned Playwright browser.
+Add `.audit/` to the target project's `.gitignore`. For a read-only audit, use the auditor's [isolated browser preparation](../skills/audit-frontend-designer-konvert/references/preparo-do-navegador.md); it can install the pinned tooling in a temporary directory outside the target checkout and use an existing system Chromium. For executor development, install tooling inside its own package with `npm ci` and `npm run setup:browser`. A system Chromium can be selected with `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`; results may differ from the pinned Playwright browser.
 
 ## Troubleshooting and removal
 

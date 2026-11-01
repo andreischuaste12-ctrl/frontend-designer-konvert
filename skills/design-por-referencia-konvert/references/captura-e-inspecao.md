@@ -1,6 +1,6 @@
 # Captura e inspeção da interface
 
-Transforma "abrir a interface" em evidência reproduzível: capturas fatiadas, valores medidos e inventário de imagens. Os scripts ficam em `scripts/` desta skill e exigem Node 20+ e Playwright com Chromium. Eles não instalam nada: se faltar algo, ofereça instalar pelo lockfile e README da skill ou peça URL e capturas ao usuário.
+Transforma "abrir a interface" em evidência reproduzível: capturas fatiadas, valores medidos e inventário de imagens. Os scripts ficam em `scripts/` desta skill e exigem Node 20+ e Playwright com Chromium. Eles não instalam nada. Quando a auditora usar estas ferramentas, siga o [preparo isolado do navegador](../../audit-frontend-designer-konvert/references/preparo-do-navegador.md) antes de concluir que a captura é impossível; o projeto auditado permanece somente leitura.
 
 Nos comandos abaixo, `<skill>` é a pasta desta skill. Rode-os a partir da raiz do projeto.
 
@@ -10,7 +10,7 @@ Nos comandos abaixo, `<skill>` é a pasta desta skill. Rode-os a partir da raiz 
 | --- | --- |
 | URL fornecida (referência ou site publicado) | Use-a direto. Registre a data da consulta. |
 | Projeto com app local | Descubra o comando em `package.json` ou no README, suba o servidor e use `http://localhost:<porta>`. Não instale dependências sem pedido. |
-| Só arquivos estáticos | Prefira servir a pasta com um servidor estático local. Para usar `file://`, passe `--allow-file` explicitamente e limite a arquivos que você controla. |
+| Só arquivos estáticos | Prefira servir a pasta com um servidor estático local. Para usar `file://`, passe `--allow-file` explicitamente e limite a arquivos que você controla; se o browser bloquear o arquivo, sirva-o em loopback e confirme a captura. |
 | Não renderiza (sem Node, Playwright ou rede) | Peça URL ou capturas, trabalhe só com o que recebeu e declare a limitação no relatório. |
 | Páginas atrás de login | Só com acesso que o usuário fornecer, e sem expor credenciais. Sem acesso, registre como não coberto. |
 
@@ -33,7 +33,7 @@ Para cada rota e largura o script gera:
 
 O script tenta congelar animações e transições com CSS injetado, rola a página inteira para disparar lazy loading e espera as fontes. Políticas CSP podem impedir o CSS; elas não são ignoradas. Isso altera a condição de captura: registre-o no relatório.
 
-Estados que o script não cobre (menu aberto, modal, carrinho com itens, erro de formulário) exigem interação. Só faça se o usuário pedir e sem efeitos colaterais: nada de finalizar compra, enviar formulário real ou aceitar consentimento.
+Estados que o script não cobre (menu aberto, modal, carrinho com itens, erro de formulário) exigem interação adicional. Na auditoria, observe-os apenas quando o escopo e o ambiente local ou de teste permitirem uma interação segura com dados sintéticos. Não finalize compra, envie formulários reais ou aceite consentimento; se o estado não puder ser produzido sem efeitos externos ou persistentes, registre-o como não observado ou bloqueado.
 
 ## 3. Ler as capturas
 

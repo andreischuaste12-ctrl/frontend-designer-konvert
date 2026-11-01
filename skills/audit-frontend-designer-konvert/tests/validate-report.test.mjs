@@ -24,6 +24,7 @@ test('the synthetic example satisfies the current contract and its Markdown mirr
 test('only approved findings without a pending dependency are implementable', async () => {
   // Coverage rows cite UX-001 and UX-002; these variants keep a single finding, so drop it.
   const { coverage, ...example } = await load();
+  example.schema_version = 2; // Legacy reports remain usable without the v3 coverage link.
   assert.deepEqual(implementableFindings(example).map((f) => f.id), ['UX-003']);
   const variants = [
     [{ approved_for_implementation: true, external_dependency: { status: 'not_applicable' } }, true],
@@ -40,6 +41,7 @@ test('only approved findings without a pending dependency are implementable', as
 
 test('dependency states require the right supporting text', async () => {
   const { coverage, ...example } = await load();
+  example.schema_version = 2;
   const withDependency = (dep) => validateAuditReport({ ...example, findings: [{ ...example.findings[2], external_dependency: dep }] }).errors;
   assert.match(withDependency({ status: 'resolved', detail: 'brand approval' }).join('\n'), /resolution must record/);
   assert.match(withDependency({ status: 'pending' }).join('\n'), /detail must describe/);
@@ -93,6 +95,13 @@ test('version 3 requires structured evidence and separates findings from hypothe
   assert.ok(check({ inference: undefined }).some((e) => /inference/.test(e)));
   assert.ok(check({ hypothesis: '' }).some((e) => /hypothesis/.test(e)));
   assert.ok(check({ finding_kind: 'needs_validation', approved_for_implementation: true }).some((e) => /cannot be approved/.test(e)));
+  assert.ok(validateAuditReport({ ...example, coverage: undefined }).errors.some((e) => /requires a coverage matrix/.test(e)));
+  const unlinked = structuredClone(example);
+  unlinked.coverage = unlinked.coverage.map((row) => ({ ...row, findings: row.findings?.filter((id) => id !== 'UX-003') }));
+  assert.ok(validateAuditReport(unlinked).errors.some((e) => /UX-003 needs at least one observed coverage/.test(e)));
+  const mismatched = structuredClone(example);
+  mismatched.findings[2].evidence.viewport = '800 px';
+  assert.ok(validateAuditReport(mismatched).errors.some((e) => /UX-003 evidence state and viewport/.test(e)));
   const legacy = { ...example, schema_version: 2, findings: [{ ...first, evidence: undefined, finding_kind: undefined, inference: undefined, hypothesis: undefined }], coverage: undefined };
   assert.deepEqual(validateAuditReport(legacy).errors, []);
   assert.match(validateAuditReport(legacy).warnings.join('\n'), /version 2 is supported/);
@@ -171,9 +180,10 @@ test('optional stack metadata validates levels and retains compatibility with ex
 test('coverage is optional, proportional and explains every result that was not observed', async () => {
   const example = await load();
   const { coverage, ...withoutCoverage } = example;
+  withoutCoverage.schema_version = 2;
   assert.ok(coverage.length > 0);
   assert.deepEqual(validateAuditReport(withoutCoverage).errors, [], 'reports without coverage stay valid under schema_version 2');
-  const check = (rows) => validateAuditReport({ ...example, coverage: rows }).errors;
+  const check = (rows) => validateAuditReport({ ...example, schema_version: 2, coverage: rows }).errors;
   const observed = { area: 'Checkout sintético', task: 'Pagar', state: 'normal', viewport: '1440 px', result: 'observed', evidence: 'Captura sintética.' };
   assert.deepEqual(check([observed]), []);
   assert.ok(check([]).some((e) => /non-empty list/.test(e)));
