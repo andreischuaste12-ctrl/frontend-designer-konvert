@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkUnits, checkCoverageMap, checkSpecificity, checkUnitReferences, isVerifiedSource, REQUIRED } from './check-knowledge-units.mjs';
+import { checkUnits, checkCoverageMap, checkSpecificity, checkUnitReferences, checkStudies, classifySourceProvenance, isVerifiedSource, REQUIRED } from './check-knowledge-units.mjs';
 
 const values = {
   Contexto: 'interface web · todas as stacks',
@@ -94,4 +94,11 @@ test('inventory distinguishes recorded sources from editorial guidance and human
     ['UXK-GEN-002', new Map([['Fonte', 'heurística editorial não verificada']])],
   ]);
   assert.deepEqual(summarizeKnowledge(units), { totalUnique: 2, sourceReferenceRecorded: 1, editorialUnverified: 1, humanReviewPending: 1 });
+  assert.equal(classifySourceProvenance(verified), 'source_recorded');
+  assert.equal(classifySourceProvenance('WCAG — https://example.invalid · verificado em 2026-10-31 · revisão: revisada por especialista de acessibilidade'), 'independently_reviewed');
+  assert.equal(classifySourceProvenance('WCAG — https://example.invalid · verificado em 2026-10-31 · revisão: revisada por agente de IA'), 'invalid');
+  assert.equal(classifySourceProvenance('WCAG — https://example.invalid · verificado em 2026-10-31 · conflitante com regra local'), 'conflicting');
+  assert.equal(classifySourceProvenance('WCAG — https://example.invalid · verificado em 2026-10-31 · vencida para nova checagem'), 'stale_for_recheck');
+  assert.equal(isVerifiedSource('WCAG — https://example.invalid · verificado em 2026-10-31 · vencida para nova checagem'), false);
+  assert.ok(checkStudies('# Estudos\n').length > 0);
 });

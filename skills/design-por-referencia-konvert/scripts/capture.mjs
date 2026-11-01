@@ -92,7 +92,8 @@ const timeout = Number(a.timeout) || 30000;
 if (!widths.length || !schemes.length) fail('--widths ou --schemes sem valores válidos.');
 
 const OVERLAP = 100;
-const CUSTOM_FIELDS = '[contenteditable]:not([contenteditable="false" i]), [role~="textbox"], [role~="searchbox"], [role~="combobox"], [role~="spinbutton"]';
+const CUSTOM_FIELDS = '[contenteditable]:not([contenteditable="false" i]), [role~="textbox" i], [role~="searchbox" i], [role~="combobox" i], [role~="spinbutton" i]';
+const EDITABLE_SEL = `input:not([type="hidden"]):not([type="submit"]):not([type="button"]), textarea, select, ${CUSTOM_FIELDS}`;
 const CONTROL_SEL = `a[href], button, [role="button"], input:not([type="hidden"]), select, textarea, summary, ${CUSTOM_FIELDS}`;
 const MASK_SEL =
   `input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]), textarea, select, ${CUSTOM_FIELDS}`;
@@ -120,7 +121,7 @@ const index = {
     'HTTP mediado sem redirects automáticos: navegação GET revalidada; redirects de subrecursos recusados. Métricas não representam rede de produção.',
     'Banners de consentimento não são clicados: se cobrirem a página, aparecem nas capturas.',
     'LCP/CLS são medidas de laboratório (indicativas). Candidatos a overflow incluem elementos fora da tela de propósito.',
-    'Campos de texto mascarados, salvo --no-mask.',
+    'Campos de texto mascarados, salvo --no-mask; em recortes de controles editáveis, a máscara cobre toda a caixa do controle e oculta foco ou borda internos.',
     'Service workers bloqueados; WebSockets seguem a política de alvos e são recusados com --block-writes.',
   ],
   pages: [],
@@ -240,19 +241,19 @@ async function captureRoute(ctx, route, width, scheme, routeIndex) {
     // Recortes de controles: foco (teclado) e hover. Nunca clica.
     if (maxControls > 0 && controlWidths.includes(width)) {
       const picks = await page.evaluate(
-        ({ sel, n }) => {
+        ({ sel, editableSel, n }) => {
           const cand = [];
           [...document.querySelectorAll(sel)].forEach((el, i) => {
             const r = el.getBoundingClientRect();
             const s = getComputedStyle(el);
             if (r.width < 24 || r.height < 16 || s.visibility === 'hidden' || s.display === 'none') return;
-            const editable = (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && !['submit', 'button'].includes(el.type)) || el.isContentEditable || (el.getAttribute('role') || '').split(/\s+/).some((role) => ['textbox', 'searchbox', 'combobox', 'spinbutton'].includes(role));
+            const editable = (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && !['submit', 'button'].includes(el.type)) || el.isContentEditable || (el.getAttribute('role') || '').toLowerCase().split(/\s+/).some((role) => ['textbox', 'searchbox', 'combobox', 'spinbutton'].includes(role)) || Boolean(el.closest(editableSel));
             const label = (editable ? `[${el.tagName.toLowerCase()}]` : (el.getAttribute('aria-label') || el.innerText || el.getAttribute('title') || '')).trim().replace(/\s+/g, ' ').slice(0, 40);
             cand.push({ i, label, score: (r.top + scrollY < innerHeight * 1.5 ? 1e6 : 0) + r.width * r.height });
           });
           return cand.sort((x, y2) => y2.score - x.score).slice(0, n).sort((x, y2) => x.i - y2.i);
         },
-        { sel: CONTROL_SEL, n: maxControls },
+        { sel: CONTROL_SEL, editableSel: EDITABLE_SEL, n: maxControls },
       );
       info.controls = [];
       let n = 0;
@@ -318,8 +319,9 @@ for (const scheme of schemes) {
 }
 await browser.close();
 
+const hasCaptureError = (page) => Boolean(page.error || page.fullPageError || (page.controls ?? []).some((c) => c.error));
 index.finishedAt = new Date().toISOString();
-index.captureStatus = !index.files.length ? 'failed' : index.pages.some((page) => page.error) ? 'partial' : 'complete';
+index.captureStatus = !index.files.length ? 'failed' : index.pages.some(hasCaptureError) ? 'partial' : 'complete';
 index.trackingBlocked = [...trackingBlocked].sort();
 index.blockedTargets = [...blockedTargets].sort();
 index.blockedWriteMethods = [...blockedWriteMethods].sort();

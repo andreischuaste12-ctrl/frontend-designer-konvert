@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { scoreRouting } from './evaluate-routing.mjs';
+import { scoreRouting, validateRoutingProvenance } from './evaluate-routing.mjs';
 
 const cases = [
   { id: 'audit-positive', skill: 'audit-frontend-designer-konvert', shouldTrigger: true },
@@ -77,4 +77,14 @@ test('flow metadata is well formed without claiming observed sequence compliance
   for (const patch of [{ expectedFlow: [] }, { expectedFlow: ['unknown'] }, { expectedFlow: [skills[0], skills[0]] }, { handoffRequiresUserApproval: 'yes' }, { expectedFlow: [skills[1]] }]) {
     assert.ok(validateRoutingMetadata([{ ...good, ...patch }], skills).length > 0);
   }
+});
+
+test('provenance rejects held_out claims on exposed calibration cases and scores workflow observations when supplied', () => {
+  assert.equal(validateRoutingProvenance({ datasetRole: 'calibration' }), 'calibration');
+  assert.throws(() => validateRoutingProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: true }), /calibration material/);
+  assert.equal(validateRoutingProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: false }), 'held_out');
+  assert.throws(() => validateRoutingProvenance({ fingerprints: { casesSha256: 'bad', scorerSha256: 'bad' } }), /64-hex/);
+  const flowCases = [{ id: 'audit-06', skill: 'audit-frontend-designer-konvert', shouldTrigger: true, expectedFlow: ['audit-frontend-designer-konvert', 'design-por-referencia-konvert'], handoffRequiresUserApproval: true }];
+  const scored = scoreRouting(flowCases, [{ id: 'audit-06', triggered: true, observedFlow: ['audit-frontend-designer-konvert', 'design-por-referencia-konvert'], waitedForApproval: true }]);
+  assert.deepEqual(scored.workflow, { flowChecked: 1, flowMatched: 1, approvalGateChecked: 1, approvalGateRespected: 1 });
 });

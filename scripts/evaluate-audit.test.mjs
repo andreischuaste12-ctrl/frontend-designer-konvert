@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateAuditCases, scoreAudit } from './evaluate-audit.mjs';
+import { validateAuditCases, scoreAudit, validateAuditProvenance } from './evaluate-audit.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const data = JSON.parse(await fs.readFile(path.join(root, 'evaluations/audit-quality/cases.json'), 'utf8'));
@@ -102,4 +102,6 @@ test('one collapsed case cannot hide behind perfect results in other cases', () 
   for (const run of criticalOnly.filter((r) => r.caseId === 'react-preview')) run.matches = run.matches.filter((m) => m.priority !== 'P1' && m.priority !== 'P0');
   assert.ok(scoreAudit(data, criticalOnly).failures.some((f) => f === 'react-preview: no critical issue detected across its repetitions'));
   assert.ok(validateAuditCases({ ...data, targets: { ...data.targets, requireCaseDetection: 'yes' } }).some((e) => e.includes('requireCaseDetection')));
+  assert.throws(() => validateAuditProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: true }), /calibration material/);
+  assert.equal(validateAuditProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: false }), 'held_out');
 });

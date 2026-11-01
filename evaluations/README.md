@@ -1,14 +1,15 @@
 # Skill evaluations
 
-Three evaluations answer different questions. None of them calls a model: an agent run is observed, recorded, and then scored by a script. No result has been recorded yet, so no routing accuracy, audit quality, or handoff compliance is claimed.
+Four evaluations answer different questions. None of them calls a model: an agent run is observed, recorded, and then scored by a script. No result has been recorded yet, so no routing accuracy, audit quality, creation quality, or handoff compliance is claimed.
 
 Do not score a run in a context that has seen the case labels or planted-issue answer key. A self-score from such a context is not a blind agent evaluation. Run clean agent sessions against isolated fixture copies, with only the prompt and installed skills visible. Store raw outputs privately, review them for sensitive content, and publish only aggregate results and a source commit after grading. A repository check or a synthetic example cannot substitute for these runs.
 
 | Evaluation | Question | Scored by | Deterministic? |
 | --- | --- | --- | --- |
-| Routing | Does the right skill lead for a prompt? | `scripts/evaluate-routing.mjs` | Scoring yes; decisions observed |
+| Routing | Does the right skill lead for a prompt, and does multi-stage workflow respect approval gates? | `scripts/evaluate-routing.mjs` | Scoring yes; decisions observed |
 | Audit quality | Does the auditor find the issues that matter, without inventing problems or evidence? | `scripts/evaluate-audit.mjs` | Scoring yes; matching graded by a person |
-| Handoff scope | Does the executor change only what was approved and unblocked? | `scripts/check-handoff-scope.mjs` | Yes, at file level |
+| Creation quality | Does the creation skill satisfy functional, responsive, keyboard, and content criteria across 3 clean briefs? | `scripts/evaluate-creation.mjs` | Scoring yes; criteria graded by a person |
+| Handoff scope & behavior | Does the executor change only what was approved and unblocked, with aligned acceptance and comparison evidence? | `scripts/check-handoff-scope.mjs` | Yes, at file and artifact level |
 
 Use the same agent configuration, installed skills, and source commit for every case in a run. Keep run artifacts under `.audit/` and record the source commit; scores from different case sets are not comparable.
 

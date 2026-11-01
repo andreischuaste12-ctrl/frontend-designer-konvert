@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Scores graded audit runs against evaluations/audit-quality/cases.json.
 // It never calls a model: a grader records which findings match which expected issue.
+import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -10,6 +11,22 @@ import { redactText } from '../skills/design-por-referencia-konvert/scripts/_com
 const PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
 const CRITICAL = new Set(['P0', 'P1']);
 const isId = (value) => typeof value === 'string' && value.trim().length > 0;
+const sha256 = (content) => createHash('sha256').update(content).digest('hex');
+
+export function validateAuditProvenance(run, { isExposedCalibrationSet = true, casesRaw = '', scorerRaw = '' } = {}) {
+  const role = run?.datasetRole ?? 'calibration';
+  if (!['calibration', 'held_out'].includes(role)) throw new Error('datasetRole must be calibration or held_out.');
+  if (role === 'held_out' && isExposedCalibrationSet) throw new Error('Exposed repository audit cases are calibration material and cannot be scored as held_out.');
+  if (run?.fingerprints !== undefined) {
+    const fp = run.fingerprints;
+    if (!fp || typeof fp !== 'object' || !/^[a-f0-9]{64}$/i.test(fp.casesSha256 ?? '') || !/^[a-f0-9]{64}$/i.test(fp.scorerSha256 ?? '')) {
+      throw new Error('fingerprints must record 64-hex casesSha256 and scorerSha256.');
+    }
+    if (casesRaw && fp.casesSha256.toLowerCase() !== sha256(casesRaw)) throw new Error('casesSha256 does not match the evaluated case file.');
+    if (scorerRaw && fp.scorerSha256.toLowerCase() !== sha256(scorerRaw)) throw new Error('scorerSha256 does not match the evaluated scorer.');
+  }
+  return role;
+}
 
 /** Returns a list of problems in the case file; empty means usable. */
 export function validateAuditCases(data) {
@@ -135,19 +152,28 @@ export function scoreAudit(data, runs) {
 }
 
 async function main() {
-  const { values: a } = parseArgs({ options: { results: { type: 'string' }, out: { type: 'string', default: '.audit/evaluations' }, help: { type: 'boolean' } } });
+  const { values: a } = parseArgs({ options: { results: { type: 'string' }, cases: { type: 'string' }, out: { type: 'string', default: '.audit/evaluations' }, help: { type: 'boolean' } } });
   if (!a.results || a.help) {
-    console.log('Usage: node scripts/evaluate-audit.mjs --results <graded-runs.json> [--out .audit/evaluations]');
+    console.log('Usage: node scripts/evaluate-audit.mjs --results <graded-runs.json> [--cases <cases.json>] [--out .audit/evaluations]');
     process.exitCode = a.help ? 0 : 1; return;
   }
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-  const data = JSON.parse(await fs.readFile(path.join(root, 'evaluations/audit-quality/cases.json'), 'utf8'));
+  const selfPath = fileURLToPath(import.meta.url);
+  const root = path.resolve(path.dirname(selfPath), '..');
+  const defaultCasesPath = path.join(root, 'evaluations/audit-quality/cases.json');
+  const casesPath = a.cases ? path.resolve(a.cases) : defaultCasesPath;
+  const [casesRaw, scorerRaw, runRaw] = await Promise.all([
+    fs.readFile(casesPath, 'utf8'),
+    fs.readFile(selfPath, 'utf8'),
+    fs.readFile(a.results, 'utf8'),
+  ]);
+  const data = JSON.parse(casesRaw);
   const caseErrors = validateAuditCases(data);
   if (caseErrors.length) throw new Error('Invalid case file.');
-  const run = JSON.parse(await fs.readFile(a.results, 'utf8'));
+  const run = JSON.parse(runRaw);
   if (!isId(run.model) || !isId(run.agentVersion) || !/^[a-f0-9]{7,40}$/i.test(run.sourceCommit ?? '') || !/^\d{4}-\d{2}-\d{2}/.test(run.executedAt ?? '') || !Number.isFinite(Date.parse(run.executedAt)) || !isId(run.grader)) throw new Error('Run metadata is required.');
+  const datasetRole = validateAuditProvenance(run, { isExposedCalibrationSet: path.resolve(casesPath) === path.resolve(defaultCasesPath), casesRaw, scorerRaw });
   const report = {
-    schemaVersion: 1, executedAt: new Date(run.executedAt).toISOString(), model: redactText(run.model, 100), agentVersion: redactText(run.agentVersion, 100),
+    schemaVersion: 1, datasetRole, executedAt: new Date(run.executedAt).toISOString(), model: redactText(run.model, 100), agentVersion: redactText(run.agentVersion, 100),
     sourceCommit: run.sourceCommit, grader: redactText(run.grader, 100), ...scoreAudit(data, run.runs),
   };
   await fs.mkdir(a.out, { recursive: true });

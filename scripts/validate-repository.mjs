@@ -9,6 +9,7 @@ import { validateAuditReport, compareMarkdownIds } from '../skills/audit-fronten
 import { validateExecutionRecord } from '../skills/audit-frontend-designer-konvert/scripts/validate-execution-record.mjs';
 import { validateRoutingMetadata } from './evaluate-routing.mjs';
 import { validateAuditCases } from './evaluate-audit.mjs';
+import { validateCreationCases } from './evaluate-creation.mjs';
 import { validateHandoffCase } from './check-handoff-scope.mjs';
 import { checkKnowledge } from './check-knowledge-units.mjs';
 
@@ -97,7 +98,7 @@ for (const skill of skillNames) {
 if (routingCases.some((c) => !c || !c.id || typeof c.prompt !== 'string' || !c.prompt.trim() || typeof c.shouldTrigger !== 'boolean' || !skillNames.includes(c.skill))) errors.push('Invalid routing case.');
 errors.push(...validateRoutingMetadata(routingCases, skillNames));
 const capture = jsonFiles.get(path.join(tooling, 'examples/capture-index.example.json'));
-if (!capture || capture.tool !== 'capture.mjs' || !Array.isArray(capture.widths) || !capture.widths.every((n) => Number.isInteger(n) && n > 0) || !Array.isArray(capture.pages) || !Array.isArray(capture.files) || !capture.files.every((f) => f && typeof f.file === 'string' && path.basename(f.file) === f.file && Number.isInteger(f.width) && ['light', 'dark'].includes(f.scheme))) errors.push('Invalid capture-index example shape.');
+if (!capture || capture.tool !== 'capture.mjs' || !['complete', 'partial', 'failed'].includes(capture.captureStatus) || !Array.isArray(capture.widths) || !capture.widths.every((n) => Number.isInteger(n) && n > 0) || !Array.isArray(capture.pages) || !Array.isArray(capture.files) || !capture.files.every((f) => f && typeof f.file === 'string' && path.basename(f.file) === f.file && Number.isInteger(f.width) && ['light', 'dark'].includes(f.scheme))) errors.push('Invalid capture-index example shape.');
 const images = jsonFiles.get(path.join(tooling, 'examples/image-manifest.example.json'));
 if (!images || typeof images.url !== 'string' || !Number.isInteger(images.width) || !Array.isArray(images.items) || !images.items.every((i) => i && ['img', 'background'].includes(i.kind) && typeof i.src === 'string' && Array.isArray(i.rendered) && i.rendered.length === 2 && i.rendered.every((n) => Number.isFinite(n) && n >= 0) && Array.isArray(i.flags))) errors.push('Invalid image-manifest example shape.');
 const auditDir = path.join(root, 'skills/audit-frontend-designer-konvert/examples');
@@ -109,6 +110,8 @@ const executionRecordCheck = validateExecutionRecord(jsonFiles.get(path.join(aud
 errors.push(...executionRecordCheck.errors.map((e) => `execution-record.example.json: ${e}`), ...executionRecordCheck.warnings.map((w) => `execution-record.example.json: ${w}`));
 const auditCases = jsonFiles.get(path.join(root, 'evaluations/audit-quality/cases.json'));
 errors.push(...validateAuditCases(auditCases).map((e) => `evaluations/audit-quality/cases.json: ${e}`));
+const creationCases = jsonFiles.get(path.join(root, 'evaluations/creation-quality/cases.json'));
+errors.push(...validateCreationCases(creationCases).map((e) => `evaluations/creation-quality/cases.json: ${e}`));
 for (const item of auditCases?.cases ?? []) {
   try { await fs.access(path.join(root, item.fixture, 'index.html')); } catch { errors.push(`evaluations/audit-quality/cases.json: fixture for ${item.id} is missing index.html`); }
 }

@@ -163,6 +163,7 @@ describe('browser CLI regression scenarios', { concurrency: false, timeout: 1800
   test('masked captures cover rich and custom textboxes in full images and control crops', async () => {
     const destination = path.join(out, 'rich-fields');
     await run('capture', ['--url', new URL('/rich-fields', url).href, '--widths', '375', '--control-widths', '375', '--max-controls', '3', '--max-tiles', '1', '--out', destination]);
+    await run('extract-styles', ['--url', new URL('/rich-fields', url).href, '--width', '375', '--out', path.join(out, 'rich-fields-styles')]);
     const index = await json(path.join(destination, 'capture-index.json'));
     assert.equal(index.captureStatus, 'complete');
     assert.equal(index.pages[0].controls.length, 3);
@@ -199,6 +200,7 @@ describe('browser CLI regression scenarios', { concurrency: false, timeout: 1800
       assert.ok(index.pages.some((p) => p.error));
       assert.equal(index.files.length === 0, status === 'failed');
     }
+    await assert.rejects(run('compare', ['--confirm-page-mapping', '--pixels', '--before', path.join(out, 'partial'), '--after', path.join(out, 'partial'), '--out', path.join(out, 'partial-compare')]), (e) => e.code === 1 && /complete capture indexes/.test(e.stderr));
   });
 
   test('a real ancestor-opacity change changes the style comparison and contrast certainty', async () => {
@@ -208,13 +210,16 @@ describe('browser CLI regression scenarios', { concurrency: false, timeout: 1800
     assert.equal(before.elements[0].ancestorOpacityProduct, 0.4);
     assert.equal(after.elements[0].ancestorOpacityProduct, 1);
     assert.equal(before.elements[0].contrastStatus, 'indeterminado');
+    assert.equal(before.elements[0].contrast, null);
     assert.equal(after.elements[0].contrastStatus, 'falha');
+    assert.equal(after.elements[0].contrast, 2.32);
     await run('compare', ['--before', path.join(out, 'opacity-before'), '--after', path.join(out, 'opacity-after'), '--out', path.join(out, 'opacity-comparison')]);
     const comparison = await json(path.join(out, 'opacity-comparison/comparison.json'));
     const sample = comparison.styles.entries.find((e) => e.element.includes('opacity-sample'));
     assert.equal(sample.status, 'changed');
     assert.ok(sample.changes.some((c) => c.field === 'ancestorOpacityProduct'));
     assert.ok(sample.changes.some((c) => c.field === 'contrastStatus'));
+    assert.ok(sample.changes.some((c) => c.field === 'contrast' && c.before === null && c.after === 2.32));
   });
 
   test('all generated text artifacts omit synthetic secrets, personal fields, and source query data', async () => {
@@ -225,7 +230,7 @@ describe('browser CLI regression scenarios', { concurrency: false, timeout: 1800
         if (entry.isDirectory()) await scan(file);
         else if (/\.(json|md|ya?ml|txt)$/.test(entry.name)) {
           inspected++;
-          assert.doesNotMatch(await readFile(file, 'utf8'), /fixture-secret|fixture-fragment|fixture-value|customer-name|owner@example\.invalid|synthetic-field-value|synthetic-textarea-value/, path.relative(out, file));
+          assert.doesNotMatch(await readFile(file, 'utf8'), /fixture-secret|fixture-fragment|fixture-value|customer-name|owner@example\.invalid|synthetic-field-value|synthetic-textarea-value|SYNTHETIC_(?:RICH|CUSTOM|NATIVE)_VALUE/, path.relative(out, file));
         }
       }
     }

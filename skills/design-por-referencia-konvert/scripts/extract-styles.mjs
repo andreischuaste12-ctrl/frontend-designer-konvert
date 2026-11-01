@@ -177,7 +177,10 @@ const data = await page.evaluate(
       }
       return own.slice(0, 80);
     };
-    const isEditable = (el) => /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable || ['textbox', 'searchbox', 'combobox', 'spinbutton'].includes(el.getAttribute('role'));
+    const CUSTOM_FIELDS = '[contenteditable]:not([contenteditable="false" i]), [role~="textbox" i], [role~="searchbox" i], [role~="combobox" i], [role~="spinbutton" i]';
+    const EDITABLE_SEL = `input:not([type="hidden"]):not([type="submit"]):not([type="button"]), textarea, select, ${CUSTOM_FIELDS}`;
+    const hasEditableRole = (node) => (node.getAttribute?.('role') || '').toLowerCase().split(/\s+/).some((role) => ['textbox', 'searchbox', 'combobox', 'spinbutton'].includes(role));
+    const isEditable = (el) => /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable || hasEditableRole(el) || Boolean(el.closest?.(EDITABLE_SEL));
     // Sampling hint only, not a full accessible-name computation. Never read field values.
     const labelHint = (el) => [
       el.getAttribute('aria-label'), el.innerText, el.getAttribute('title'),
@@ -195,7 +198,7 @@ const data = await page.evaluate(
     const cats = {
       h1: 'h1', h2: 'h2', h3: 'h3', h4: 'h4', p: 'p', li: 'li', a: 'a[href]',
       button: 'button, [role="button"], input[type="submit"], input[type="button"]',
-      input: 'input:not([type="hidden"]):not([type="submit"]):not([type="button"]), textarea, select',
+      input: EDITABLE_SEL,
       label: 'label', small: 'small, figcaption, caption',
     };
     if (extra) cats.custom = extra;
@@ -226,12 +229,13 @@ const data = await page.evaluate(
         const s = getComputedStyle(el);
         const fg = parse(s.color);
         const bg = bgOf(el);
-        const ancestorOpacityProduct = ancestorOpacityOf(el);
+        const ancestorOpacityProduct = Number(ancestorOpacityOf(el).toFixed(6));
         const opacityUncertain = ancestorOpacityProduct < 0.999;
         const fgOpaque = fg ? (fg[3] < 1 ? over(fg, bg.color) : fg) : null;
-        const sig = [s.fontSize, s.fontWeight, s.lineHeight, s.fontFamily, s.color, hex(bg.color), bg.uncertain, ancestorOpacityProduct, Boolean((el.innerText || '').trim()), s.borderRadius].join('|');
-        // Controls without rendered text stay inspectable but do not describe typography.
-        if ((el.innerText || '').trim()) {
+        const hasRenderedText = !isEditable(el) && Boolean((el.innerText || '').trim());
+        const sig = [s.fontSize, s.fontWeight, s.lineHeight, s.fontFamily, s.color, hex(bg.color), bg.uncertain, ancestorOpacityProduct, hasRenderedText, s.borderRadius].join('|');
+        // Controls without rendered text and editable fields stay inspectable but do not describe typography.
+        if (hasRenderedText) {
           bump(typeScale, `${s.fontSize} / ${s.fontWeight} / ${s.lineHeight}`);
           bump(textColors, hex(fgOpaque) ?? s.color);
         }
@@ -247,6 +251,7 @@ const data = await page.evaluate(
         const large = px >= 24 || (px >= 18.66 && bold);
         const required = large ? 3 : 4.5;
         const cr = fgOpaque ? ratio(fgOpaque, bg.color) : null;
+        const contrastStatus = cr === null || !hasRenderedText ? 'indeterminado' : bg.uncertain || opacityUncertain ? 'indeterminado' : cr >= required ? 'ok' : 'falha';
         const r = el.getBoundingClientRect();
         const baseSelector = hint(el);
         const occurrence = (usedSelectors.get(baseSelector) || 0) + 1;
@@ -265,12 +270,12 @@ const data = await page.evaluate(
           color: hex(fgOpaque) ?? s.color,
           background: hex(bg.color),
           backgroundIndeterminate: bg.uncertain,
-          contrast: cr ? Number(cr.toFixed(2)) : null,
+          contrast: contrastStatus === 'indeterminado' ? null : Number(cr.toFixed(2)),
           contrastRequired: required,
-          contrastStatus: cr === null || !(el.innerText || '').trim() ? 'indeterminado' : bg.uncertain || opacityUncertain ? 'indeterminado' : cr >= required ? 'ok' : 'falha',
+          contrastStatus,
           contrastOpacityIndeterminate: opacityUncertain,
           opacity: Number.parseFloat(s.opacity),
-          ancestorOpacityProduct: Number(ancestorOpacityProduct.toFixed(6)),
+          ancestorOpacityProduct,
           padding: s.padding,
           borderRadius: s.borderRadius,
           boxShadow: s.boxShadow === 'none' ? null : s.boxShadow.slice(0, 90),
@@ -318,7 +323,7 @@ const data = await page.evaluate(
 
     // Alvos interativos (WCAG 2.5.8: mínimo 24×24 CSS px, com exceções como links em linha).
     const targets = [];
-    const allInteractive = [...document.querySelectorAll('a[href], button, [role="button"], input:not([type="hidden"]), select, textarea, summary')].filter(visible);
+    const allInteractive = [...document.querySelectorAll(`a[href], button, [role="button"], input:not([type="hidden"]), select, textarea, summary, ${CUSTOM_FIELDS}`)].filter(visible);
     const interactiveTotal = allInteractive.length;
     const interactiveTruncated = Math.max(0, interactiveTotal - 400);
     for (const el of allInteractive.slice(0, 400)) {
@@ -339,7 +344,7 @@ const data = await page.evaluate(
 
     const headings = [...document.querySelectorAll('h1,h2,h3,h4,h5,h6')].filter(visible).slice(0, 80).map((h) => ({
       level: Number(h.tagName[1]),
-      text: h.innerText.trim().replace(/\s+/g, ' ').slice(0, 60),
+      text: safeText(h, 60),
     }));
     const count = (s) => document.querySelectorAll(s).length;
     const meta = (n) => document.querySelector(`meta[name="${n}"]`)?.getAttribute('content') ?? null;
@@ -380,16 +385,6 @@ const data = await page.evaluate(
   { extra: a.selectors, maxPer },
 );
 
-let aria = null;
-try {
-  aria = redactText(await page.locator('body').ariaSnapshot(), 100000).replace(
-    /^(\s*-\s*(?:textbox|searchbox|combobox|spinbutton)\b[^:\n]*:\s*).+$/gim,
-    '$1[value redacted]',
-  );
-  await fs.writeFile(path.join(outDir, 'aria-snapshot.yml'), aria, 'utf8');
-} catch {
-  /* versão do Playwright sem ariaSnapshot */
-}
 let axeReport = null, axeDetails = null;
 if (a.axe) {
   try {
@@ -415,6 +410,29 @@ if (a.axe) {
     await browser.close();
     fail('Verificação axe indisponível. Instale as dependências fixadas e confira a página; detalhes e conteúdo foram omitidos.', 3);
   }
+}
+let aria = null;
+try {
+  await page.evaluate(() => {
+    const sel = 'input:not([type="hidden"]):not([type="submit"]):not([type="button"]), textarea, select, [contenteditable]:not([contenteditable="false" i]), [role~="textbox" i], [role~="searchbox" i], [role~="combobox" i], [role~="spinbutton" i]';
+    for (const el of document.querySelectorAll(sel)) {
+      if (el.tagName === 'SELECT') {
+        for (const opt of el.querySelectorAll('option')) opt.textContent = '[value redacted]';
+      } else if ('value' in el) {
+        try { el.value = ''; } catch {}
+      }
+      if (el.isContentEditable || el.matches('[contenteditable]:not([contenteditable="false" i]), [role~="textbox" i], [role~="searchbox" i], [role~="combobox" i], [role~="spinbutton" i]')) {
+        el.textContent = '[value redacted]';
+      }
+    }
+  });
+  aria = redactText(await page.locator('body').ariaSnapshot(), 100000).replace(
+    /^(\s*-\s*(?:textbox|searchbox|combobox|spinbutton)\b[^:\n]*:\s*).+$/gim,
+    '$1[value redacted]',
+  );
+  await fs.writeFile(path.join(outDir, 'aria-snapshot.yml'), aria, 'utf8');
+} catch {
+  /* versão do Playwright sem ariaSnapshot */
 }
 await browser.close();
 

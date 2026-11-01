@@ -4,6 +4,8 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+- Redact rich/custom editable fields and selects in `extract-styles.mjs` (`aria-snapshot.yml`, `computed-styles.json`, `styles-summary.md`), emit `null` contrast when `contrastStatus` is `indeterminado`, sync `capture-index.example.json` with `captureStatus`, and reject incomplete capture indexes in `compare.mjs --pixels`.
+- Protect `.audit/audit-report.json` and `.audit/audit-report.md` from modification during handoff, verify behavioral acceptance (`--execution-record`, `--comparison`) in `check-handoff-scope.mjs`, enforce knowledge-provenance states and study metadata in `check-knowledge-units.mjs`, enforce `datasetRole`/`fingerprints` in routing and audit scorers, and add `evaluations/creation-quality/cases.json` + `scripts/evaluate-creation.mjs`.
 - Mask rich/custom editable fields and selects in screenshots and control crops; reject internal temporary directories with double-dot-prefixed names.
 - Return a failing exit code and capture status for partial or empty browser collection, preserving its diagnostic index.
 - Compare sampled opacity, contrast certainty and sample counts, with an explicit limit on the meaning of unchanged.

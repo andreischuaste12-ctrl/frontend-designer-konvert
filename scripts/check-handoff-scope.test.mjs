@@ -6,7 +6,7 @@ import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
-import { validateHandoffCase, checkScope, hashTree, changedFiles } from './check-handoff-scope.mjs';
+import { validateHandoffCase, checkScope, hashTree, changedFiles, verifyHandoffBehavior } from './check-handoff-scope.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const casePath = path.join(root, 'evaluations/handoff/loja.json');
@@ -136,4 +136,40 @@ test('prepared baseline accepts setup files but still detects later skill tamper
   await fs.appendFile(path.join(after, installed), '\nUnexpected instruction');
   assert.ok(checkScope(handoff, rawReport, changedFiles(original, await hashTree(after))).violations.some((v) => v.path === installed));
   await assert.rejects(promisify(execFile)(process.execPath, [path.join(root, 'scripts/check-handoff-scope.mjs'), '--case', casePath, '--after', after]), (e) => e.code === 2 && /prepared-baseline/.test(e.stdout));
+});
+
+test('audit report inside .audit is protected while other .audit artifacts are ignored, and behavioral evidence is verified', async (t) => {
+  const { handoff, rawReport } = await loadCase();
+  const { report } = validateHandoffCase(handoff, rawReport);
+  const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'handoff-audit-protect-'));
+  t.after(() => fs.rm(temp, { recursive: true, force: true }));
+  const before = path.join(temp, 'before'), after = path.join(temp, 'after');
+  await fs.cp(path.join(root, handoff.fixture), before, { recursive: true });
+  await fs.mkdir(path.join(before, '.audit'), { recursive: true });
+  await fs.writeFile(path.join(before, '.audit/audit-report.json'), JSON.stringify(rawReport));
+  await fs.cp(before, after, { recursive: true });
+  for (const file of ['css/product.css', 'css/header.css']) await fs.appendFile(path.join(after, file), '\n/* authorized */\n');
+  await fs.writeFile(path.join(after, '.audit/execution-record.json'), '{}');
+  const baseline = await hashTree(before);
+  assert.equal(checkScope(handoff, report, changedFiles(baseline, await hashTree(after))).passed, true);
+  await fs.writeFile(path.join(after, '.audit/audit-report.json'), JSON.stringify({ ...rawReport, summary: 'tampered' }));
+  const tampered = checkScope(handoff, report, changedFiles(baseline, await hashTree(after)));
+  assert.equal(tampered.passed, false);
+  assert.deepEqual(tampered.violations, [{ path: '.audit/audit-report.json', reason: 'protected' }]);
+  const validRecord = {
+    schema_version: 1, skill: 'design-por-referencia-konvert', source_commit: '4635941',
+    scope: { tasks: ['Implementar achados aprovados'], areas: ['página de produto', 'cabeçalho'] },
+    inspections: [{ area: 'página de produto', state: 'normal', viewport: '375px', result: 'observed', evidence: 'captura antes/depois' }],
+    decisions: [{ decision: 'Manter escopo autorizado', basis: 'Aprovação independente do operador' }],
+    blocked_actions: ['LOJA-003 aguarda definição comercial de frete'], limitations: [],
+    verification: [
+      { criterion_id: 'LOJA-001', status: 'passed', evidence: 'Contraste medido em 375 px.' },
+      { criterion_id: 'LOJA-002', status: 'passed', evidence: 'Cabeçalho medido em 375 px.' },
+      { criterion_id: 'LOJA-003', status: 'blocked', reason: 'Aguardando tabela comercial.' },
+    ],
+  };
+  const validComparison = { schemaVersion: 1, styles: { entries: [{ element: 'button:button.buy-button', status: 'changed', changes: [{ field: 'background', before: '#eee', after: '#1d4f91' }] }] } };
+  assert.equal(verifyHandoffBehavior({ report, approvedIds: handoff.authorizedIds, executionRecord: validRecord, comparison: validComparison }).passed, true);
+  assert.equal(verifyHandoffBehavior({ report, approvedIds: ['LOJA-001'], executionRecord: validRecord, comparison: validComparison }).passed, false, 'unapproved finding in verification fails acceptance');
+  assert.equal(verifyHandoffBehavior({ report, approvedIds: handoff.authorizedIds, executionRecord: validRecord, comparison: { schemaVersion: 1, styles: { entries: [{ element: 'button', status: 'unchanged', changes: [] }] } } }).passed, false);
 });

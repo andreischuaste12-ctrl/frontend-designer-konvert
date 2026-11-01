@@ -8,9 +8,11 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { validateAuditReport, implementableFindings } from '../skills/audit-frontend-designer-konvert/scripts/validate-report.mjs';
+import { validateExecutionRecord, validateAcceptance } from '../skills/audit-frontend-designer-konvert/scripts/validate-execution-record.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const SKIP = new Set(['.audit', '.git', 'node_modules']);
+const SKIP = new Set(['.git', 'node_modules']);
+const PROTECTED_AUDIT_FILES = new Set(['audit-report.json', 'audit-report.md']);
 const toPosix = (p) => p.split(path.sep).join('/');
 
 /** Returns { report, errors } after checking the case against its report. */
@@ -55,6 +57,15 @@ export async function hashTree(dir, base = dir, out = new Map()) {
   for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
     if (SKIP.has(entry.name)) continue;
     const file = path.join(dir, entry.name);
+    if (entry.name === '.audit' && entry.isDirectory()) {
+      for (const auditEntry of await fs.readdir(file, { withFileTypes: true })) {
+        if (!PROTECTED_AUDIT_FILES.has(auditEntry.name)) continue;
+        const auditFile = path.join(file, auditEntry.name);
+        if (auditEntry.isSymbolicLink()) out.set(toPosix(path.relative(base, auditFile)), `symlink:${createHash('sha256').update(await fs.readlink(auditFile)).digest('hex')}`);
+        else if (auditEntry.isFile()) out.set(toPosix(path.relative(base, auditFile)), `file:${createHash('sha256').update(await fs.readFile(auditFile)).digest('hex')}`);
+      }
+      continue;
+    }
     if (entry.isDirectory()) await hashTree(file, base, out);
     else if (entry.isSymbolicLink()) out.set(toPosix(path.relative(base, file)), `symlink:${createHash('sha256').update(await fs.readlink(file)).digest('hex')}`);
     else if (entry.isFile()) out.set(toPosix(path.relative(base, file)), `file:${createHash('sha256').update(await fs.readFile(file)).digest('hex')}`);
@@ -77,7 +88,11 @@ export function checkScope(handoff, report, changed, approvedIds = handoff.autho
   const approved = new Set(approvedIds);
   const ready = new Set(implementableFindings(report).filter((f) => approved.has(f.id)).map((f) => f.id));
   const allowed = new Map();
-  const forbidden = new Map((handoff.protectedPaths ?? []).map((p) => [p, 'protected']));
+  const forbidden = new Map([
+    ['.audit/audit-report.json', 'protected'],
+    ['.audit/audit-report.md', 'protected'],
+    ...(handoff.protectedPaths ?? []).map((p) => [p, 'protected']),
+  ]);
   for (const finding of report.findings) {
     for (const p of handoff.findingPaths[finding.id]) {
       if (ready.has(finding.id)) allowed.set(p, finding.id);
@@ -90,10 +105,32 @@ export function checkScope(handoff, report, changed, approvedIds = handoff.autho
   return { changed, implementable: [...ready].sort(), violations, notImplemented, passed: !violations.length && !notImplemented.length };
 }
 
+/** Verifies execution-record acceptance and render comparison artifacts against the approved handoff scope. */
+export function verifyHandoffBehavior({ report, approvedIds, executionRecord, comparison }) {
+  const errors = [];
+  if (executionRecord !== undefined) {
+    const check = validateExecutionRecord(executionRecord);
+    errors.push(...check.errors.map((e) => `executionRecord: ${e}`));
+    if (!check.errors.length) errors.push(...validateAcceptance(executionRecord, report, approvedIds).map((e) => `acceptance: ${e}`));
+  }
+  if (comparison !== undefined) {
+    if (!comparison || comparison.schemaVersion !== 1 || (!comparison.styles && !comparison.pixels)) {
+      errors.push('comparison: must be a valid schemaVersion 1 comparison report');
+    } else {
+      const styleChanged = Array.isArray(comparison.styles?.entries) && comparison.styles.entries.some((e) => e?.status === 'changed');
+      const pixelChanged = Array.isArray(comparison.pixels) && comparison.pixels.some((p) => p?.status === 'compared' && p.differentPixels > 0);
+      const pixelFailed = Array.isArray(comparison.pixels) && comparison.pixels.some((p) => ['dimension-mismatch', 'pixel-limit', 'missing'].includes(p?.status));
+      if (pixelFailed) errors.push('comparison: pixel comparison contains missing or incompatible pairs');
+      if (!styleChanged && !pixelChanged) errors.push('comparison: no rendered style or pixel change was observed');
+    }
+  }
+  return { errors, passed: errors.length === 0 };
+}
+
 async function main() {
-  const { values: a } = parseArgs({ options: { case: { type: 'string' }, before: { type: 'string' }, after: { type: 'string' }, 'approved-ids': { type: 'string' }, help: { type: 'boolean' } } });
+  const { values: a } = parseArgs({ options: { case: { type: 'string' }, before: { type: 'string' }, after: { type: 'string' }, 'approved-ids': { type: 'string' }, 'execution-record': { type: 'string' }, comparison: { type: 'string' }, help: { type: 'boolean' } } });
   if (!a.case || !a.before || !a.after || a.help) {
-    console.log('Usage: node scripts/check-handoff-scope.mjs --case evaluations/handoff/<case>.json --after <executed-copy> --before <prepared-baseline> [--approved-ids <id,id>]');
+    console.log('Usage: node scripts/check-handoff-scope.mjs --case evaluations/handoff/<case>.json --after <executed-copy> --before <prepared-baseline> [--approved-ids <id,id>] [--execution-record <file>] [--comparison <file>]');
     process.exitCode = a.help ? 0 : 2; return;
   }
   const handoff = JSON.parse(await fs.readFile(a.case, 'utf8'));
@@ -103,7 +140,15 @@ async function main() {
   for (const warning of warnings ?? []) console.error(`Warning: ${warning}`);
   const before = await hashTree(path.resolve(a.before));
   const after = await hashTree(path.resolve(a.after));
-  const result = { case: handoff.id, ...checkScope(handoff, report, changedFiles(before, after), a['approved-ids'] === undefined ? undefined : a['approved-ids'].split(',').map((s) => s.trim()).filter(Boolean)) };
+  const approvedIds = a['approved-ids'] === undefined ? undefined : a['approved-ids'].split(',').map((s) => s.trim()).filter(Boolean);
+  const scope = checkScope(handoff, report, changedFiles(before, after), approvedIds);
+  const result = { case: handoff.id, ...scope };
+  if (a['execution-record'] || a.comparison) {
+    const executionRecord = a['execution-record'] ? JSON.parse(await fs.readFile(path.resolve(a['execution-record']), 'utf8')) : undefined;
+    const comparison = a.comparison ? JSON.parse(await fs.readFile(path.resolve(a.comparison), 'utf8')) : undefined;
+    result.behavior = verifyHandoffBehavior({ report, approvedIds: approvedIds ?? handoff.authorizedIds ?? [], executionRecord, comparison });
+    result.passed = result.passed && result.behavior.passed;
+  }
   console.log(JSON.stringify(result, null, 2));
   if (!result.passed) process.exitCode = 1;
 }

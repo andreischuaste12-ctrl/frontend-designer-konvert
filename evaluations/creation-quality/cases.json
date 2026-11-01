@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "minRepetitions": 3,
+  "dimensions": [
+    "functionalCompletion",
+    "briefAdherence",
+    "contentAccuracy",
+    "renderedResponsiveness",
+    "keyboardUse",
+    "visualCoherence"
+  ],
+  "targets": {
+    "deliveryValidRate": 1,
+    "criterionPassRate": 0.85,
+    "unsupportedClaims": 0,
+    "requireCasePass": true
+  },
+  "cases": [
+    {
+      "id": "service-landing",
+      "title": "Service landing page with clear offer, region, and contact flow",
+      "brief": "Crie do zero uma landing page estática em português para uma consultoria contábil B2B em São Paulo (atendimento híbrido e remoto no Brasil), com apresentação do serviço principal na primeira dobra, três frentes de atuação, perguntas frequentes e formulário de diagnóstico inicial com campos rotulados e validação acessível.",
+      "viewports": [320, 375, 1440],
+      "requiredStates": ["normal", "erro", "sucesso"],
+      "requiredTasks": [
+        "Identificar serviço, público B2B, modalidade de atendimento e canal principal na primeira dobra em 375 px e 1440 px.",
+        "Preencher o formulário de diagnóstico com dados sintéticos, observar erro descritivo junto ao campo quando inválido e confirmação visível quando válido."
+      ],
+      "constraints": [
+        "Não inventar selos certificadores, prêmios, números de clientes ou depoimentos sem fonte no brief.",
+        "Manter contraste mínimo WCAG 2.2 AA (4.5:1 para texto normal, 3:1 para texto grande) e refluxo sem rolagem horizontal em 320 px."
+      ],
+      "legitimateChoices": [
+        "Paleta sóbria clara ou escura, tipografia serifada ou sem serifa e organização em uma ou duas colunas no desktop."
+      ]
+    },
+    {
+      "id": "catalog-filters",
+      "title": "Product catalog with search, facet filters, and empty recovery state",
+      "brief": "Crie do zero uma página de catálogo de iluminação residencial com 8 itens sintéticos, busca por termo, filtro por ambiente e faixa de preço, ordenação visível, remoção individual de filtros aplicados e estado vazio com ação para limpar filtros quando nenhum item corresponder.",
+      "viewports": [320, 375, 1440],
+      "requiredStates": ["normal", "vazio", "recuperacao"],
+      "requiredTasks": [
+        "Filtrar por ambiente e preço em 375 px, visualizar os filtros ativos e remover um filtro individualmente.",
+        "Buscar um termo sintético inexistente, observar o estado vazio com o termo buscado e recuperar a listagem limpando os filtros."
+      ],
+      "constraints": [
+        "Exibir contagem atualizada de resultados e preservar a ordenação selecionada ao alterar filtros.",
+        "Garantir operação completa por teclado (Tab, Enter/Espaço) com foco visível em todos os controles de filtro e cards."
+      ],
+      "legitimateChoices": [
+        "Filtros em barra lateral no desktop ou gaveta/chips no mobile, e grade de 1 a 4 colunas conforme a largura."
+      ]
+    },
+    {
+      "id": "dashboard-states",
+      "title": "Operations dashboard with loading, empty, error, and recovery states",
+      "brief": "Crie do zero um painel operacional de entregas com indicadores principais (com unidade e período explícitos), tabela de remessas responsiva em 320 px e controles de simulação para alternar e inspecionar os estados carregando, vazio (período sem dados distinto de zero), erro isolado em bloco e recuperação mantendo filtros.",
+      "viewports": [320, 375, 1440],
+      "requiredStates": ["normal", "carregando", "vazio", "erro", "recuperacao"],
+      "requiredTasks": [
+        "Inspecionar os indicadores principais com unidade e período visíveis sem depender de hover ou apenas de cor.",
+        "Alternar pelos estados carregando, vazio, erro e recuperação verificando que a falha não apaga os filtros e que o carregamento não exibe zeros falsos."
+      ],
+      "constraints": [
+        "Em 320 px e 375 px, conter qualquer rolagem horizontal dentro do contêiner da tabela, nunca na página inteira.",
+        "Diferenciar explicitamente período sem dados de valor zero e anunciar mudanças de estado de forma perceptível."
+      ],
+      "legitimateChoices": [
+        "Densidade compacta ou confortável, navegação no topo ou lateral colapsável e estilo visual minimalista ou técnico."
+      ]
+    }
+  ]
+}

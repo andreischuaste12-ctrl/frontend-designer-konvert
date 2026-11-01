@@ -24,7 +24,26 @@ function overlap(a, b) {
   for (const w of x) if (y.has(w)) shared++;
   return { jaccard: shared / new Set([...x, ...y]).size, containment: Math.min(x.size, y.size) >= 3 ? shared / Math.min(x.size, y.size) : 0 };
 }
-export const isVerifiedSource = (source) => /verificado em \d{4}-\d{2}-\d{2}/i.test(source ?? '') && /@[0-9a-f]{7,40}\b|https?:\/\//i.test(source ?? '');
+export function classifySourceProvenance(source) {
+  const text = String(source ?? '').trim();
+  if (!text) return 'invalid';
+  const hasRef = /verificado em \d{4}-\d{2}-\d{2}/i.test(text) && /@[0-9a-f]{7,40}\b|https?:\/\//i.test(text);
+  const isUnverified = /\bnão verificada\b/i.test(text);
+  const isConflicting = /\bconflitante\b/i.test(text);
+  const isStale = /\bvencida(?:\s+para\s+nova\s+checagem)?\b/i.test(text);
+  const isPendingHuman = /pendente de revisão humana|revisão humana pendente/i.test(text);
+  const isReviewed = /\brevisão:\s*revisada\b/i.test(text);
+  if (isUnverified && (hasRef || isReviewed || isConflicting || isStale)) return 'invalid';
+  if (isReviewed && (isPendingHuman || /agente de IA/i.test(text) || !hasRef || isConflicting || isStale)) return 'invalid';
+  if (isConflicting && isStale) return 'invalid';
+  if (isConflicting) return 'conflicting';
+  if (isStale) return 'stale_for_recheck';
+  if (isUnverified) return 'editorial_unverified';
+  if (isReviewed) return 'independently_reviewed';
+  if (hasRef) return 'source_recorded';
+  return 'invalid';
+}
+export const isVerifiedSource = (source) => ['source_recorded', 'independently_reviewed'].includes(classifySourceProvenance(source));
 
 export function checkUnits(markdown, file = 'input') {
   const errors = [], ids = [], units = new Map();
@@ -51,7 +70,7 @@ export function checkUnits(markdown, file = 'input') {
     if (!/^(?:pendente|resolvida|não aplicável)(?:\s|$|\s*—)/i.test(dependency)) errors.push(`${file}: ${id} invalid dependency`);
     if (/\[comercial\]/i.test(fields.get('Contexto') ?? '') && !/^pendente(?:\s|$|\s*—)/i.test(dependency)) errors.push(`${file}: ${id} commercial dependency must be pending`);
     const source = fields.get('Fonte') ?? '';
-    if (source && !/não verificada/i.test(source) && !isVerifiedSource(source)) errors.push(`${file}: ${id} source needs "não verificada" or a verification date with a commit or URL`);
+    if (source && classifySourceProvenance(source) === 'invalid') errors.push(`${file}: ${id} source needs "não verificada" or a verification date with a commit or URL`);
     const recommendation = fields.get('Recomendação'), criterion = fields.get('Critério de aceite');
     const { jaccard, containment } = overlap(recommendation, criterion);
     if (recommendation && criterion && (jaccard >= 0.6 || containment >= 0.8)) errors.push(`${file}: ${id} acceptance criterion restates the recommendation; describe an observable pass condition`);
@@ -130,6 +149,21 @@ async function markdownOutsideKnowledgeBase(root) {
   return out;
 }
 
+export function checkStudies(markdown, file = 'knowledge-base/05-estudos-ux-ui-psicologia.md') {
+  const errors = [];
+  const sections = [...String(markdown ?? '').matchAll(/^##\s+(\d+)\.\s+(.+)$/gm)];
+  if (sections.length !== 20) errors.push(`${file}: expected 20 numbered study sections`);
+  const required = ['Status da fonte', 'Fonte indicada', 'Método informado', 'Pergunta de design', 'Limite'];
+  for (const [i, match] of sections.entries()) {
+    const block = markdown.slice(match.index, sections[i + 1]?.index ?? markdown.length).split(/^##\s+Referências/m)[0];
+    const fields = new Map([...block.matchAll(/^- \*\*([^*]+):\*\*\s*(.*?)\s*$/gm)].map((m) => [m[1], m[2]]));
+    for (const key of required) if (!fields.get(key)) errors.push(`${file}: study ${match[1]} missing ${key}`);
+    if (!fields.get('Resultado informado, não verificado') && !fields.get('Resultado verificado')) errors.push(`${file}: study ${match[1]} missing result status`);
+    if (!/^<https:\/\/[^>\s]+>$/.test(fields.get('Fonte indicada') ?? '')) errors.push(`${file}: study ${match[1]} needs an HTTPS URL in Fonte indicada`);
+  }
+  return errors;
+}
+
 export async function checkKnowledge(root) {
   const dir = path.join(root, 'skills/audit-frontend-designer-konvert/knowledge-base');
   const errors = [], known = new Map();
@@ -138,6 +172,7 @@ export async function checkKnowledge(root) {
     errors.push(...result.errors);
     for (const [id, fields] of result.units) { if (known.has(id)) errors.push(`duplicate unit ID across files: ${id}`); known.set(id, fields); }
   }
+  errors.push(...checkStudies(await fs.readFile(path.join(dir, '05-estudos-ux-ui-psicologia.md'), 'utf8')));
   errors.push(...checkSpecificity(known).map((e) => `knowledge-base: ${e}`));
   errors.push(...checkCoverageMap(await fs.readFile(path.join(root, 'docs/coverage-map.md'), 'utf8'), known));
   errors.push(...checkUnitReferences(await markdownOutsideKnowledgeBase(root), known));

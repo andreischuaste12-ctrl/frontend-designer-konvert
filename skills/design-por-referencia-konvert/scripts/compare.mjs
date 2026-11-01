@@ -64,6 +64,9 @@ function sanitize(value) {
 
 async function comparePixels(leftFile, rightFile, out, threshold) {
   const left = await readJson(leftFile), right = await readJson(rightFile);
+  for (const side of [left, right]) {
+    if (side.captureStatus && side.captureStatus !== 'complete') throw new ComparisonError('Pixel comparison requires complete capture indexes.');
+  }
   const id = (item) => JSON.stringify([item.route, item.width, item.scheme, item.state]);
   const index = (files) => {
     const map = new Map();

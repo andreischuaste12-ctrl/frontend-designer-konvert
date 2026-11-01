@@ -19,5 +19,6 @@
   "files": [
     { "file": "route-01__375__full.png", "route": "route-01", "width": 375, "scheme": "light", "state": "full" }
   ],
-  "finishedAt": "2026-01-01T00:00:01.000Z"
+  "finishedAt": "2026-01-01T00:00:01.000Z",
+  "captureStatus": "complete"
 }

@@ -28,7 +28,7 @@ Para cada rota e largura o script gera:
 
 - `full`: a página inteira.
 - `tile-01 … tile-NN`: fatias de 900 px com 100 px de sobreposição. Servem para ler detalhes quando o visualizador reduz imagens grandes (hipótese: confirme o limite na ferramenta do agente).
-- `ctrl-N-focus` e `ctrl-N-hover`: recortes dos principais controles (CTAs), só em 375 e 1440 px. O foco é emulado por teclado.
+- `ctrl-N-focus` e `ctrl-N-hover`: recortes dos principais controles (CTAs), só em 375 e 1440 px. O foco é emulado por teclado. Em controles editáveis com máscara ativa, toda a caixa do controle é coberta, então foco interno (`outline-offset < 0` / `box-shadow: inset`) e mudanças internas de borda/fundo ficam ocultos sob a máscara.
 - `capture-index.json`: status HTTP, título, `lang`, meta viewport, altura do documento, overflow horizontal e seus candidatos, LCP e CLS de laboratório, erros de console e requisições falhas.
 
 O índice informa `captureStatus`: `complete`, `partial` ou `failed`. A CLI retorna código 3 para coleta parcial ou sem imagens úteis, preservando o índice para diagnóstico; código zero não certifica fidelidade, ausência de recursos bloqueados nem sucesso da tarefa. Leia também os erros e as lacunas do índice.
