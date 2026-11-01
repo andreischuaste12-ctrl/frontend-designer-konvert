@@ -5,7 +5,12 @@ import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
 import { ensureDir, fail, launch, loadPlaywright, redactText } from './_common.mjs';
 
-const FIELDS = ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'color', 'background', 'padding', 'borderRadius', 'boxShadow', 'rect.x', 'rect.y', 'rect.w', 'rect.h'];
+const FIELDS = [
+  'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'color',
+  'background', 'padding', 'borderRadius', 'boxShadow', 'opacity', 'ancestorOpacityProduct',
+  'contrast', 'contrastRequired', 'contrastStatus', 'backgroundIndeterminate',
+  'contrastOpacityIndeterminate', 'count', 'rect.x', 'rect.y', 'rect.w', 'rect.h',
+];
 class ComparisonError extends Error {}
 export function compareStyles(before, after, { confirmPageMapping = false } = {}) {
   for (const sample of [before, after]) {
@@ -40,7 +45,7 @@ export function compareStyles(before, after, { confirmPageMapping = false } = {}
     }) : [];
     entries.push({ element: id, status: !a ? 'added' : !b ? 'removed' : changes.length ? 'changed' : 'unchanged', changes });
   }
-  return { width: before.meta?.width, scheme: before.meta?.scheme, pageMapping: confirmPageMapping ? 'operator-confirmed' : 'unverified', entries };
+  return { width: before.meta?.width, scheme: before.meta?.scheme, pageMapping: confirmPageMapping ? 'operator-confirmed' : 'unverified', limitation: 'Unchanged means no difference in sampled fields; it does not prove unchanged appearance or usability.', entries };
 }
 
 async function locate(dir, file, subdir) {

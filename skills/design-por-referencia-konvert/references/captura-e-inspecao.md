@@ -31,6 +31,8 @@ Para cada rota e largura o script gera:
 - `ctrl-N-focus` e `ctrl-N-hover`: recortes dos principais controles (CTAs), só em 375 e 1440 px. O foco é emulado por teclado.
 - `capture-index.json`: status HTTP, título, `lang`, meta viewport, altura do documento, overflow horizontal e seus candidatos, LCP e CLS de laboratório, erros de console e requisições falhas.
 
+O índice informa `captureStatus`: `complete`, `partial` ou `failed`. A CLI retorna código 3 para coleta parcial ou sem imagens úteis, preservando o índice para diagnóstico; código zero não certifica fidelidade, ausência de recursos bloqueados nem sucesso da tarefa. Leia também os erros e as lacunas do índice.
+
 O script tenta congelar animações e transições com CSS injetado, rola a página inteira para disparar lazy loading e espera as fontes. Políticas CSP podem impedir o CSS; elas não são ignoradas. Isso altera a condição de captura: registre-o no relatório.
 
 Estados que o script não cobre (menu aberto, modal, carrinho com itens, erro de formulário) exigem interação adicional. Na auditoria, observe-os apenas quando o escopo e o ambiente local ou de teste permitirem uma interação segura com dados sintéticos. Não finalize compra, envie formulários reais ou aceite consentimento; se o estado não puder ser produzido sem efeitos externos ou persistentes, registre-o como não observado ou bloqueado.
@@ -96,7 +98,7 @@ Para pixels, `--confirm-page-mapping` é obrigatório após revisar as rotas. Pa
 - A navegação usa GET, não clica, envia formulários nem confirma ações, mas executa JavaScript do alvo; GET não garante ausência de efeitos colaterais. Inspecione somente alvos autorizados.
 - Endpoints de metadata, hosts de tracking conhecidos e destinos privados (literais ou resolvidos por DNS) são bloqueados por padrão. `--allow-private` abre acesso a redes privadas (metadata e link-local continuam bloqueados); prefira loopback para desenvolvimento local. A checagem de DNS acontece antes da requisição e de novo no momento da conexão, no proxy que fixa o endereço; mesmo assim, não é uma sandbox para URLs não confiáveis.
 - `--allow-tracking` desativa o bloqueio dos provedores conhecidos. Use apenas em staging/testes; em produção, a captura padrão pode não mostrar conteúdo variante de A/B, analytics ou widgets.
-- Campos de texto mascarados por padrão (`--no-mask` só com dados fictícios).
+- Campos nativos de texto, selects, editores `contenteditable` e controles com papéis textbox/searchbox/combobox/spinbutton são mascarados por padrão, inclusive em recortes (`--no-mask` só com dados fictícios). Campos customizados sem essas marcações, conteúdo fora do campo e árvores inacessíveis ao navegador ainda exigem revisão.
 - Confirme que `.audit/` está ignorada pelo Git no projeto auditado; se não estiver, adicione a regra ao `.gitignore` local ou escreva fora do checkout. Capturas e relatórios podem conter texto pessoal e material de terceiros.
 - Campos de formulário mascarados não ocultam nomes, mensagens ou outros dados já renderizados. Prefira dados fictícios e revise todos os arquivos antes de compartilhar.
 - URLs em relatórios têm credenciais, caminho, query string e fragmento removidos. As requisições continuam usando a URL original apenas em memória para executar a auditoria.
@@ -111,3 +113,5 @@ Rotas, larguras, esquemas de cor e estados efetivamente capturados; o que ficou 
 Todas as capturas usam `animations: disabled` e `caret: hide` do Playwright, inclusive com CSP que impeça o CSS injetado. Isso trata animações CSS/Web Animations reconhecidas pelo navegador; vídeo, canvas e animação via JavaScript podem continuar dinâmicos. Animações finitas podem avançar ao final; registre esta condição ao comparar pixels.
 
 A extração amostra o DOM principal; não cobre integralmente iframes, Shadow DOM, pseudo-elementos, mistura de camadas nem contraste de foco. Esses casos exigem inspeção específica. Não interprete ausência de alerta como conformidade.
+
+A comparação de estilos inclui opacidade própria, produto das opacidades do elemento e ancestrais, quantidade da amostra e indicadores de contraste/incerteza. Esse produto é um sinal das condições de pintura; não calcula o contraste final de grupos compostos. `unchanged` significa ausência de diferença nos campos amostrados, não aparência idêntica nem usabilidade comprovada. Use a mesma revisão das ferramentas antes/depois e complemente com imagens quando necessário.

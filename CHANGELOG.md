@@ -4,6 +4,13 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+- Mask rich/custom editable fields and selects in screenshots and control crops; reject internal temporary directories with double-dot-prefixed names.
+- Return a failing exit code and capture status for partial or empty browser collection, preserving its diagnostic index.
+- Compare sampled opacity, contrast certainty and sample counts, with an explicit limit on the meaning of unchanged.
+- Require an explicitly prepared baseline for handoff scope evaluation so setup files do not cause false violations while later skill edits remain detectable.
+- Classify exposed cases as calibration material and document independent reserved evaluation and claim-level knowledge provenance without claiming new runs or reviews.
+
+
 - Align execution-record acceptance with intersected handoff approvals so authorized findings blocked by pending external dependencies are recorded as `blocked` rather than rejected or marked `passed`.
 - Disambiguate extracted style selectors by semantic/classed container and occurrence so `compare.mjs` does not fail on unclassed links or paragraphs across sections, and include form controls in focus crops without reading field values.
 - Make proxy socket tracking idempotent, close CONNECT tunnels symmetrically when upstream closes, and abort plain-HTTP forwarding if the client disconnects during DNS resolution.

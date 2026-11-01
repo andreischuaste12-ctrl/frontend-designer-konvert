@@ -4,6 +4,8 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { prepareBrowser, stageBrowserTools } from '../scripts/prepare-browser.mjs';
 
 const executor = fileURLToPath(new URL('../../design-por-referencia-konvert/', import.meta.url));
@@ -53,4 +55,16 @@ test('failed isolated preparation exposes no personal path and does not install 
   assert.equal(unavailable.reason, 'Isolated browser preparation failed; filesystem details omitted.');
   assert.ok(!unavailable.reason.includes(missingParent));
   assert.deepEqual((await fs.readdir(source)).sort(), ['package-lock.json', 'package.json', 'scripts']);
+});
+
+
+test('an internal temporary directory named with a double-dot prefix is still inside the project', async (t) => {
+  const project = await fs.mkdtemp(path.join(os.tmpdir(), 'audit-dot-prefix-'));
+  t.after(() => fs.rm(project, { recursive: true, force: true }));
+  const internal = path.join(project, '..runtime');
+  await fs.mkdir(internal);
+  const moduleUrl = new URL('../scripts/prepare-browser.mjs', import.meta.url).href;
+  const code = `import assert from 'node:assert/strict'; import {stageBrowserTools} from ${JSON.stringify(moduleUrl)}; await assert.rejects(stageBrowserTools(${JSON.stringify(executor)}, ${JSON.stringify(internal)}), /outside the audited project/);`;
+  await promisify(execFile)(process.execPath, ['--input-type=module', '-e', code], { cwd: project });
+  assert.deepEqual(await fs.readdir(internal), []);
 });

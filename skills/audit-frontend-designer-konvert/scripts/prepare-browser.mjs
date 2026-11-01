@@ -17,7 +17,7 @@ export async function stageBrowserTools(executorDir, parent = os.tmpdir()) {
   const source = path.resolve(executorDir);
   const destinationParent = path.resolve(parent);
   const relativeToProject = path.relative(await fs.realpath(process.cwd()), await fs.realpath(destinationParent));
-  if (!relativeToProject || (!relativeToProject.startsWith('..') && !path.isAbsolute(relativeToProject))) throw new Error('The isolated runtime must be outside the audited project.');
+  if (!relativeToProject || (relativeToProject !== '..' && !relativeToProject.startsWith(`..${path.sep}`) && !path.isAbsolute(relativeToProject))) throw new Error('The isolated runtime must be outside the audited project.');
   for (const name of ['package.json', 'package-lock.json', 'scripts/_common.mjs', 'scripts/_network.mjs', 'scripts/_pinning.mjs', 'scripts/capture.mjs', 'scripts/extract-styles.mjs', 'scripts/image-manifest.mjs']) {
     if (!(await exists(path.join(source, name)))) throw new Error('The installed executor skill is incomplete.');
   }

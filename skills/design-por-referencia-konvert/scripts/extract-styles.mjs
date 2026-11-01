@@ -152,11 +152,12 @@ const data = await page.evaluate(
       const s = getComputedStyle(el);
       return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none';
     };
-    const hasAncestorOpacity = (el) => {
+    const ancestorOpacityOf = (el) => {
+      let product = 1;
       for (let node = el; node; node = node.parentElement) {
-        if (Number.parseFloat(getComputedStyle(node).opacity) < 0.999) return true;
+        product *= Number.parseFloat(getComputedStyle(node).opacity);
       }
-      return false;
+      return product;
     };
     const nodeHint = (el) => {
       let s = el.tagName.toLowerCase();
@@ -225,9 +226,10 @@ const data = await page.evaluate(
         const s = getComputedStyle(el);
         const fg = parse(s.color);
         const bg = bgOf(el);
-        const opacityUncertain = hasAncestorOpacity(el);
+        const ancestorOpacityProduct = ancestorOpacityOf(el);
+        const opacityUncertain = ancestorOpacityProduct < 0.999;
         const fgOpaque = fg ? (fg[3] < 1 ? over(fg, bg.color) : fg) : null;
-        const sig = [s.fontSize, s.fontWeight, s.lineHeight, s.fontFamily, s.color, hex(bg.color), bg.uncertain, opacityUncertain, Boolean((el.innerText || '').trim()), s.borderRadius].join('|');
+        const sig = [s.fontSize, s.fontWeight, s.lineHeight, s.fontFamily, s.color, hex(bg.color), bg.uncertain, ancestorOpacityProduct, Boolean((el.innerText || '').trim()), s.borderRadius].join('|');
         // Controls without rendered text stay inspectable but do not describe typography.
         if ((el.innerText || '').trim()) {
           bump(typeScale, `${s.fontSize} / ${s.fontWeight} / ${s.lineHeight}`);
@@ -267,6 +269,8 @@ const data = await page.evaluate(
           contrastRequired: required,
           contrastStatus: cr === null || !(el.innerText || '').trim() ? 'indeterminado' : bg.uncertain || opacityUncertain ? 'indeterminado' : cr >= required ? 'ok' : 'falha',
           contrastOpacityIndeterminate: opacityUncertain,
+          opacity: Number.parseFloat(s.opacity),
+          ancestorOpacityProduct: Number(ancestorOpacityProduct.toFixed(6)),
           padding: s.padding,
           borderRadius: s.borderRadius,
           boxShadow: s.boxShadow === 'none' ? null : s.boxShadow.slice(0, 90),

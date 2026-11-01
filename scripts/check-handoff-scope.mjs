@@ -92,8 +92,8 @@ export function checkScope(handoff, report, changed, approvedIds = handoff.autho
 
 async function main() {
   const { values: a } = parseArgs({ options: { case: { type: 'string' }, before: { type: 'string' }, after: { type: 'string' }, 'approved-ids': { type: 'string' }, help: { type: 'boolean' } } });
-  if (!a.case || !a.after || a.help) {
-    console.log('Usage: node scripts/check-handoff-scope.mjs --case evaluations/handoff/<case>.json --after <executed-copy> [--before <pristine-copy>] [--approved-ids <id,id>]');
+  if (!a.case || !a.before || !a.after || a.help) {
+    console.log('Usage: node scripts/check-handoff-scope.mjs --case evaluations/handoff/<case>.json --after <executed-copy> --before <prepared-baseline> [--approved-ids <id,id>]');
     process.exitCode = a.help ? 0 : 2; return;
   }
   const handoff = JSON.parse(await fs.readFile(a.case, 'utf8'));
@@ -101,7 +101,7 @@ async function main() {
   const { errors, warnings, report } = validateHandoffCase(handoff, rawReport);
   if (errors.length) { console.error(errors.join('\n')); process.exitCode = 2; return; }
   for (const warning of warnings ?? []) console.error(`Warning: ${warning}`);
-  const before = await hashTree(path.resolve(a.before ?? path.resolve(root, handoff.fixture)));
+  const before = await hashTree(path.resolve(a.before));
   const after = await hashTree(path.resolve(a.after));
   const result = { case: handoff.id, ...checkScope(handoff, report, changedFiles(before, after), a['approved-ids'] === undefined ? undefined : a['approved-ids'].split(',').map((s) => s.trim()).filter(Boolean)) };
   console.log(JSON.stringify(result, null, 2));

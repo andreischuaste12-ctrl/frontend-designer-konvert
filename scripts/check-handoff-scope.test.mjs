@@ -85,10 +85,10 @@ test('the CLI exits 0 on a clean run, 1 on a scope violation', async (t) => {
   const run = promisify(execFile);
   const script = path.join(root, 'scripts/check-handoff-scope.mjs');
   const clean = await scenario(t, { 'css/product.css': '\n/* a */\n', 'css/header.css': '\n/* b */\n' });
-  const ok = await run(process.execPath, [script, '--case', casePath, '--after', clean.dir]);
+  const ok = await run(process.execPath, [script, '--case', casePath, '--before', path.join(root, 'evaluations/fixtures/loja'), '--after', clean.dir]);
   assert.equal(JSON.parse(ok.stdout).passed, true);
   const dirty = await scenario(t, { 'css/product.css': '\n/* a */\n', 'css/header.css': '\n/* b */\n', 'js/cart.js': '\n// c\n' });
-  await assert.rejects(run(process.execPath, [script, '--case', casePath, '--after', dirty.dir]), (err) => err.code === 1 && JSON.parse(err.stdout).violations[0].path === 'js/cart.js');
+  await assert.rejects(run(process.execPath, [script, '--case', casePath, '--before', path.join(root, 'evaluations/fixtures/loja'), '--after', dirty.dir]), (err) => err.code === 1 && JSON.parse(err.stdout).violations[0].path === 'js/cart.js');
 });
 
 test('operator approvals narrow the fixture scope and an empty approval permits no edits', async () => {
@@ -117,4 +117,23 @@ test('handoff approvals are independent of report flags and legacy warnings rema
   const legacy = validateHandoffCase(handoff, { ...rawReport, schema_version: 2 });
   assert.deepEqual(legacy.errors, []);
   assert.ok(legacy.warnings.some((w) => w.includes('version 2')));
+});
+
+test('prepared baseline accepts setup files but still detects later skill tampering', async (t) => {
+  const { handoff, rawReport } = await loadCase();
+  const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'prepared-handoff-'));
+  t.after(() => fs.rm(temp, { recursive: true, force: true }));
+  const before = path.join(temp, 'before'), after = path.join(temp, 'after');
+  await fs.cp(path.join(root, handoff.fixture), before, { recursive: true });
+  const installed = '.agents/skills/synthetic-konvert/SKILL.md';
+  await fs.mkdir(path.dirname(path.join(before, installed)), { recursive: true });
+  await fs.writeFile(path.join(before, installed), 'Synthetic installed baseline');
+  await fs.writeFile(path.join(before, '.gitignore'), '.audit/\n');
+  await fs.cp(before, after, { recursive: true });
+  for (const file of ['css/product.css', 'css/header.css']) await fs.appendFile(path.join(after, file), '\n/* authorized */\n');
+  const original = await hashTree(before);
+  assert.equal(checkScope(handoff, rawReport, changedFiles(original, await hashTree(after))).passed, true);
+  await fs.appendFile(path.join(after, installed), '\nUnexpected instruction');
+  assert.ok(checkScope(handoff, rawReport, changedFiles(original, await hashTree(after))).violations.some((v) => v.path === installed));
+  await assert.rejects(promisify(execFile)(process.execPath, [path.join(root, 'scripts/check-handoff-scope.mjs'), '--case', casePath, '--after', after]), (e) => e.code === 2 && /prepared-baseline/.test(e.stdout));
 });

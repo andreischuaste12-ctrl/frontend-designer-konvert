@@ -2,9 +2,17 @@
 
 Tooling tests demonstrate behavior of scripts and contracts. They do not measure agent routing, audit quality, creation quality, or user outcomes. All those outcomes remain unmeasured until independently executed runs are recorded. Do not publish a new stable release on the strength of green tooling checks alone.
 
-## First baseline
+## Calibration and held-out rounds
 
-Use the protocol in [evaluations](../evaluations/README.md): 72 routing prompts and seven audit fixtures, with at least three repetitions per audit fixture (21 reports). Freeze source commit, installed skills, model, configuration, and case revision. Keep the agent away from answer keys and use a clean session for each run. A session that read the labels or planted issues cannot produce a blind result for those cases.
+Current routing and audit cases are exposed development/calibration cases. Do not relabel an arbitrary subset as independent held-out evidence. An executing agent can be blind to an answer key while the development process has already been tuned to those cases.
+
+An independent evaluator should prepare a new reserved set and freeze its rubric, cases, scorer, and candidate skill before the round. Record purpose (`calibration` or `held_out`), IDs, commit/revision for each component, SHA-256 fingerprints for case/scorer/rubric files, model and agent versions when available, evaluator role, date, per-case outcomes, execution failures, and limitations. A Git commit identifies a frozen tracked tree; hashes are also needed for external rubrics/cases or modified files. Do not auto-stamp the current scorer's hash after a run as proof that it was the one used.
+
+Do not use reserved results to tune the candidate during the round. After results inform a change, those cases become calibration material for that next version. Use newly reserved cases for another independent claim. Choose targets before seeing reserved results; separate tool execution failure, invalid delivery, and task-quality failure. Preserve denominators and unexecuted cases.
+
+## First calibration baseline
+
+Use the protocol in [evaluations](../evaluations/README.md): 72 routing prompts and seven audit fixtures, with at least three repetitions per audit fixture (21 reports). Freeze source commit, installed skills, model, configuration, and case revision. Keep the agent away from answer keys and use a clean session for each run. A session that read the labels or planted issues cannot produce a blind result for those cases; this applies to the present development context.
 
 Report denominators, per-case results, repetition variation, critical and overall recall, precision, false positives, unsupported claims, preserve coverage, declared gaps, silent omissions, and report validity. Include the weakest scenario; aggregate passing scores are not proof that every scenario is usable. Keep existing percentage thresholds until a baseline and grading consistency justify changing them. The scorer additionally rejects total detection collapse per case and excludes invalid deliveries from accepted-evidence credit; neither rule demonstrates efficacy.
 

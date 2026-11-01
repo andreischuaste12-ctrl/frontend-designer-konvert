@@ -14,6 +14,12 @@ Use the same agent configuration, installed skills, and source commit for every 
 
 See [evaluation priorities](../docs/evaluation-priorities.md) for the baseline, independent grading, creation rubric, and workflow observations. The [vision proposal](vision-proposal.json) is a manual proposal, not a runner or a recorded result.
 
+## Calibration and reserved evaluation
+
+The current 72 routing cases and seven audit fixtures have been inspected during development and are calibration/regression material. Hiding their answer keys from a clean executing agent prevents direct leakage, but does not make them an independent held-out set. No reserved dataset or result is claimed here.
+
+A separate evaluator should prepare new cases for a planned candidate evaluation. Freeze the skill commit, scorer, rubric, and cases before execution; do not tune against reserved results during the round. If results guide a later fix, move those cases into calibration and use new reserved cases for the next independent evaluation. Record dataset role, case IDs, source/scorer/case revisions, SHA-256 hashes of scorer/cases/rubric, model and agent versions, grader role, per-case results, failed or unexecuted cases, and limitations. Keep raw sessions private. See [evaluation priorities](../docs/evaluation-priorities.md).
+
 ## Reference availability
 
 The weekly `Reference availability` workflow checks public catalog and study links with HTTP HEAD, retries once with a one-byte GET when a server answers 405 or 501, and records each check time in the job summary. A successful response does not verify the content, publication details, or scientific claims. A 403 or 429 means restricted, not definitively broken; connection errors and unsupported network environments are inconclusive. Only a 404 or 410 fails the job, so the maintainer is notified to review the reference manually; it never deletes or changes links. The checker refuses to run when a proxy is configured because it cannot safely enforce its connection policy through a proxy.
@@ -93,15 +99,16 @@ The scorer micro-averages critical recall (P0–P1), overall recall, precision, 
 
 `handoff/loja.json` pairs the `loja` fixture with `handoff/loja-report.json`, a prescribed schema v3 report with source-code evidence and findings covering every eligibility condition: approved without a dependency, approved with a resolved dependency, approved but blocked by a pending dependency, and not approved. Each finding is mapped to disjoint files, and `js/cart.js` (tracking and checkout) is protected.
 
-1. Copy the fixture to an empty directory outside the repository, initialize Git with `.audit/` ignored, copy `handoff/loja-report.json` to `.audit/audit-report.json` there, install all three current skills, and give the agent only the case `brief`.
-2. After the executor finishes, run:
+1. Copy the fixture to an empty directory outside the repository, initialize Git with `.audit/` ignored, copy `handoff/loja-report.json` to `.audit/audit-report.json` there, and install all three current skills.
+2. Before starting the agent, save an independent copy of this **prepared** tree as the baseline, including `.gitignore` and installed skills. Keep the baseline outside the agent's working tree and make it unavailable for modification by the agent. Record its source revision and integrity information. Do not generate it after the run.
+3. Give the agent only the case `brief`. After it finishes, run:
 
 ```bash
-node scripts/check-handoff-scope.mjs --case evaluations/handoff/loja.json --after <executed-copy>
+node scripts/check-handoff-scope.mjs --case evaluations/handoff/loja.json --before <prepared-baseline> --after <executed-copy>
 ```
 
 Use `--approved-ids LOJA-001` to restrict this synthetic run to independently selected IDs. When omitted, the case's `authorizedIds` is the synthetic operator approval set (also stated in the brief); `expectedImplementable` records the expected intersection with unblocked findings; real authorization must come from the operator, not from the report. An explicit empty list permits no changes. The flag intersects approvals with eligible findings and cannot clear a pending dependency.
 
-It hashes the pristine fixture and the executed copy, then exits 0 only if every changed file belongs to an implementable finding (`LOJA-001`, `LOJA-002`) and each of those findings changed something. Changes to protected files, to files of blocked findings, or to unmapped files are violations (exit 1). The check is file-level: it proves scope discipline, not that the change satisfies the acceptance criteria. Verify those with the executor's before/after captures and `compare.mjs`.
+The CLI requires `--before` and hashes the prepared baseline and executed copy, then exits 0 only if every changed file belongs to an implementable finding (`LOJA-001`, `LOJA-002`) and each of those findings changed something. Changes to protected files, to files of blocked findings, or to unmapped files are violations (exit 1). Installed skills remain part of this comparison: later edits to them are violations. Do not solve setup differences by excluding `.agents/` globally. The check is file-level: it proves scope discipline, not that the change satisfies the acceptance criteria. Verify those with the executor's before/after captures and `compare.mjs`.
 
 For a real executor run, also validate its private `execution-record.json` with `audit-frontend-designer-konvert/scripts/validate-execution-record.mjs --report <report.json> --approved-ids <user-approved-ids>`. This gate requires a passed check with evidence for each approved implementable finding. Grade the actual rendered behavior and evidence separately; the record validator checks structure, not truth or user authorization.

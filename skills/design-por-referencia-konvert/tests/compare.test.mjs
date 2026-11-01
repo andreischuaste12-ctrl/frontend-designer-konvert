@@ -29,3 +29,12 @@ test('different page URLs require explicit mapping confirmation', () => {
   assert.equal(compareStyles(a, b, { confirmPageMapping: true }).pageMapping, 'operator-confirmed');
   assert.equal(compareStyles(a, a).pageMapping, 'unverified');
 });
+
+test('opacity, contrast certainty and sample membership are changes even with identical typography', () => {
+  const before = sample([{ ...heading, opacity: 0.4, ancestorOpacityProduct: 0.4, contrastStatus: 'indeterminado', contrastOpacityIndeterminate: true, count: 2 }]);
+  const after = sample([{ ...heading, opacity: 1, ancestorOpacityProduct: 1, contrastStatus: 'falha', contrastOpacityIndeterminate: false, count: 1 }]);
+  const result = compareStyles(before, after);
+  assert.equal(result.entries[0].status, 'changed');
+  for (const field of ['opacity', 'ancestorOpacityProduct', 'contrastStatus', 'contrastOpacityIndeterminate', 'count']) assert.ok(result.entries[0].changes.some((c) => c.field === field));
+  assert.ok(result.limitation.includes('sampled fields'));
+});

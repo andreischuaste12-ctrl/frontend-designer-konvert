@@ -4,6 +4,8 @@ The map records **guidance**, not validated behavior, accessibility conformance,
 
 For current counts, run `node scripts/check-knowledge-units.mjs`. Do not infer current totals from historical changelog entries. A recorded source consultation can still be pending human review; the inventory reports that separately. No cell demonstrates agent efficacy or an integration test unless a corresponding execution was actually recorded.
 
+The [knowledge provenance protocol](../skills/audit-frontend-designer-konvert/references/proveniencia-do-conhecimento.md) distinguishes an editorial heuristic, a recorded source, an independently reviewed claim, and conflicting or stale guidance. These are editorial review decisions; current numeric inventory fields do not automatically certify those additional statuses. Review keyboard/focus, accessibility and implementation safety first.
+
 ## Cell labels
 
 | Label | Meaning | Enforced rule |
