@@ -1,6 +1,6 @@
 # Frontend Design Skills
 
-This repository contains three complementary skills for coding agents. It is a skills-and-tools repository, not a web application.
+This repository contains three complementary skills for coding agents. It is a skills-and-tools repository.
 
 ## Skills
 
