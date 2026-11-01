@@ -21,6 +21,37 @@ test('the case file is valid and every fixture referenced exists', async () => {
   for (const item of data.cases) await fs.access(path.join(root, item.fixture, 'index.html'));
 });
 
+test('audit evaluation refuses malformed case rubrics before accepting operator grades', () => {
+  for (const invalid of [null, {}, { schemaVersion: 1, cases: [] }]) assert.ok(validateAuditCases(invalid).length);
+  const variants = [
+    { minRepetitions: 0, targets: {} },
+    { targets: { ...data.targets, precision: -1, criticalRecall: 2, unsupportedClaims: -1, requireCaseDetection: 'yes', requireCaseCriticalDetection: 'yes' } },
+    { cases: [...data.cases, data.cases[0], { id: '' }] },
+    { cases: [{ id: 'missing', fixture: '', brief: '', expected: [], decoys: null, preserve: [] }] },
+    { cases: [{ id: 'duplicates', fixture: 'synthetic', brief: 'Synthetic brief.', expected: [{ id: 'E1', summary: '', priority: 'invalid', evidence: '' }, { id: 'E1', summary: 'Repeated ID', priority: 'P1', evidence: 'source' }], decoys: [{ id: '', summary: '' }], preserve: [{ id: 'P1', summary: '' }] }] },
+  ];
+  for (const patch of variants) assert.ok(validateAuditCases({ ...data, ...patch }).length);
+});
+
+test('audit grading rejects incomplete templates and accepts independently evidenced extra findings', () => {
+  const base = perfectRuns();
+  const variants = [
+    [], [{ ...base[0], caseId: 'unknown' }], base.map((r, i) => i ? r : { ...r, repetition: 0 }),
+    base.map((r, i) => i ? r : { ...r, reportValid: null }),
+    base.map((r, i) => i ? r : { ...r, matches: null }),
+    base.map((r, i) => i ? r : { ...r, matches: [{ ...r.matches[0], finding: '' }] }),
+    base.map((r, i) => i ? r : { ...r, matches: [{ ...r.matches[0], priority: 'invalid' }] }),
+    base.map((r, i) => i ? r : { ...r, preserveCovered: ['unknown'] }),
+    base.map((r, i) => i ? r : { ...r, preserveCovered: [r.preserveCovered[0], r.preserveCovered[0]] }),
+    base.map((r, i) => i ? r : { ...r, declaredGaps: 'ungraded' }),
+  ];
+  for (const runs of variants) assert.throws(() => scoreAudit(data, runs));
+  const withExtra = perfectRuns();
+  withExtra[0].validExtra = ['EXTRA-1'];
+  withExtra[0].findingsTotal++;
+  assert.equal(scoreAudit(data, withExtra).overall.precision, 1);
+});
+
 test('a perfect graded run passes every target', () => {
   const score = scoreAudit(data, perfectRuns());
   assert.equal(score.passed, true, score.failures.join('; '));

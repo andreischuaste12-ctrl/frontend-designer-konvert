@@ -5,6 +5,8 @@ on:
     paths:
       - '**/*.md'
       - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
       - 'evaluations/**'
       - 'skills/audit-frontend-designer-konvert/**'
       - '.gitignore'
@@ -17,6 +19,8 @@ on:
     paths:
       - '**/*.md'
       - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
       - 'evaluations/**'
       - 'skills/audit-frontend-designer-konvert/**'
       - '.gitignore'
@@ -61,13 +65,10 @@ jobs:
           cache-dependency-path: skills/design-por-referencia-konvert/package-lock.json
       - run: npm ci
         working-directory: skills/design-por-referencia-konvert
-      # Gate set just below the measured baseline (lines 82.1%, branches 87.3%, functions 89.2%); raise it as tests grow.
-      - run: >-
-          node --experimental-test-coverage
-          --test-coverage-lines=80 --test-coverage-branches=85 --test-coverage-functions=87
-          --test "scripts/*.test.mjs" "skills/audit-frontend-designer-konvert/tests/*.test.mjs"
-          skills/design-por-referencia-konvert/tests/common.test.mjs skills/design-por-referencia-konvert/tests/compare.test.mjs
-          skills/design-por-referencia-konvert/tests/pinning.test.mjs
+      - run: npm run setup:browser -- --with-deps
+        working-directory: skills/design-por-referencia-konvert
+      # Measure the complete tooling suite, including browser paths, with unchanged thresholds.
+      - run: npm run check:coverage
 
   validate:
     runs-on: ${{ matrix.os }}
@@ -110,6 +111,7 @@ jobs:
           cache-dependency-path: skills/design-por-referencia-konvert/package-lock.json
       - run: npm ci
       - run: npm run setup:browser -- --with-deps
+      - run: node ../../scripts/doctor.mjs --browser
       - run: npm run test:smoke
 
   fixture-react:

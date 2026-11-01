@@ -5,14 +5,13 @@ Keep changes focused on a reproducible user problem. Explain the affected skill,
 ## Local checks
 
 ```bash
-node scripts/validate-repository.mjs
-node --test "scripts/*.test.mjs" "skills/audit-frontend-designer-konvert/tests/*.test.mjs"
-cd skills/design-por-referencia-konvert
-npm ci
-npm run setup:browser
-npm run check
+npm run setup:tools
+npm run doctor -- --browser
 npm test
+npm run check:browser
 ```
+
+If Chromium is unavailable, use `npm run setup:browser` or configure a system browser and repeat the diagnostic. Root unit checks need no installed packages; the full browser suite requires both pinned tooling packages. Use `npm run knowledge:review` for source review work and the [evaluation preparation guide](docs/evaluation-preparation.md) for clean agent workspaces. Prepared templates and green tooling checks are never performance results.
 
 Add regression tests for changed detector, comparison, privacy, report-contract, or scoring behavior. A change to the report schema needs a new `schema_version`, a migration rule in `validate-report.mjs`, and updates to the example, the evaluation report, and both skills' contract documents.
 

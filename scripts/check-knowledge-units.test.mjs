@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkUnits, checkCoverageMap, checkSpecificity, checkUnitReferences, checkStudies, classifySourceProvenance, isVerifiedSource, REQUIRED } from './check-knowledge-units.mjs';
+import { checkUnits, checkCoverageMap, checkSpecificity, checkUnitReferences, checkStudies, classifySourceProvenance, isVerifiedSource, buildReviewQueue, REQUIRED } from './check-knowledge-units.mjs';
 
 const values = {
   Contexto: 'interface web · todas as stacks',
@@ -101,4 +101,20 @@ test('inventory distinguishes recorded sources from editorial guidance and human
   assert.equal(classifySourceProvenance('WCAG — https://example.invalid · verificado em 2026-10-31 · vencida para nova checagem'), 'stale_for_recheck');
   assert.equal(isVerifiedSource('WCAG — https://example.invalid · verificado em 2026-10-31 · vencida para nova checagem'), false);
   assert.ok(checkStudies('# Estudos\n').length > 0);
+});
+
+test('review queue prioritizes task risk, keeps provenance distinct, and excludes independently reviewed claims', () => {
+  const fields = (priority, source) => new Map([['Prioridade padrão', priority], ['Fonte', source]]);
+  const units = new Map([
+    ['UXK-GEN-001', fields('P2', 'heurística editorial não verificada')],
+    ['UXK-GEN-002', fields('P1', 'https://example.invalid · verificado em 2026-10-31 · pendente de revisão humana')],
+    ['UXK-GEN-003', fields('P1', 'heurística editorial não verificada')],
+    ['UXK-GEN-004', fields('P0', 'https://example.invalid · verificado em 2026-10-31 · revisão: revisada por especialista')],
+  ]);
+  const queue = buildReviewQueue(units, new Map([['UXK-GEN-003', 'synthetic.md']]));
+  assert.deepEqual(queue.map((x) => x.id), ['UXK-GEN-003', 'UXK-GEN-002', 'UXK-GEN-001']);
+  assert.equal(queue[0].file, 'synthetic.md');
+  assert.equal(queue[1].humanReviewPending, true);
+  assert.ok(queue.every((x) => x.action));
+  assert.equal(units.get('UXK-GEN-002').get('Fonte').includes('pendente'), true);
 });

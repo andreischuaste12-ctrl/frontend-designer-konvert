@@ -2,6 +2,8 @@
 
 Four evaluations answer different questions. None of them calls a model: an agent run is observed, recorded, and then scored by a script. No result has been recorded yet, so no routing accuracy, audit quality, creation quality, or handoff compliance is claimed.
 
+Use the [evaluation preparation command](../docs/evaluation-preparation.md) to create clean audit and creation workspaces, freeze case/scorer/candidate fingerprints, and generate grading templates with unobserved fields left empty. It never executes or grades an agent. Creation scores count blocked criteria in the full denominator and report evaluated-only pass rate and verification coverage separately; older scores are not directly comparable.
+
 Do not score a run in a context that has seen the case labels or planted-issue answer key. A self-score from such a context is not a blind agent evaluation. Run clean agent sessions against isolated fixture copies, with only the prompt and installed skills visible. Store raw outputs privately, review them for sensitive content, and publish only aggregate results and a source commit after grading. A repository check or a synthetic example cannot substitute for these runs.
 
 | Evaluation | Question | Scored by | Deterministic? |

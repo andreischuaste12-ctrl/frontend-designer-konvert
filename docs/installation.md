@@ -2,9 +2,38 @@
 
 Requires Git. The scripts additionally require Node.js 20+ and Playwright Chromium. Agent skill discovery depends on the installed agent version; refresh its skills after installation.
 
+## Fresh installation from a local checkout
+
+From a reviewed checkout of this repository, run:
+
+```bash
+node scripts/install-skills.mjs --target ../my-project/.agents/skills
+```
+
+This command works in Bash and PowerShell. It validates the staged copy before installing, refuses to replace an existing skill, and removes only directories it created if a later step fails. Other skills in the destination remain untouched. It excludes dependencies, hidden files, runtime reports and caches, and rejects source symlinks. It never installs packages, edits the target project's `.gitignore`, or claims agent activation. Use `.claude/skills` for Claude Code.
+
+For updates, back up the three existing skill directories and move them out of the destination before repeating the fresh installer. There is intentionally no force-overwrite option. Pin and record a reviewed commit for reproducibility; `main` remains the development version.
+
+## Tooling diagnostics
+
+In this source checkout:
+
+```bash
+npm run setup:tools
+npm run doctor -- --browser
+npm test
+npm run check:browser
+```
+
+`setup:tools` installs the executor's pinned packages with lifecycle scripts disabled. The root package has no dependencies. The read-only `doctor` checks Node.js, skill structure, both Playwright and `@axe-core/playwright` versions, and, with `--browser`, an actual Chromium launch. Missing or incompatible packages stop the full browser check before its scenarios run. If no Chromium launches, run `npm run setup:browser` or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an installed browser. A system browser can differ from Playwright's pinned build.
+
+The root npm commands are development conveniences and are not copied into target projects. For an installed skill, use `npm ci --ignore-scripts` in its `design-por-referencia-konvert` directory, followed by `npm run setup:browser` if needed. See the auditor's isolated preparation for read-only audits.
+
+With Node.js 22.8+, `npm run check:coverage` measures the complete unit and browser suite in one run, after diagnosing packages and selecting a working browser. It retains the CI minimums of 80% lines, 85% branches and 87% functions. Browser paths are included in this measurement; a unit-only run is not the full tooling coverage gate.
+
 ## Current development version: all three skills
 
-The third skill, `create-frontend-from-zero-konvert`, is not in the `v0.1.0` release. For a fresh installation from `main`, use the three-skill Bash command in the [README](../README.md#install-all-three-from-main). For PowerShell, use the released instructions below with `--branch main` and add a third `Copy-Item` for `skills/create-frontend-from-zero-konvert` before running the verifier. The verifier from current `main` requires all three skills; the verifier in the pinned `v0.1.0` release requires only its two skills. Back up local changes before updating installed folders.
+The third skill, `create-frontend-from-zero-konvert`, is not in the `v0.1.0` release. For a fresh installation from `main`, use the three-skill Bash command in the [README](../README.md#install-all-three-from-main), or clone `main` and run the local installer above in Bash or PowerShell. The verifier from current `main` requires all three skills; the verifier in the pinned `v0.1.0` release requires only its two skills. Back up local changes before updating installed folders.
 
 ## Bash — released v0.1.0
 

@@ -32,14 +32,29 @@ test('failed prerequisites stop browser checks; successful preflight wires the b
   const root = await fixture(t);
   const calls = [];
   const run = async (...args) => calls.push(args);
-  await assert.rejects(checkProject(root, { browser: true, run, prepare: async () => ({ status: 'unavailable' }) }), (error) => error.exitCode === 2);
+  const inspect = async () => ({ ready: true });
+  await assert.rejects(checkProject(root, { browser: true, run, inspect: async () => ({ ready: false }), prepare: () => { throw new Error('must fail before probing'); } }), (error) => error.exitCode === 2 && /axe-core/.test(error.message));
+  assert.equal(calls.length, 0);
+  await assert.rejects(checkProject(root, { browser: true, run, inspect, prepare: async () => ({ status: 'unavailable' }) }), (error) => error.exitCode === 2);
   assert.equal(calls.length, 2);
   calls.length = 0;
-  await checkProject(root, { browser: true, run, prepare: async () => ({ status: 'ready', executablePath: 'synthetic-browser' }) });
+  await checkProject(root, { browser: true, run, inspect, prepare: async () => ({ status: 'ready', executablePath: 'synthetic-browser' }) });
   assert.equal(calls.length, 3);
   assert.equal(calls[2][2].PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH, 'synthetic-browser');
   assert.equal(calls[1][2], undefined);
   let attempts = 0;
   await assert.rejects(checkProject(root, { run: async () => { attempts++; throw new Error('check failed'); } }));
   assert.equal(attempts, 1);
+});
+
+test('coverage checks discover all suites once, retain thresholds, and use the verified browser', async (t) => {
+  const root = await fixture(t), calls = [];
+  await checkProject(root, { coverage: true, inspect: async () => ({ ready: true }),
+    prepare: async () => ({ status: 'ready', executablePath: 'synthetic-browser' }), run: async (...args) => calls.push(args) });
+  assert.equal(calls.length, 2); // Structural validation plus a single combined test run.
+  const [args, cwd, env] = calls[1];
+  assert.equal(cwd, root);
+  assert.ok(args.includes('--test-coverage-lines=80') && args.includes('--test-coverage-branches=85') && args.includes('--test-coverage-functions=87'));
+  assert.equal(args.filter((s) => s.endsWith('.test.mjs')).length, 5);
+  assert.equal(env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH, 'synthetic-browser');
 });

@@ -60,3 +60,48 @@ test('creation scorer rejects invalid deliveries, single-case collapse, and copi
   assert.equal(validateCreationProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: false, data: { cases: [{ id: 'reserved-01', title: 'New reserved case', brief: 'Unique brief' }] }, exposedData: data }), 'held_out');
   assert.throws(() => validateCreationProvenance({ fingerprints: { casesSha256: 'bad', scorerSha256: 'bad' } }), /64-hex/);
 });
+
+test('blocked criteria cannot turn a mostly unverified delivery into a passing score', () => {
+  const runs = perfectRuns();
+  for (const run of runs) {
+    for (const dim of data.dimensions.slice(1)) run.criteria[dim] = { status: 'blocked', reason: 'Synthetic unavailable evidence.' };
+  }
+  const result = scoreCreation(data, runs);
+  assert.equal(result.passed, false);
+  assert.equal(result.overall.criterionPassRate, 1 / 6);
+  assert.equal(result.overall.evaluatedCriterionPassRate, 1);
+  assert.ok(Math.abs(result.overall.verificationCoverage - 1 / 6) < 1e-12);
+  assert.equal(result.overall.blockedCriteria, 45);
+  assert.ok(result.failures.some((f) => f.startsWith('criterionPassRate')));
+  assert.ok(result.failures.some((f) => f.startsWith('blockedCriteria')));
+  assert.ok(result.failures.some((f) => f.startsWith('dimension keyboardUse')));
+});
+
+test('creation validation rejects malformed rubrics and incomplete or inconsistent grades', () => {
+  assert.ok(validateCreationCases(null).length);
+  const rubricVariants = [
+    { minRepetitions: 0 }, { dimensions: [] },
+    { targets: { ...data.targets, deliveryValidRate: -1, criterionPassRate: 2, unsupportedClaims: -1, requireCasePass: 'yes' } },
+    { cases: [...data.cases, data.cases[0]] },
+    { cases: data.cases.map((c) => ({ ...c, title: '', brief: '', viewports: [0], requiredStates: [], requiredTasks: [], constraints: [], legitimateChoices: [] })) },
+  ];
+  for (const patch of rubricVariants) assert.ok(validateCreationCases({ ...data, ...patch }).length);
+  const good = perfectRuns();
+  const gradeVariants = [
+    [], [{ ...good[0], caseId: 'unknown' }], [good[0], good[0]],
+    good.slice(1), good.map((r, i) => i ? r : { ...r, repetition: 0 }),
+    good.map((r, i) => i ? r : { ...r, unsupportedClaims: -1 }),
+    good.map((r, i) => i ? r : { ...r, criteria: null }),
+    good.map((r, i) => i ? r : { ...r, criteria: { ...r.criteria, keyboardUse: { status: 'not_run' } } }),
+    good.map((r, i) => i ? r : { ...r, criteria: { ...r.criteria, keyboardUse: { status: 'blocked' } } }),
+  ];
+  for (const runs of gradeVariants) assert.throws(() => scoreCreation(data, runs));
+  const invalid = perfectRuns();
+  invalid[0].deliveryValid = false;
+  invalid[0].criteria.keyboardUse = { status: 'blocked', reason: 'Not observed.' };
+  invalid[1].unsupportedClaims = 1;
+  const result = scoreCreation(data, invalid);
+  assert.equal(result.passed, false);
+  assert.equal(result.overall.blockedCriteria, 1);
+  assert.ok(result.overall.failedCriteria >= 5);
+});

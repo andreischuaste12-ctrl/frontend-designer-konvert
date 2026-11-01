@@ -1,0 +1,21 @@
+{
+  "name": "frontend-designer-konvert",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Development commands for the three Konvert frontend design skills",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "check": "node scripts/check-project.mjs",
+    "test": "node scripts/check-project.mjs",
+    "check:browser": "node scripts/check-project.mjs --browser",
+    "check:coverage": "node scripts/check-project.mjs --coverage",
+    "doctor": "node scripts/doctor.mjs",
+    "install:skills": "node scripts/install-skills.mjs",
+    "setup:tools": "npm ci --prefix skills/design-por-referencia-konvert --ignore-scripts --no-audit --no-fund",
+    "setup:browser": "npm run setup:browser --prefix skills/design-por-referencia-konvert",
+    "knowledge": "node scripts/check-knowledge-units.mjs",
+    "knowledge:review": "node scripts/check-knowledge-units.mjs --review",
+    "evaluation:prepare": "node scripts/prepare-evaluation.mjs"
+  }
+}

@@ -5,6 +5,18 @@ Notable changes to the repository are recorded here. The automation package vers
 ## Unreleased
 
 - Exclude nested editable-control text when sampling outer headings, paragraphs, labels, and interactive wrappers in `extract-styles.mjs` and `capture.mjs`, preserve full criterion denominators and enforce `maxBlockedCriteria: 0` plus per-dimension pass rates in `evaluate-creation.mjs`, detect copied or subsetted calibration cases by content before allowing `held_out` in all evaluators, and validate the full `comparison.json` structure in `check-handoff-scope.mjs`.
+
+### Tooling and evaluation improvements
+
+- Add a cross-platform fresh installer for all three skills, with staged structural validation, no overwrites, cache exclusion, symlink rejection, and rollback of directories created by a failed install.
+- Add dependency-free root npm commands and a read-only doctor for Node.js, installed skill structure, pinned Playwright/axe packages, and optional browser launch. Full browser checks reject missing or incompatible packages before running scenarios.
+- Add external audit/creation calibration workspace preparation with clean Git baselines, private operator material, frozen case/scorer/candidate fingerprints, and incomplete grading templates. No model run or independent performance result is claimed.
+- Add a prioritized knowledge-source review queue without changing source verification or human-review status.
+- Fix creation scores that excluded blocked criteria from the pass-rate denominator. Blocked checks now reduce the overall pass rate; evaluated-only rate and verification coverage are reported separately. Earlier scores are not directly comparable.
+- Keep copied or reformatted exposed cases classified as calibration in all three scorers, preserve input/candidate fingerprints in results, and require a candidate fingerprint for dirty-source evaluations.
+- Measure unit and browser coverage together through `npm run check:coverage` (Node.js 22.8+), selecting a verified browser and retaining the existing 80%/85%/87% minimums.
+- Simplify the development quick start and document installation, diagnostics, source review, and observed evaluation preparation. CI also watches the root manifests and diagnoses smoke-test prerequisites.
+
 - Redact rich/custom editable fields and selects in `extract-styles.mjs` (`aria-snapshot.yml`, `computed-styles.json`, `styles-summary.md`), emit `null` contrast when `contrastStatus` is `indeterminado`, sync `capture-index.example.json` with `captureStatus`, and reject incomplete capture indexes in `compare.mjs --pixels`.
 - Protect `.audit/audit-report.json` and `.audit/audit-report.md` from modification during handoff, verify behavioral acceptance (`--execution-record`, `--comparison`) in `check-handoff-scope.mjs`, enforce knowledge-provenance states and study metadata in `check-knowledge-units.mjs`, enforce `datasetRole`/`fingerprints` in routing and audit scorers, and add `evaluations/creation-quality/cases.json` + `scripts/evaluate-creation.mjs`.
 - Mask rich/custom editable fields and selects in screenshots and control crops; reject internal temporary directories with double-dot-prefixed names.

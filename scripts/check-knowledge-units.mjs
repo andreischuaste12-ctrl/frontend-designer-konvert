@@ -2,6 +2,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 
 export const REQUIRED = ['Contexto', 'Estados', 'Quando se aplica', 'Exceções', 'Evidência a coletar', 'Método', 'Prioridade padrão', 'Recomendação', 'Critério de aceite', 'Preservar', 'Dependência externa', 'Métrica a monitorar', 'Fonte'];
 /** Free-text fields that must be written for the specific problem, never copied between units. */
@@ -191,16 +192,49 @@ export function summarizeKnowledge(units) {
   return summary;
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-  const errors = await checkKnowledge(root);
-  if (errors.length) { console.error(errors.join('\n')); process.exitCode = 1; }
-  else {
-    const dir = path.join(root, 'skills/audit-frontend-designer-konvert/knowledge-base');
-    const units = new Map();
-    for (const name of (await fs.readdir(dir)).filter((n) => n.endsWith('.md'))) {
-      for (const [id, fields] of checkUnits(await fs.readFile(path.join(dir, name), 'utf8')).units) units.set(id, fields);
+/** Prioritize review work without promoting unreviewed claims or inventing source verification. */
+export function buildReviewQueue(units, files = new Map()) {
+  const order = { invalid: 0, conflicting: 1, stale_for_recheck: 2, editorial_unverified: 3, source_recorded: 4 };
+  const actions = {
+    invalid: 'Correct incomplete or contradictory provenance before using this claim.',
+    conflicting: 'Compare the conflicting sources and document which rule applies.',
+    stale_for_recheck: 'Reopen the original source and record the scope and date of the new check.',
+    editorial_unverified: 'Find and read a primary source, or keep the claim explicitly editorial.',
+    source_recorded: 'Have an independent human reviewer check the claim against the cited source.',
+  };
+  return [...units].flatMap(([id, fields]) => {
+    const source = fields.get('Fonte') ?? '';
+    const provenance = classifySourceProvenance(source);
+    if (provenance === 'independently_reviewed') return [];
+    return [{ id, file: files.get(id) ?? null, priority: fields.get('Prioridade padrão') ?? 'P3',
+      provenance, humanReviewPending: /pendente de revisão humana|revisão humana pendente/i.test(source), source, action: actions[provenance] }];
+  }).sort((a, b) => a.priority.localeCompare(b.priority) || order[a.provenance] - order[b.provenance] || a.id.localeCompare(b.id));
+}
+
+export async function readKnowledgeUnits(root) {
+  const dir = path.join(root, 'skills/audit-frontend-designer-konvert/knowledge-base');
+  const units = new Map(), files = new Map();
+  for (const name of (await fs.readdir(dir)).filter((n) => n.endsWith('.md')).sort()) {
+    for (const [id, fields] of checkUnits(await fs.readFile(path.join(dir, name), 'utf8')).units) {
+      units.set(id, fields);
+      files.set(id, path.relative(root, path.join(dir, name)).split(path.sep).join('/'));
     }
-    console.log(JSON.stringify(summarizeKnowledge(units), null, 2));
+  }
+  return { units, files };
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { values } = parseArgs({ options: { review: { type: 'boolean' }, help: { type: 'boolean' } } });
+  if (values.help) {
+    console.log('Usage: node scripts/check-knowledge-units.mjs [--review]\n--review prints a prioritized JSON review queue. No sources are promoted automatically.');
+  } else {
+    const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+    const errors = await checkKnowledge(root);
+    if (errors.length) { console.error(errors.join('\n')); process.exitCode = 1; }
+    else {
+      const { units, files } = await readKnowledgeUnits(root);
+      const summary = summarizeKnowledge(units);
+      console.log(JSON.stringify(values.review ? { summary, limitation: 'Review queue only; no independent review or user outcome is established.', queue: buildReviewQueue(units, files) } : summary, null, 2));
+    }
   }
 }

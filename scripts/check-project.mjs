@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { prepareBrowser } from '../skills/audit-frontend-designer-konvert/scripts/prepare-browser.mjs';
+import { inspectTooling } from './doctor.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BROWSER_TESTS = new Set(['scripts-smoke.test.mjs', 'network-guards.test.mjs']);
@@ -27,27 +28,37 @@ function runNode(args, cwd, env = process.env) {
   if (result.error || result.status !== 0) throw Object.assign(new Error('Project check failed.'), { exitCode: result.status || 1 });
 }
 
-export async function checkProject(sourceRoot, { browser = false, run = runNode, prepare = prepareBrowser } = {}) {
+export async function checkProject(sourceRoot, { browser = false, coverage = false, run = runNode, prepare = prepareBrowser, inspect = inspectTooling } = {}) {
+  const needsBrowser = browser || coverage;
+  const executor = path.join(sourceRoot, 'skills/design-por-referencia-konvert');
+  if (needsBrowser && !(await inspect(executor)).ready) {
+    throw Object.assign(new Error('Browser checks require pinned Playwright and @axe-core/playwright. Run npm run setup:tools, then npm run doctor -- --browser. No installation was attempted.'), { exitCode: 2 });
+  }
   await run(['scripts/validate-repository.mjs'], sourceRoot);
   const tests = await discoverTests(sourceRoot);
-  await run(['--test', ...tests.unit], sourceRoot);
-  if (!browser) return;
-  const executor = path.join(sourceRoot, 'skills/design-por-referencia-konvert');
+  if (!coverage) await run(['--test', ...tests.unit], sourceRoot);
+  if (!needsBrowser) return;
   const prepared = await prepare(executor);
   if (prepared.status !== 'ready') {
     throw Object.assign(new Error('Browser checks require executor dependencies and a working Chromium. See docs/installation.md. No installation was attempted.'), { exitCode: 2 });
   }
   const env = { ...process.env };
   if (prepared.executablePath) env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = prepared.executablePath;
-  await run(['--test', ...tests.browser], sourceRoot, env);
+  await run(coverage
+    ? ['--experimental-test-coverage', '--test-coverage-lines=80', '--test-coverage-branches=85', '--test-coverage-functions=87', '--test', ...tests.unit, ...tests.browser]
+    : ['--test', ...tests.browser], sourceRoot, env);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
-  if (args.some((arg) => arg !== '--browser')) {
-    console.error('Usage: node scripts/check-project.mjs [--browser]'); process.exitCode = 2;
+  if (args.some((arg) => !['--browser', '--coverage'].includes(arg))) {
+    console.error('Usage: node scripts/check-project.mjs [--browser] [--coverage]'); process.exitCode = 2;
   } else {
-    try { await checkProject(root, { browser: args.includes('--browser') }); }
+    try {
+      const [major, minor] = process.versions.node.split('.').map(Number);
+      if (args.includes('--coverage') && (major < 22 || (major === 22 && minor < 8))) throw Object.assign(new Error('Coverage thresholds require Node.js 22.8+. Other checks support Node.js 20+.'), { exitCode: 2 });
+      await checkProject(root, { browser: args.includes('--browser'), coverage: args.includes('--coverage') });
+    }
     catch (error) { console.error(error.exitCode ? error.message : 'Project check could not run; filesystem details omitted.'); process.exitCode = error.exitCode || 1; }
   }
 }

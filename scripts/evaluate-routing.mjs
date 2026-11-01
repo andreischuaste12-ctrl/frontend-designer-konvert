@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { redactText } from '../skills/design-por-referencia-konvert/scripts/_common.mjs';
+import { containsExposedCases, candidateProvenance } from './evaluation-provenance.mjs';
 
 const sha256 = (content) => createHash('sha256').update(content).digest('hex');
 const norm = (value) => String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -110,9 +111,9 @@ async function main() {
   const cases = JSON.parse(casesRaw);
   const run = JSON.parse(runRaw);
   if (typeof run.model !== 'string' || !run.model.trim() || typeof run.agentVersion !== 'string' || !run.agentVersion.trim() || !/^[a-f0-9]{7,40}$/i.test(run.sourceCommit ?? '') || !/^\d{4}-\d{2}-\d{2}/.test(run.executedAt ?? '') || !Number.isFinite(Date.parse(run.executedAt)) || !Array.isArray(run.decisions)) throw new Error('Run metadata and decisions are required.');
-  const datasetRole = validateRoutingProvenance(run, { isExposedCalibrationSet: path.resolve(casesPath) === path.resolve(defaultCasesPath), cases, casesRaw, scorerRaw });
+  const datasetRole = validateRoutingProvenance(run, { isExposedCalibrationSet: containsExposedCases(cases, EXPOSED_ROUTING_CASES), cases, casesRaw, scorerRaw });
   const scored = scoreRouting(cases, run.decisions);
-  const report = { schemaVersion: 1, datasetRole, executedAt: new Date(run.executedAt).toISOString(), model: redactText(run.model, 100), agentVersion: redactText(run.agentVersion, 100), sourceCommit: run.sourceCommit, ...scored };
+  const report = { schemaVersion: 1, datasetRole, executedAt: new Date(run.executedAt).toISOString(), model: redactText(run.model, 100), agentVersion: redactText(run.agentVersion, 100), sourceCommit: run.sourceCommit, ...candidateProvenance(run, await fs.readFile(new URL('./evaluation-provenance.mjs', import.meta.url), 'utf8')), ...scored };
   await fs.mkdir(a.out, { recursive: true });
   await fs.writeFile(path.join(a.out, 'routing-score.json'), JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));

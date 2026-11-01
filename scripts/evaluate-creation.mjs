@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { redactText } from '../skills/design-por-referencia-konvert/scripts/_common.mjs';
+import { containsExposedCases, candidateProvenance } from './evaluation-provenance.mjs';
 
 const REQUIRED_DIMENSIONS = [
   'functionalCompletion',
@@ -103,9 +104,9 @@ export function scoreCreation(data, runs) {
       if (!entry || !['passed', 'failed', 'blocked'].includes(entry.status)) throw new Error(`Criterion ${dim} must record status passed, failed, or blocked.`);
       if (entry.status === 'passed' && !isId(entry.evidence)) throw new Error(`Criterion ${dim} requires evidence when passed.`);
       if (entry.status === 'blocked' && !isId(entry.reason)) throw new Error(`Criterion ${dim} requires reason when blocked.`);
-      if (!run.deliveryValid) failed++;
+      if (entry.status === 'blocked') blocked++;
+      else if (!run.deliveryValid) failed++;
       else if (entry.status === 'passed') { passed++; totals.dimensionPassed[dim]++; caseStats.dimensionPassed[dim]++; }
-      else if (entry.status === 'blocked') blocked++;
       else failed++;
     }
     const delta = { runs: 1, valid: run.deliveryValid ? 1 : 0, criteriaTotal: REQUIRED_DIMENSIONS.length, criteriaPassed: passed, criteriaFailed: failed, criteriaBlocked: blocked, unsupportedClaims: run.unsupportedClaims };
@@ -116,8 +117,11 @@ export function scoreCreation(data, runs) {
   }
   const summarize = (s) => ({
     deliveryValidRate: ratio(s.valid, s.runs),
+    // Blocked checks remain unverified and must not inflate the delivery score.
     criterionPassRate: ratio(s.criteriaPassed, s.criteriaTotal),
     verifiedCriterionPassRate: ratio(s.criteriaPassed, s.criteriaTotal - s.criteriaBlocked),
+    evaluatedCriterionPassRate: ratio(s.criteriaPassed, s.criteriaTotal - s.criteriaBlocked),
+    verificationCoverage: ratio(s.criteriaTotal - s.criteriaBlocked, s.criteriaTotal),
     dimensionPassRates: Object.fromEntries(REQUIRED_DIMENSIONS.map((d) => [d, ratio(s.dimensionPassed[d], s.runs)])),
     blockedCriteria: s.criteriaBlocked,
     failedCriteria: s.criteriaFailed,
@@ -168,10 +172,10 @@ async function main() {
   if (validateCreationCases(data).length) throw new Error('Invalid creation case file.');
   const run = JSON.parse(runRaw);
   if (!isId(run.model) || !isId(run.agentVersion) || !/^[a-f0-9]{7,40}$/i.test(run.sourceCommit ?? '') || !/^\d{4}-\d{2}-\d{2}/.test(run.executedAt ?? '') || !Number.isFinite(Date.parse(run.executedAt)) || !isId(run.grader)) throw new Error('Run metadata is required.');
-  const datasetRole = validateCreationProvenance(run, { isExposedCalibrationSet: path.resolve(casesPath) === path.resolve(defaultCasesPath), data, exposedData, casesRaw, exposedCasesRaw, scorerRaw });
+  const datasetRole = validateCreationProvenance(run, { isExposedCalibrationSet: containsExposedCases(data, exposedData), data, exposedData, casesRaw, exposedCasesRaw, scorerRaw });
   const report = {
     schemaVersion: 1, datasetRole, executedAt: new Date(run.executedAt).toISOString(), model: redactText(run.model, 100), agentVersion: redactText(run.agentVersion, 100),
-    sourceCommit: run.sourceCommit, grader: redactText(run.grader, 100), ...scoreCreation(data, run.runs),
+    sourceCommit: run.sourceCommit, ...candidateProvenance(run, await fs.readFile(new URL('./evaluation-provenance.mjs', import.meta.url), 'utf8')), grader: redactText(run.grader, 100), ...scoreCreation(data, run.runs),
   };
   await fs.mkdir(a.out, { recursive: true });
   await fs.writeFile(path.join(a.out, 'creation-quality-score.json'), JSON.stringify(report, null, 2));

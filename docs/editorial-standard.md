@@ -22,3 +22,5 @@ Use a level-three heading `### UXK-CHK-001 — Title` followed by the exact fiel
 The [coverage map](coverage-map.md) reports guidance with existing unit IDs: `orientação` when any cited unit is unverified, `verificação` only when every cited unit has a verified source, `teste` only with an evaluation case. Stack cells must cite units that name that stack; state cells must cite units that list that state; `não se aplica` is limited to the journey × stack table. Labels do not prove that agents, users or stacks were evaluated.
 
 Run `node scripts/validate-repository.mjs` and the root tests before requesting review. Structural checks cannot validate evidence, accessibility, quality, or source truth.
+
+Run `npm run knowledge:review` to generate the current review queue without editing sources. It sorts by task priority, then provenance (invalid/conflicting/stale before unverified editorial guidance and recorded sources awaiting independent review). Each entry names the existing source file and the next review action. A queue entry is work to do, not a completed review; only an actual independent reviewer can establish independent review.

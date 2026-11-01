@@ -2,6 +2,34 @@
 
 This repository contains three complementary skills for coding agents. It is a skills-and-tools repository.
 
+## Quick start from a reviewed checkout
+
+Requires Git and Node.js 20+. From this repository, install into your target project:
+
+```bash
+node scripts/install-skills.mjs --target ../my-project/.agents/skills
+```
+
+The installer verifies all three skills, excludes dependencies and caches, refuses existing copies, and rolls back its own files on failure. For Claude Code, use `../my-project/.claude/skills`. Refresh your agent after installation.
+
+| Your task | Start with |
+| --- | --- |
+| Review an existing interface | `audit-frontend-designer-konvert` |
+| Refine an existing interface or apply a reference | `design-por-referencia-konvert` |
+| Build a new frontend | `create-frontend-from-zero-konvert` |
+
+To develop or validate these tools locally:
+
+```bash
+npm run setup:tools
+npm run doctor -- --browser
+npm test
+```
+
+If the browser diagnostic fails, run `npm run setup:browser` or configure an existing Chromium, then repeat the diagnostic. Run `npm run check:browser` for the full browser suite. Diagnostics never download packages or browsers. See the [installation guide](docs/installation.md) for installed-skill setup and [evaluation preparation](docs/evaluation-preparation.md) for clean calibration workspaces.
+
+On Node.js 22.8+, `npm run check:coverage` runs all unit and browser tests with the existing CI coverage thresholds.
+
 ## Skills
 
 ### `audit-frontend-designer-konvert`
@@ -34,12 +62,7 @@ trap 'rm -rf "$tmp_dir"' EXIT
 git clone --depth 1 --branch main --filter=blob:none --sparse \
   https://github.com/andreischuaste12-ctrl/frontend-designer-konvert.git "$tmp_dir/repo"
 git -C "$tmp_dir/repo" sparse-checkout set skills scripts
-mkdir -p .agents/skills
-for name in audit-frontend-designer-konvert design-por-referencia-konvert create-frontend-from-zero-konvert; do
-  if [ -e ".agents/skills/$name" ]; then echo "Existing skill: $name; back it up before updating."; exit 1; fi
-done
-cp -R "$tmp_dir/repo"/skills/* .agents/skills/
-node "$tmp_dir/repo/scripts/verify-install.mjs" .agents/skills
+node "$tmp_dir/repo/scripts/install-skills.mjs" --target .agents/skills
 ```
 
 The verifier checks the installed structure, not agent activation. Node.js 20+ is required for the tooling. See the [installation guide](docs/installation.md) for platform-specific instructions and browser setup.
@@ -91,6 +114,8 @@ See the [installation guide](docs/installation.md) for PowerShell, Claude Code p
 From the repository root, run `node scripts/check-project.mjs` for structural validation and all root, auditor, and executor unit tests. Add `--browser` to include smoke tests: `node scripts/check-project.mjs --browser`. Browser checks require installed executor dependencies and a working Chromium; the command detects an existing system browser and never installs dependencies. See the [installation guide](docs/installation.md).
 
 Run `node scripts/check-knowledge-units.mjs` for the current knowledge inventory. Recorded source consultation, technical execution, and demonstrated user outcomes are separate evidence levels; the inventory measures only the first. The [evaluation priorities](docs/evaluation-priorities.md) describe the next observed runs and their limits.
+
+Run `npm run knowledge:review` for a source-review queue sorted by task priority and provenance. It lists the unit, source file, existing source status, and next review action; it does not mark sources as independently reviewed. Run `npm run evaluation:prepare -- --list` to see available audit and creation calibration cases without printing their answer keys.
 
 ## Validate the reference tooling
 

@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { redactText } from '../skills/design-por-referencia-konvert/scripts/_common.mjs';
+import { containsExposedCases, candidateProvenance } from './evaluation-provenance.mjs';
 
 const PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
 const CRITICAL = new Set(['P0', 'P1']);
@@ -185,10 +186,10 @@ async function main() {
   if (caseErrors.length) throw new Error('Invalid case file.');
   const run = JSON.parse(runRaw);
   if (!isId(run.model) || !isId(run.agentVersion) || !/^[a-f0-9]{7,40}$/i.test(run.sourceCommit ?? '') || !/^\d{4}-\d{2}-\d{2}/.test(run.executedAt ?? '') || !Number.isFinite(Date.parse(run.executedAt)) || !isId(run.grader)) throw new Error('Run metadata is required.');
-  const datasetRole = validateAuditProvenance(run, { isExposedCalibrationSet: path.resolve(casesPath) === path.resolve(defaultCasesPath), data, casesRaw, scorerRaw });
+  const datasetRole = validateAuditProvenance(run, { isExposedCalibrationSet: containsExposedCases(data, EXPOSED_AUDIT_DATA), data, casesRaw, scorerRaw });
   const report = {
     schemaVersion: 1, datasetRole, executedAt: new Date(run.executedAt).toISOString(), model: redactText(run.model, 100), agentVersion: redactText(run.agentVersion, 100),
-    sourceCommit: run.sourceCommit, grader: redactText(run.grader, 100), ...scoreAudit(data, run.runs),
+    sourceCommit: run.sourceCommit, ...candidateProvenance(run, await fs.readFile(new URL('./evaluation-provenance.mjs', import.meta.url), 'utf8')), grader: redactText(run.grader, 100), ...scoreAudit(data, run.runs),
   };
   await fs.mkdir(a.out, { recursive: true });
   await fs.writeFile(path.join(a.out, 'audit-quality-score.json'), JSON.stringify(report, null, 2));
