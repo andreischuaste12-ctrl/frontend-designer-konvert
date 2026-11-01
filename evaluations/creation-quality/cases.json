@@ -12,6 +12,7 @@
   "targets": {
     "deliveryValidRate": 1,
     "criterionPassRate": 0.85,
+    "maxBlockedCriteria": 0,
     "unsupportedClaims": 0,
     "requireCasePass": true
   },

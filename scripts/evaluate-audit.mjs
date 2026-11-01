@@ -12,11 +12,25 @@ const PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
 const CRITICAL = new Set(['P0', 'P1']);
 const isId = (value) => typeof value === 'string' && value.trim().length > 0;
 const sha256 = (content) => createHash('sha256').update(content).digest('hex');
+const norm = (value) => String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+const DEFAULT_CASES_PATH = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../evaluations/audit-quality/cases.json');
+const EXPOSED_AUDIT_RAW = await fs.readFile(DEFAULT_CASES_PATH, 'utf8');
+const EXPOSED_AUDIT_DATA = JSON.parse(EXPOSED_AUDIT_RAW);
 
-export function validateAuditProvenance(run, { isExposedCalibrationSet = true, casesRaw = '', scorerRaw = '' } = {}) {
+export function isExposedAuditCalibration(data, exposedData = EXPOSED_AUDIT_DATA) {
+  if (!Array.isArray(data?.cases) || !Array.isArray(exposedData?.cases) || !exposedData.cases.length) return false;
+  const ids = new Set(exposedData.cases.map((c) => norm(c?.id)));
+  const fixtures = new Set(exposedData.cases.map((c) => norm(c?.fixture)));
+  const briefs = new Set(exposedData.cases.map((c) => norm(c?.brief)));
+  return data.cases.some((c) => ids.has(norm(c?.id)) || fixtures.has(norm(c?.fixture)) || briefs.has(norm(c?.brief)));
+}
+
+export function validateAuditProvenance(run, { isExposedCalibrationSet = true, data = null, exposedData = EXPOSED_AUDIT_DATA, casesRaw = '', exposedCasesRaw = EXPOSED_AUDIT_RAW, scorerRaw = '' } = {}) {
   const role = run?.datasetRole ?? 'calibration';
   if (!['calibration', 'held_out'].includes(role)) throw new Error('datasetRole must be calibration or held_out.');
-  if (role === 'held_out' && isExposedCalibrationSet) throw new Error('Exposed repository audit cases are calibration material and cannot be scored as held_out.');
+  const candidateData = data ?? (casesRaw ? JSON.parse(casesRaw) : null);
+  const exposed = isExposedCalibrationSet || Boolean(casesRaw && exposedCasesRaw && sha256(casesRaw) === sha256(exposedCasesRaw)) || isExposedAuditCalibration(candidateData, exposedData);
+  if (role === 'held_out' && exposed) throw new Error('Exposed repository audit cases are calibration material and cannot be scored as held_out.');
   if (run?.fingerprints !== undefined) {
     const fp = run.fingerprints;
     if (!fp || typeof fp !== 'object' || !/^[a-f0-9]{64}$/i.test(fp.casesSha256 ?? '') || !/^[a-f0-9]{64}$/i.test(fp.scorerSha256 ?? '')) {
@@ -171,7 +185,7 @@ async function main() {
   if (caseErrors.length) throw new Error('Invalid case file.');
   const run = JSON.parse(runRaw);
   if (!isId(run.model) || !isId(run.agentVersion) || !/^[a-f0-9]{7,40}$/i.test(run.sourceCommit ?? '') || !/^\d{4}-\d{2}-\d{2}/.test(run.executedAt ?? '') || !Number.isFinite(Date.parse(run.executedAt)) || !isId(run.grader)) throw new Error('Run metadata is required.');
-  const datasetRole = validateAuditProvenance(run, { isExposedCalibrationSet: path.resolve(casesPath) === path.resolve(defaultCasesPath), casesRaw, scorerRaw });
+  const datasetRole = validateAuditProvenance(run, { isExposedCalibrationSet: path.resolve(casesPath) === path.resolve(defaultCasesPath), data, casesRaw, scorerRaw });
   const report = {
     schemaVersion: 1, datasetRole, executedAt: new Date(run.executedAt).toISOString(), model: redactText(run.model, 100), agentVersion: redactText(run.agentVersion, 100),
     sourceCommit: run.sourceCommit, grader: redactText(run.grader, 100), ...scoreAudit(data, run.runs),

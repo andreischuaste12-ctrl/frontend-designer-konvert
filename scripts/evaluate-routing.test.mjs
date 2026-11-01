@@ -79,10 +79,12 @@ test('flow metadata is well formed without claiming observed sequence compliance
   }
 });
 
-test('provenance rejects held_out claims on exposed calibration cases and scores workflow observations when supplied', () => {
+test('provenance rejects held_out claims on exposed or copied calibration cases and scores workflow observations when supplied', () => {
+  const routingCases = JSON.parse(fs.readFileSync(new URL('../evaluations/routing-cases.json', import.meta.url), 'utf8'));
   assert.equal(validateRoutingProvenance({ datasetRole: 'calibration' }), 'calibration');
   assert.throws(() => validateRoutingProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: true }), /calibration material/);
-  assert.equal(validateRoutingProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: false }), 'held_out');
+  assert.throws(() => validateRoutingProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: false, cases: [routingCases[0]] }), /calibration material/);
+  assert.equal(validateRoutingProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: false, cases: [{ id: 'reserved-01', prompt: 'Unique reserved routing prompt', skill: 'audit-frontend-designer-konvert', shouldTrigger: true }] }), 'held_out');
   assert.throws(() => validateRoutingProvenance({ fingerprints: { casesSha256: 'bad', scorerSha256: 'bad' } }), /64-hex/);
   const flowCases = [{ id: 'audit-06', skill: 'audit-frontend-designer-konvert', shouldTrigger: true, expectedFlow: ['audit-frontend-designer-konvert', 'design-por-referencia-konvert'], handoffRequiresUserApproval: true }];
   const scored = scoreRouting(flowCases, [{ id: 'audit-06', triggered: true, observedFlow: ['audit-frontend-designer-konvert', 'design-por-referencia-konvert'], waitedForApproval: true }]);

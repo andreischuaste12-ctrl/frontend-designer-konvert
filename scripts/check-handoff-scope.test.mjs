@@ -168,8 +168,14 @@ test('audit report inside .audit is protected while other .audit artifacts are i
       { criterion_id: 'LOJA-003', status: 'blocked', reason: 'Aguardando tabela comercial.' },
     ],
   };
-  const validComparison = { schemaVersion: 1, styles: { entries: [{ element: 'button:button.buy-button', status: 'changed', changes: [{ field: 'background', before: '#eee', after: '#1d4f91' }] }] } };
+  const validComparison = { schemaVersion: 1, styles: { width: 375, scheme: 'light', entries: [{ element: 'button:button.buy-button', status: 'changed', changes: [{ field: 'background', before: '#eee', after: '#1d4f91' }] }] } };
   assert.equal(verifyHandoffBehavior({ report, approvedIds: handoff.authorizedIds, executionRecord: validRecord, comparison: validComparison }).passed, true);
   assert.equal(verifyHandoffBehavior({ report, approvedIds: ['LOJA-001'], executionRecord: validRecord, comparison: validComparison }).passed, false, 'unapproved finding in verification fails acceptance');
-  assert.equal(verifyHandoffBehavior({ report, approvedIds: handoff.authorizedIds, executionRecord: validRecord, comparison: { schemaVersion: 1, styles: { entries: [{ element: 'button', status: 'unchanged', changes: [] }] } } }).passed, false);
+  assert.equal(verifyHandoffBehavior({ report, approvedIds: handoff.authorizedIds, executionRecord: validRecord, comparison: { schemaVersion: 1, styles: { width: 375, scheme: 'light', entries: [{ element: 'button:button.buy-button', status: 'unchanged', changes: [] }] } } }).passed, false);
+  assert.equal(verifyHandoffBehavior({ report, approvedIds: handoff.authorizedIds, executionRecord: validRecord, comparison: { schemaVersion: 1, styles: { entries: [{ status: 'changed' }] } } }).passed, false, 'comparison without element, viewport, or changed fields must fail');
+  assert.equal(verifyHandoffBehavior({ report, approvedIds: handoff.authorizedIds, executionRecord: validRecord, comparison: { schemaVersion: 1, styles: { width: 375, scheme: 'light', entries: [{ element: 'button:button.buy-button', status: 'changed', changes: [{ field: 'background', before: '#eee', after: '#eee' }] }] } } }).passed, false);
+  assert.equal(verifyHandoffBehavior({ report, approvedIds: handoff.authorizedIds, executionRecord: validRecord, comparison: { schemaVersion: 1, styles: { width: 375, scheme: 'light', entries: [{ element: 'button:button.buy-button', status: 'unchanged', changes: [{ field: 'background', before: '#eee', after: '#111' }] }] } } }).passed, false);
+  assert.equal(verifyHandoffBehavior({ report, approvedIds: handoff.authorizedIds, executionRecord: validRecord, comparison: { schemaVersion: 1, pixels: [{ pair: 'pair-001', route: 'route-01', width: 375, scheme: 'light', state: 'full', status: 'compared', differentPixels: 12, totalPixels: 100, differentPercent: 12 }] } }).passed, true);
+  assert.equal(verifyHandoffBehavior({ report, approvedIds: handoff.authorizedIds, executionRecord: validRecord, comparison: { schemaVersion: 1, pixels: [{ pair: 'pair-001', route: 'route-01', width: 375, scheme: 'light', state: 'full', status: 'compared', differentPixels: -1, totalPixels: 100, differentPercent: 0 }] } }).passed, false);
+  assert.equal(verifyHandoffBehavior({ report, approvedIds: handoff.authorizedIds, executionRecord: validRecord, comparison: { schemaVersion: 1, pixels: [] } }).passed, false);
 });

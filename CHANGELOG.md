@@ -4,6 +4,7 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+- Exclude nested editable-control text when sampling outer headings, paragraphs, labels, and interactive wrappers in `extract-styles.mjs` and `capture.mjs`, preserve full criterion denominators and enforce `maxBlockedCriteria: 0` plus per-dimension pass rates in `evaluate-creation.mjs`, detect copied or subsetted calibration cases by content before allowing `held_out` in all evaluators, and validate the full `comparison.json` structure in `check-handoff-scope.mjs`.
 - Redact rich/custom editable fields and selects in `extract-styles.mjs` (`aria-snapshot.yml`, `computed-styles.json`, `styles-summary.md`), emit `null` contrast when `contrastStatus` is `indeterminado`, sync `capture-index.example.json` with `captureStatus`, and reject incomplete capture indexes in `compare.mjs --pixels`.
 - Protect `.audit/audit-report.json` and `.audit/audit-report.md` from modification during handoff, verify behavioral acceptance (`--execution-record`, `--comparison`) in `check-handoff-scope.mjs`, enforce knowledge-provenance states and study metadata in `check-knowledge-units.mjs`, enforce `datasetRole`/`fingerprints` in routing and audit scorers, and add `evaluations/creation-quality/cases.json` + `scripts/evaluate-creation.mjs`.
 - Mask rich/custom editable fields and selects in screenshots and control crops; reject internal temporary directories with double-dot-prefixed names.

@@ -105,6 +105,56 @@ export function checkScope(handoff, report, changed, approvedIds = handoff.autho
   return { changed, implementable: [...ready].sort(), violations, notImplemented, passed: !violations.length && !notImplemented.length };
 }
 
+const STYLE_FIELDS = new Set([
+  'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'color',
+  'background', 'padding', 'borderRadius', 'boxShadow', 'opacity', 'ancestorOpacityProduct',
+  'contrast', 'contrastRequired', 'contrastStatus', 'backgroundIndeterminate',
+  'contrastOpacityIndeterminate', 'count', 'rect.x', 'rect.y', 'rect.w', 'rect.h',
+]);
+
+export function validateComparisonArtifact(comparison) {
+  const errors = [];
+  if (!comparison || typeof comparison !== 'object' || comparison.schemaVersion !== 1 || (!comparison.styles && !comparison.pixels)) {
+    return ['comparison: must be a valid schemaVersion 1 comparison report'];
+  }
+  if (comparison.styles != null) {
+    const s = comparison.styles;
+    if (!Number.isInteger(s.width) || s.width <= 0 || !['light', 'dark'].includes(s.scheme) || !Array.isArray(s.entries) || !s.entries.length) {
+      errors.push('comparison.styles: requires positive width, scheme (light|dark), and non-empty entries');
+    } else {
+      for (const [i, e] of s.entries.entries()) {
+        if (!e || typeof e.element !== 'string' || !/^[a-z0-9_-]+:.+/i.test(e.element) || !['added', 'removed', 'changed', 'unchanged'].includes(e.status) || !Array.isArray(e.changes)) {
+          errors.push(`comparison.styles.entries[${i}]: requires category:selector element, valid status, and changes list`);
+          continue;
+        }
+        if (e.status === 'changed') {
+          if (!e.changes.length || e.changes.some((c) => !c || !STYLE_FIELDS.has(c.field) || !('before' in c) || !('after' in c) || JSON.stringify(c.before) === JSON.stringify(c.after))) {
+            errors.push(`comparison.styles.entries[${i}]: changed entry requires non-empty field diffs`);
+          }
+        } else if (e.changes.length > 0) {
+          errors.push(`comparison.styles.entries[${i}]: non-changed entry must have empty changes`);
+        }
+      }
+    }
+  }
+  if (comparison.pixels != null) {
+    if (!Array.isArray(comparison.pixels) || !comparison.pixels.length) {
+      errors.push('comparison.pixels: must be a non-empty list');
+    } else {
+      for (const [i, p] of comparison.pixels.entries()) {
+        if (!p || !/^pair-\d+$/.test(p.pair ?? '') || typeof p.route !== 'string' || !p.route.trim() || !Number.isInteger(p.width) || p.width <= 0 || !['light', 'dark'].includes(p.scheme) || typeof p.state !== 'string' || !p.state.trim() || !['compared', 'dimension-mismatch', 'pixel-limit', 'missing'].includes(p.status)) {
+          errors.push(`comparison.pixels[${i}]: requires pair, route, width, scheme, state, and status`);
+          continue;
+        }
+        if (p.status === 'compared' && (!Number.isInteger(p.differentPixels) || p.differentPixels < 0 || !Number.isInteger(p.totalPixels) || p.totalPixels <= 0 || p.differentPixels > p.totalPixels || typeof p.differentPercent !== 'number')) {
+          errors.push(`comparison.pixels[${i}]: compared entry requires valid pixel counts`);
+        }
+      }
+    }
+  }
+  return errors;
+}
+
 /** Verifies execution-record acceptance and render comparison artifacts against the approved handoff scope. */
 export function verifyHandoffBehavior({ report, approvedIds, executionRecord, comparison }) {
   const errors = [];
@@ -114,12 +164,12 @@ export function verifyHandoffBehavior({ report, approvedIds, executionRecord, co
     if (!check.errors.length) errors.push(...validateAcceptance(executionRecord, report, approvedIds).map((e) => `acceptance: ${e}`));
   }
   if (comparison !== undefined) {
-    if (!comparison || comparison.schemaVersion !== 1 || (!comparison.styles && !comparison.pixels)) {
-      errors.push('comparison: must be a valid schemaVersion 1 comparison report');
-    } else {
-      const styleChanged = Array.isArray(comparison.styles?.entries) && comparison.styles.entries.some((e) => e?.status === 'changed');
-      const pixelChanged = Array.isArray(comparison.pixels) && comparison.pixels.some((p) => p?.status === 'compared' && p.differentPixels > 0);
-      const pixelFailed = Array.isArray(comparison.pixels) && comparison.pixels.some((p) => ['dimension-mismatch', 'pixel-limit', 'missing'].includes(p?.status));
+    const compErrors = validateComparisonArtifact(comparison);
+    errors.push(...compErrors);
+    if (!compErrors.length) {
+      const styleChanged = Array.isArray(comparison.styles?.entries) && comparison.styles.entries.some((e) => e.status === 'changed' && e.changes.length > 0);
+      const pixelChanged = Array.isArray(comparison.pixels) && comparison.pixels.some((p) => p.status === 'compared' && p.differentPixels > 0);
+      const pixelFailed = Array.isArray(comparison.pixels) && comparison.pixels.some((p) => ['dimension-mismatch', 'pixel-limit', 'missing'].includes(p.status));
       if (pixelFailed) errors.push('comparison: pixel comparison contains missing or incompatible pairs');
       if (!styleChanged && !pixelChanged) errors.push('comparison: no rendered style or pixel change was observed');
     }

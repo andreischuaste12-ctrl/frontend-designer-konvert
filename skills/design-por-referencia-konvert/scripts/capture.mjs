@@ -242,13 +242,28 @@ async function captureRoute(ctx, route, width, scheme, routeIndex) {
     if (maxControls > 0 && controlWidths.includes(width)) {
       const picks = await page.evaluate(
         ({ sel, editableSel, n }) => {
+          const isEdit = (node) => (/^(INPUT|TEXTAREA|SELECT|OPTION)$/.test(node.tagName) && !['submit', 'button'].includes(node.type)) || node.isContentEditable || (node.getAttribute?.('role') || '').toLowerCase().split(/\s+/).some((role) => ['textbox', 'searchbox', 'combobox', 'spinbutton'].includes(role)) || Boolean(node.closest?.(editableSel));
+          const nonEditableText = (root) => {
+            if (isEdit(root)) return '';
+            if (!root.querySelector?.(editableSel)) return root.innerText || '';
+            const parts = [];
+            const walk = (node) => {
+              for (const child of node.childNodes) {
+                if (child.nodeType === 3) parts.push(child.nodeValue || '');
+                else if (child.nodeType === 1 && !/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(child.tagName) && !isEdit(child)) walk(child);
+              }
+            };
+            walk(root);
+            return parts.join(' ');
+          };
           const cand = [];
           [...document.querySelectorAll(sel)].forEach((el, i) => {
             const r = el.getBoundingClientRect();
             const s = getComputedStyle(el);
             if (r.width < 24 || r.height < 16 || s.visibility === 'hidden' || s.display === 'none') return;
-            const editable = (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && !['submit', 'button'].includes(el.type)) || el.isContentEditable || (el.getAttribute('role') || '').toLowerCase().split(/\s+/).some((role) => ['textbox', 'searchbox', 'combobox', 'spinbutton'].includes(role)) || Boolean(el.closest(editableSel));
-            const label = (editable ? `[${el.tagName.toLowerCase()}]` : (el.getAttribute('aria-label') || el.innerText || el.getAttribute('title') || '')).trim().replace(/\s+/g, ' ').slice(0, 40);
+            const editable = isEdit(el);
+            const rawText = (el.getAttribute('aria-label') || nonEditableText(el) || el.getAttribute('title') || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+            const label = editable || (!rawText && el.querySelector?.(editableSel)) ? `[${el.tagName.toLowerCase()}]` : rawText;
             cand.push({ i, label, score: (r.top + scrollY < innerHeight * 1.5 ? 1e6 : 0) + r.width * r.height });
           });
           return cand.sort((x, y2) => y2.score - x.score).slice(0, n).sort((x, y2) => x.i - y2.i);

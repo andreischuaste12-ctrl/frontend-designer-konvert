@@ -7,11 +7,24 @@ import { parseArgs } from 'node:util';
 import { redactText } from '../skills/design-por-referencia-konvert/scripts/_common.mjs';
 
 const sha256 = (content) => createHash('sha256').update(content).digest('hex');
+const norm = (value) => String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+const DEFAULT_CASES_PATH = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../evaluations/routing-cases.json');
+const EXPOSED_ROUTING_RAW = await fs.readFile(DEFAULT_CASES_PATH, 'utf8');
+const EXPOSED_ROUTING_CASES = JSON.parse(EXPOSED_ROUTING_RAW);
 
-export function validateRoutingProvenance(run, { isExposedCalibrationSet = true, casesRaw = '', scorerRaw = '' } = {}) {
+export function isExposedRoutingCalibration(cases, exposedCases = EXPOSED_ROUTING_CASES) {
+  if (!Array.isArray(cases) || !Array.isArray(exposedCases) || !exposedCases.length) return false;
+  const ids = new Set(exposedCases.map((c) => norm(c?.id)));
+  const prompts = new Set(exposedCases.map((c) => norm(c?.prompt)));
+  return cases.some((c) => ids.has(norm(c?.id)) || prompts.has(norm(c?.prompt)));
+}
+
+export function validateRoutingProvenance(run, { isExposedCalibrationSet = true, cases = null, exposedCases = EXPOSED_ROUTING_CASES, casesRaw = '', exposedCasesRaw = EXPOSED_ROUTING_RAW, scorerRaw = '' } = {}) {
   const role = run?.datasetRole ?? 'calibration';
   if (!['calibration', 'held_out'].includes(role)) throw new Error('datasetRole must be calibration or held_out.');
-  if (role === 'held_out' && isExposedCalibrationSet) throw new Error('Exposed repository routing cases are calibration material and cannot be scored as held_out.');
+  const candidateCases = cases ?? (casesRaw ? JSON.parse(casesRaw) : null);
+  const exposed = isExposedCalibrationSet || Boolean(casesRaw && exposedCasesRaw && sha256(casesRaw) === sha256(exposedCasesRaw)) || isExposedRoutingCalibration(candidateCases, exposedCases);
+  if (role === 'held_out' && exposed) throw new Error('Exposed repository routing cases are calibration material and cannot be scored as held_out.');
   if (run?.fingerprints !== undefined) {
     const fp = run.fingerprints;
     if (!fp || typeof fp !== 'object' || !/^[a-f0-9]{64}$/i.test(fp.casesSha256 ?? '') || !/^[a-f0-9]{64}$/i.test(fp.scorerSha256 ?? '')) {
@@ -97,7 +110,7 @@ async function main() {
   const cases = JSON.parse(casesRaw);
   const run = JSON.parse(runRaw);
   if (typeof run.model !== 'string' || !run.model.trim() || typeof run.agentVersion !== 'string' || !run.agentVersion.trim() || !/^[a-f0-9]{7,40}$/i.test(run.sourceCommit ?? '') || !/^\d{4}-\d{2}-\d{2}/.test(run.executedAt ?? '') || !Number.isFinite(Date.parse(run.executedAt)) || !Array.isArray(run.decisions)) throw new Error('Run metadata and decisions are required.');
-  const datasetRole = validateRoutingProvenance(run, { isExposedCalibrationSet: path.resolve(casesPath) === path.resolve(defaultCasesPath), casesRaw, scorerRaw });
+  const datasetRole = validateRoutingProvenance(run, { isExposedCalibrationSet: path.resolve(casesPath) === path.resolve(defaultCasesPath), cases, casesRaw, scorerRaw });
   const scored = scoreRouting(cases, run.decisions);
   const report = { schemaVersion: 1, datasetRole, executedAt: new Date(run.executedAt).toISOString(), model: redactText(run.model, 100), agentVersion: redactText(run.agentVersion, 100), sourceCommit: run.sourceCommit, ...scored };
   await fs.mkdir(a.out, { recursive: true });

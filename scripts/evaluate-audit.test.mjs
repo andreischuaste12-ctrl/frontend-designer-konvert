@@ -103,5 +103,6 @@ test('one collapsed case cannot hide behind perfect results in other cases', () 
   assert.ok(scoreAudit(data, criticalOnly).failures.some((f) => f === 'react-preview: no critical issue detected across its repetitions'));
   assert.ok(validateAuditCases({ ...data, targets: { ...data.targets, requireCaseDetection: 'yes' } }).some((e) => e.includes('requireCaseDetection')));
   assert.throws(() => validateAuditProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: true }), /calibration material/);
-  assert.equal(validateAuditProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: false }), 'held_out');
+  assert.throws(() => validateAuditProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: false, data: { cases: [data.cases[0]] } }), /calibration material/);
+  assert.equal(validateAuditProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: false, data: { cases: [{ id: 'reserved-01', fixture: 'reserved/fixture', brief: 'Unique reserved brief' }] } }), 'held_out');
 });

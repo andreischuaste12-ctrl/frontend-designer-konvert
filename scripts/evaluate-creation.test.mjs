@@ -20,13 +20,25 @@ test('the creation case file is valid and covers the three required scenarios', 
   assert.deepEqual(data.cases.map((c) => c.id), ['service-landing', 'catalog-filters', 'dashboard-states']);
 });
 
-test('a complete graded creation run passes and blocked criteria require explicit reasons', () => {
+test('a complete graded creation run passes and blocked criteria fail the gate while preserving denominators', () => {
   const scored = scoreCreation(data, perfectRuns());
   assert.equal(scored.passed, true);
   assert.equal(scored.overall.criterionPassRate, 1);
-  const withBlocked = perfectRuns();
-  withBlocked[0].criteria.keyboardUse = { status: 'blocked', reason: 'Sem ambiente interativo autorizado.' };
-  assert.equal(scoreCreation(data, withBlocked).overall.blockedCriteria, 1);
+  const mostlyBlocked = perfectRuns().map((run) => ({
+    ...run,
+    criteria: Object.fromEntries(data.dimensions.map((d) => [
+      d,
+      d === 'visualCoherence'
+        ? { status: 'passed', evidence: 'Coerente visualmente.' }
+        : { status: 'blocked', reason: 'Sem ambiente interativo autorizado.' },
+    ])),
+  }));
+  const blockedResult = scoreCreation(data, mostlyBlocked);
+  assert.equal(blockedResult.passed, false);
+  assert.equal(blockedResult.overall.blockedCriteria, 45);
+  assert.equal(Number(blockedResult.overall.criterionPassRate.toFixed(4)), Number((9 / 54).toFixed(4)));
+  assert.ok(blockedResult.failures.some((f) => f.includes('blockedCriteria 45 > 0')));
+  assert.ok(blockedResult.failures.some((f) => f.includes('dimension functionalCompletion passRate 0.00 < 0.85')));
   assert.throws(() => {
     const bad = perfectRuns();
     bad[0].criteria.keyboardUse = { status: 'passed', evidence: '' };
@@ -34,7 +46,7 @@ test('a complete graded creation run passes and blocked criteria require explici
   }, /requires evidence/);
 });
 
-test('creation scorer rejects invalid deliveries, single-case collapse, and held_out claims on calibration cases', () => {
+test('creation scorer rejects invalid deliveries, single-case collapse, and copied calibration cases claimed as held_out', () => {
   const collapsed = perfectRuns();
   for (const run of collapsed.filter((r) => r.caseId === 'dashboard-states')) {
     run.criteria.functionalCompletion = { status: 'failed' };
@@ -44,5 +56,7 @@ test('creation scorer rejects invalid deliveries, single-case collapse, and held
   assert.equal(result.passed, false);
   assert.ok(result.failures.some((f) => f.startsWith('dashboard-states:')));
   assert.throws(() => validateCreationProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: true }), /calibration material/);
-  assert.equal(validateCreationProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: false }), 'held_out');
+  assert.throws(() => validateCreationProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: false, data: structuredClone(data), exposedData: data }), /calibration material/);
+  assert.equal(validateCreationProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: false, data: { cases: [{ id: 'reserved-01', title: 'New reserved case', brief: 'Unique brief' }] }, exposedData: data }), 'held_out');
+  assert.throws(() => validateCreationProvenance({ fingerprints: { casesSha256: 'bad', scorerSha256: 'bad' } }), /64-hex/);
 });

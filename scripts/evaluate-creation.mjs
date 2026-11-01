@@ -18,6 +18,10 @@ const REQUIRED_DIMENSIONS = [
 ];
 const isId = (value) => typeof value === 'string' && value.trim().length > 0;
 const sha256 = (content) => createHash('sha256').update(content).digest('hex');
+const norm = (value) => String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+const DEFAULT_CASES_PATH = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../evaluations/creation-quality/cases.json');
+const EXPOSED_CREATION_RAW = await fs.readFile(DEFAULT_CASES_PATH, 'utf8');
+const EXPOSED_CREATION_DATA = JSON.parse(EXPOSED_CREATION_RAW);
 
 export function validateCreationCases(data) {
   const errors = [];
@@ -32,7 +36,9 @@ export function validateCreationCases(data) {
   for (const key of ['deliveryValidRate', 'criterionPassRate']) {
     if (typeof targets[key] !== 'number' || targets[key] < 0 || targets[key] > 1) errors.push(`targets.${key} must be between 0 and 1`);
   }
-  if (!Number.isInteger(targets.unsupportedClaims) || targets.unsupportedClaims < 0) errors.push('targets.unsupportedClaims must be a non-negative integer');
+  for (const key of ['maxBlockedCriteria', 'unsupportedClaims']) {
+    if (!Number.isInteger(targets[key]) || targets[key] < 0) errors.push(`targets.${key} must be a non-negative integer`);
+  }
   if (targets.requireCasePass !== undefined && typeof targets.requireCasePass !== 'boolean') errors.push('targets.requireCasePass must be a boolean');
   const ids = new Set();
   for (const item of data.cases) {
@@ -47,10 +53,20 @@ export function validateCreationCases(data) {
   return errors;
 }
 
-export function validateCreationProvenance(run, { isExposedCalibrationSet = true, casesRaw = '', scorerRaw = '' } = {}) {
+export function isExposedCreationCalibration(data, exposedData = EXPOSED_CREATION_DATA) {
+  if (!Array.isArray(data?.cases) || !Array.isArray(exposedData?.cases) || !exposedData.cases.length) return false;
+  const ids = new Set(exposedData.cases.map((c) => norm(c?.id)));
+  const titles = new Set(exposedData.cases.map((c) => norm(c?.title)));
+  const briefs = new Set(exposedData.cases.map((c) => norm(c?.brief)));
+  return data.cases.some((c) => ids.has(norm(c?.id)) || titles.has(norm(c?.title)) || briefs.has(norm(c?.brief)));
+}
+
+export function validateCreationProvenance(run, { isExposedCalibrationSet = true, data = null, exposedData = EXPOSED_CREATION_DATA, casesRaw = '', exposedCasesRaw = EXPOSED_CREATION_RAW, scorerRaw = '' } = {}) {
   const role = run?.datasetRole ?? 'calibration';
   if (!['calibration', 'held_out'].includes(role)) throw new Error('datasetRole must be calibration or held_out.');
-  if (role === 'held_out' && isExposedCalibrationSet) throw new Error('Exposed repository creation cases are calibration material and cannot be scored as held_out.');
+  const candidateData = data ?? (casesRaw ? JSON.parse(casesRaw) : null);
+  const exposed = isExposedCalibrationSet || Boolean(casesRaw && exposedCasesRaw && sha256(casesRaw) === sha256(exposedCasesRaw)) || isExposedCreationCalibration(candidateData, exposedData);
+  if (role === 'held_out' && exposed) throw new Error('Exposed repository creation cases are calibration material and cannot be scored as held_out.');
   if (run?.fingerprints !== undefined) {
     const fp = run.fingerprints;
     if (!fp || typeof fp !== 'object' || !/^[a-f0-9]{64}$/i.test(fp.casesSha256 ?? '') || !/^[a-f0-9]{64}$/i.test(fp.scorerSha256 ?? '')) {
@@ -63,12 +79,13 @@ export function validateCreationProvenance(run, { isExposedCalibrationSet = true
 }
 
 const ratio = (num, den) => (den ? num / den : 0);
+const blankStats = () => ({ runs: 0, valid: 0, criteriaTotal: 0, criteriaPassed: 0, criteriaFailed: 0, criteriaBlocked: 0, unsupportedClaims: 0, dimensionPassed: Object.fromEntries(REQUIRED_DIMENSIONS.map((d) => [d, 0])) });
 
 export function scoreCreation(data, runs) {
   const cases = new Map(data.cases.map((c) => [c.id, c]));
   if (!Array.isArray(runs) || !runs.length) throw new Error('At least one graded creation run is required.');
   const seen = new Set();
-  const totals = { runs: 0, valid: 0, criteriaTotal: 0, criteriaPassed: 0, criteriaFailed: 0, criteriaBlocked: 0, unsupportedClaims: 0 };
+  const totals = blankStats();
   const perCase = {};
   for (const run of runs) {
     const item = cases.get(run?.caseId);
@@ -79,6 +96,7 @@ export function scoreCreation(data, runs) {
     if (typeof run.deliveryValid !== 'boolean' || !Number.isInteger(run.unsupportedClaims) || run.unsupportedClaims < 0 || !run.criteria || typeof run.criteria !== 'object') {
       throw new Error('Run needs deliveryValid, unsupportedClaims, and criteria.');
     }
+    const caseStats = perCase[item.id] ??= blankStats();
     let passed = 0, failed = 0, blocked = 0;
     for (const dim of REQUIRED_DIMENSIONS) {
       const entry = run.criteria[dim];
@@ -86,11 +104,10 @@ export function scoreCreation(data, runs) {
       if (entry.status === 'passed' && !isId(entry.evidence)) throw new Error(`Criterion ${dim} requires evidence when passed.`);
       if (entry.status === 'blocked' && !isId(entry.reason)) throw new Error(`Criterion ${dim} requires reason when blocked.`);
       if (!run.deliveryValid) failed++;
-      else if (entry.status === 'passed') passed++;
+      else if (entry.status === 'passed') { passed++; totals.dimensionPassed[dim]++; caseStats.dimensionPassed[dim]++; }
       else if (entry.status === 'blocked') blocked++;
       else failed++;
     }
-    const caseStats = perCase[item.id] ??= { runs: 0, valid: 0, criteriaTotal: 0, criteriaPassed: 0, criteriaFailed: 0, criteriaBlocked: 0, unsupportedClaims: 0 };
     const delta = { runs: 1, valid: run.deliveryValid ? 1 : 0, criteriaTotal: REQUIRED_DIMENSIONS.length, criteriaPassed: passed, criteriaFailed: failed, criteriaBlocked: blocked, unsupportedClaims: run.unsupportedClaims };
     for (const [k, v] of Object.entries(delta)) { totals[k] += v; caseStats[k] += v; }
   }
@@ -99,22 +116,32 @@ export function scoreCreation(data, runs) {
   }
   const summarize = (s) => ({
     deliveryValidRate: ratio(s.valid, s.runs),
-    criterionPassRate: ratio(s.criteriaPassed, s.criteriaTotal - s.criteriaBlocked),
+    criterionPassRate: ratio(s.criteriaPassed, s.criteriaTotal),
+    verifiedCriterionPassRate: ratio(s.criteriaPassed, s.criteriaTotal - s.criteriaBlocked),
+    dimensionPassRates: Object.fromEntries(REQUIRED_DIMENSIONS.map((d) => [d, ratio(s.dimensionPassed[d], s.runs)])),
     blockedCriteria: s.criteriaBlocked,
     failedCriteria: s.criteriaFailed,
     unsupportedClaims: s.unsupportedClaims,
   });
   const overall = summarize(totals);
   const t = data.targets;
+  const maxBlocked = t.maxBlockedCriteria ?? 0;
   const failures = [];
   if (overall.deliveryValidRate < t.deliveryValidRate) failures.push(`deliveryValidRate ${overall.deliveryValidRate.toFixed(2)} < ${t.deliveryValidRate}`);
   if (overall.criterionPassRate < t.criterionPassRate) failures.push(`criterionPassRate ${overall.criterionPassRate.toFixed(2)} < ${t.criterionPassRate}`);
+  if (overall.blockedCriteria > maxBlocked) failures.push(`blockedCriteria ${overall.blockedCriteria} > ${maxBlocked}`);
   if (overall.unsupportedClaims > t.unsupportedClaims) failures.push(`unsupportedClaims ${overall.unsupportedClaims} > ${t.unsupportedClaims}`);
+  for (const dim of REQUIRED_DIMENSIONS) {
+    if (overall.dimensionPassRates[dim] < t.criterionPassRate) failures.push(`dimension ${dim} passRate ${overall.dimensionPassRates[dim].toFixed(2)} < ${t.criterionPassRate}`);
+  }
   const casesOut = {};
   for (const [id, stats] of Object.entries(perCase)) {
     casesOut[id] = { runs: stats.runs, ...summarize(stats) };
     if (t.requireCasePass && casesOut[id].criterionPassRate < t.criterionPassRate) {
       failures.push(`${id}: criterionPassRate ${casesOut[id].criterionPassRate.toFixed(2)} < ${t.criterionPassRate}`);
+    }
+    if (t.requireCasePass && casesOut[id].blockedCriteria > maxBlocked) {
+      failures.push(`${id}: blockedCriteria ${casesOut[id].blockedCriteria} > ${maxBlocked}`);
     }
   }
   return { runs: totals.runs, overall, cases: casesOut, failures, passed: failures.length === 0 };
@@ -130,16 +157,18 @@ async function main() {
   const root = path.resolve(path.dirname(selfPath), '..');
   const defaultCasesPath = path.join(root, 'evaluations/creation-quality/cases.json');
   const casesPath = a.cases ? path.resolve(a.cases) : defaultCasesPath;
-  const [casesRaw, scorerRaw, runRaw] = await Promise.all([
+  const [casesRaw, exposedCasesRaw, scorerRaw, runRaw] = await Promise.all([
     fs.readFile(casesPath, 'utf8'),
+    fs.readFile(defaultCasesPath, 'utf8'),
     fs.readFile(selfPath, 'utf8'),
     fs.readFile(a.results, 'utf8'),
   ]);
   const data = JSON.parse(casesRaw);
+  const exposedData = JSON.parse(exposedCasesRaw);
   if (validateCreationCases(data).length) throw new Error('Invalid creation case file.');
   const run = JSON.parse(runRaw);
   if (!isId(run.model) || !isId(run.agentVersion) || !/^[a-f0-9]{7,40}$/i.test(run.sourceCommit ?? '') || !/^\d{4}-\d{2}-\d{2}/.test(run.executedAt ?? '') || !Number.isFinite(Date.parse(run.executedAt)) || !isId(run.grader)) throw new Error('Run metadata is required.');
-  const datasetRole = validateCreationProvenance(run, { isExposedCalibrationSet: path.resolve(casesPath) === path.resolve(defaultCasesPath), casesRaw, scorerRaw });
+  const datasetRole = validateCreationProvenance(run, { isExposedCalibrationSet: path.resolve(casesPath) === path.resolve(defaultCasesPath), data, exposedData, casesRaw, exposedCasesRaw, scorerRaw });
   const report = {
     schemaVersion: 1, datasetRole, executedAt: new Date(run.executedAt).toISOString(), model: redactText(run.model, 100), agentVersion: redactText(run.agentVersion, 100),
     sourceCommit: run.sourceCommit, grader: redactText(run.grader, 100), ...scoreCreation(data, run.runs),

@@ -180,18 +180,36 @@ const data = await page.evaluate(
     const CUSTOM_FIELDS = '[contenteditable]:not([contenteditable="false" i]), [role~="textbox" i], [role~="searchbox" i], [role~="combobox" i], [role~="spinbutton" i]';
     const EDITABLE_SEL = `input:not([type="hidden"]):not([type="submit"]):not([type="button"]), textarea, select, ${CUSTOM_FIELDS}`;
     const hasEditableRole = (node) => (node.getAttribute?.('role') || '').toLowerCase().split(/\s+/).some((role) => ['textbox', 'searchbox', 'combobox', 'spinbutton'].includes(role));
-    const isEditable = (el) => /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable || hasEditableRole(el) || Boolean(el.closest?.(EDITABLE_SEL));
+    const isEditable = (el) => /^(INPUT|TEXTAREA|SELECT|OPTION)$/.test(el.tagName) || el.isContentEditable || hasEditableRole(el) || Boolean(el.closest?.(EDITABLE_SEL));
+    const nonEditableText = (root) => {
+      if (isEditable(root)) return '';
+      if (!root.querySelector?.(EDITABLE_SEL)) return root.innerText || '';
+      const parts = [];
+      const walkText = (node) => {
+        for (const child of node.childNodes) {
+          if (child.nodeType === 3) parts.push(child.nodeValue || '');
+          else if (child.nodeType === 1 && !/^(SCRIPT|STYLE|NOSCRIPT|TEMPLATE)$/.test(child.tagName) && !isEditable(child) && visible(child)) walkText(child);
+        }
+      };
+      walkText(root);
+      return parts.join(' ');
+    };
     // Sampling hint only, not a full accessible-name computation. Never read field values.
-    const labelHint = (el) => [
-      el.getAttribute('aria-label'), el.innerText, el.getAttribute('title'),
-      el.querySelector('img[alt]')?.getAttribute('alt'),
-    ].map((value) => (value || '').trim().replace(/\s+/g, ' ')).find(Boolean) || '';
+    const labelHint = (el) => {
+      const altNode = [...el.querySelectorAll('img[alt]')].find((img) => !isEditable(img));
+      return [
+        el.getAttribute('aria-label'), nonEditableText(el), el.getAttribute('title'),
+        altNode?.getAttribute('alt'),
+      ].map((value) => (value || '').trim().replace(/\s+/g, ' ')).find(Boolean) || '';
+    };
     const safeText = (el, max = 40) => {
       if (isEditable(el)) {
         const type = el.tagName === 'INPUT' ? ` ${el.type || 'text'}` : '';
         return `[${el.tagName.toLowerCase()}${type}]`;
       }
-      return labelHint(el).slice(0, max);
+      const text = labelHint(el).slice(0, max);
+      if (!text && el.querySelector?.(EDITABLE_SEL)) return `[${el.tagName.toLowerCase()}]`;
+      return text;
     };
     const bump = (map, key) => map.set(key, (map.get(key) || 0) + 1);
 
@@ -232,7 +250,7 @@ const data = await page.evaluate(
         const ancestorOpacityProduct = Number(ancestorOpacityOf(el).toFixed(6));
         const opacityUncertain = ancestorOpacityProduct < 0.999;
         const fgOpaque = fg ? (fg[3] < 1 ? over(fg, bg.color) : fg) : null;
-        const hasRenderedText = !isEditable(el) && Boolean((el.innerText || '').trim());
+        const hasRenderedText = !isEditable(el) && Boolean(nonEditableText(el).trim());
         const sig = [s.fontSize, s.fontWeight, s.lineHeight, s.fontFamily, s.color, hex(bg.color), bg.uncertain, ancestorOpacityProduct, hasRenderedText, s.borderRadius].join('|');
         // Controls without rendered text and editable fields stay inspectable but do not describe typography.
         if (hasRenderedText) {
