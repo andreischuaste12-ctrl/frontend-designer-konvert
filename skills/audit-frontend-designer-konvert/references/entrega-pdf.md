@@ -3,7 +3,7 @@
 O PDF é a apresentação para o cliente. Markdown e JSON continuam necessários para revisão, evidência e handoff; o PDF não aprova nem implementa mudanças. O modelo automático usa rótulos em português brasileiro; escreva os valores do relatório em português claro e descreva por achado: o que foi observado, por que importa para a tarefa, como melhorar e como verificar o resultado. Diferencie problema confirmado, oportunidade e hipótese. Não prometa ganhos, invente pesquisa ou oculte lacunas de cobertura. Use rótulos e dados sanitizados, sem dados de clientes ou URLs privadas.
 
 1. Produza e valide `audit-report.json` e `audit-report.md` pelo [contrato](contrato-de-relatorio.md). Revise os textos, a correspondência entre os formatos e os avisos de privacidade: a validação automática não garante a qualidade ou a privacidade do conteúdo.
-2. Prepare o navegador conforme [preparo isolado](preparo-do-navegador.md). Use `scriptsDir` retornado como `--browser-scripts`. Quando fornecidos pelo preparo, aplique `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` e `PLAYWRIGHT_BROWSERS_PATH` somente aos comandos que usam navegador.
+2. Prepare o navegador conforme [preparo isolado](preparo-do-navegador.md). Use `scriptsDir` retornado como `--browser-scripts`. Quando fornecidos pelo preparo, aplique `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` e `PLAYWRIGHT_BROWSERS_PATH` somente aos comandos que usam navegador. Sem `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`, o gerador procura o mesmo Chromium funcional do diagnóstico (`doctor`); uma variável definida por você tem precedência.
 3. Gere um novo arquivo no diretório autorizado (substitua os caminhos pelos retornados na instalação e no preparo):
 
 ```bash

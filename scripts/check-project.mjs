@@ -16,7 +16,8 @@ export async function discoverTests(sourceRoot) {
   for (const dir of ['scripts', 'skills/audit-frontend-designer-konvert/tests', 'skills/design-por-referencia-konvert/tests']) {
     for (const file of (await fs.readdir(path.join(sourceRoot, dir))).sort()) {
       if (!file.endsWith('.test.mjs')) continue;
-      const target = dir.endsWith('design-por-referencia-konvert/tests') && BROWSER_TESTS.has(file) ? browser : unit;
+      const isBrowser = file.endsWith('.browser.test.mjs') || (dir.endsWith('design-por-referencia-konvert/tests') && BROWSER_TESTS.has(file));
+      const target = isBrowser ? browser : unit;
       target.push(`${dir}/${file}`);
     }
   }

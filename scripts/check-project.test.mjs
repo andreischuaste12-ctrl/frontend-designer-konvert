@@ -28,6 +28,15 @@ test('new executor tests are discovered without editing the runner and browser t
   assert.ok(!calls[1][0].some((p) => p.includes('scripts-smoke')));
 });
 
+test('any suite named *.browser.test.mjs runs only with the browser suite, in either skill', async (t) => {
+  const root = await fixture(t);
+  await fs.writeFile(path.join(root, 'skills/audit-frontend-designer-konvert/tests/render.browser.test.mjs'), '');
+  const tests = await discoverTests(root);
+  assert.ok(tests.browser.includes('skills/audit-frontend-designer-konvert/tests/render.browser.test.mjs'));
+  assert.ok(!tests.unit.some((file) => file.endsWith('.browser.test.mjs')));
+  assert.equal(tests.browser.length, 3);
+});
+
 test('failed prerequisites stop browser checks; successful preflight wires the browser only to that suite', async (t) => {
   const root = await fixture(t);
   const calls = [];

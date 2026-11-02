@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { validateAuditReport } from './validate-report.mjs';
+import { prepareBrowser } from './prepare-browser.mjs';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const list = (values, empty) => values?.length ? `<ul>${values.map((v) => `<li>${esc(v)}</li>`).join('')}</ul>` : `<p>${esc(empty)}</p>`;
@@ -46,9 +47,27 @@ export function clientHtml(input) {
   return { html, warnings };
 }
 
-export async function renderPdf({ input, out, browserScripts }) {
+const BROWSER_ENV = 'PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH';
+
+// Use the same browser discovery as `doctor` and `check-project`; an explicit environment override always wins.
+async function withDiscoveredBrowser(browserScripts, prepare, task) {
+  const previous = process.env[BROWSER_ENV];
+  if (previous === undefined) {
+    const prepared = await prepare(path.dirname(path.resolve(browserScripts)));
+    if (prepared.status === 'ready' && prepared.executablePath) process.env[BROWSER_ENV] = prepared.executablePath;
+  }
+  try { return await task(); }
+  finally { if (previous === undefined) delete process.env[BROWSER_ENV]; }
+}
+
+export async function renderPdf({ input, out, browserScripts, prepare = prepareBrowser }) {
   const { html, warnings } = clientHtml(input);
   const common = await import(pathToFileURL(path.resolve(browserScripts, '_common.mjs')).href);
+  await withDiscoveredBrowser(browserScripts, prepare, () => writePdf({ common, html, out }));
+  return { warnings };
+}
+
+async function writePdf({ common, html, out }) {
   const browser = await common.launch(common.loadPlaywright());
   try {
     const page = await browser.newPage({ javaScriptEnabled: false });
@@ -56,7 +75,6 @@ export async function renderPdf({ input, out, browserScripts }) {
     await page.setContent(html, { waitUntil: 'load' });
     const pdf = await page.pdf({ format: 'A4', printBackground: true, tagged: true, displayHeaderFooter: true, headerTemplate: '<span></span>', footerTemplate: '<div style="font:9px Arial;color:#64748b;width:100%;text-align:center">Auditoria de experiência · <span class="pageNumber"></span> / <span class="totalPages"></span></div>', margin: { top: '18mm', bottom: '20mm', left: '16mm', right: '16mm' } });
     await fs.writeFile(out, pdf, { flag: 'wx', mode: 0o600 });
-    return { warnings };
   } finally { await browser.close(); }
 }
 

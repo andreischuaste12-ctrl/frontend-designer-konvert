@@ -4,6 +4,8 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+- Make the client audit PDF generator discover a working Chromium with the same preparation logic as `doctor` and `check-project` (an explicit `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` still wins), and add a real-browser test that renders the example report and verifies the no-overwrite guard. Test files named `*.browser.test.mjs` now run only in the browser suite.
+
 - Add a client-facing audit PDF generated locally from validated schema v3 reports, with evidence, rationale, recommendations, acceptance criteria, limitations and privacy review; preserve Markdown/JSON handoff.
 
 - Require candidate, source state, case, scorer and scorer-support fingerprints for held-out scoring; retain legacy calibration compatibility. Share comparison style fields between producer and handoff validator and clarify root browser-test commands. Fingerprints do not authenticate a run or prove case independence.
