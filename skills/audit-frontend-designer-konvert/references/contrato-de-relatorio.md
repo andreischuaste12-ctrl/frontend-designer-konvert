@@ -1,6 +1,6 @@
 # Contrato de relatório de auditoria
 
-Toda auditoria de design UX/UI concluída produz um relatório em Markdown e outro em JSON, com IDs de achados iguais e conteúdo equivalente. Cubra necessidades do público, jornadas, design visual, interação e psicologia do design. O Markdown serve à revisão; o JSON é a entrada estruturada do handoff para `design-por-referencia-konvert`. As chaves do JSON permanecem em inglês (esquema estável); os valores seguem o idioma do relatório.
+Toda auditoria de design UX/UI concluída produz um PDF para o cliente e relatórios em Markdown e JSON, com IDs de achados iguais e conteúdo equivalente. Cubra necessidades do público, jornadas, design visual, interação e psicologia do design. O Markdown serve à revisão; o JSON é a entrada estruturada do handoff para `design-por-referencia-konvert`. As chaves do JSON permanecem em inglês (esquema estável); os valores seguem o idioma do relatório.
 
 ## Campos obrigatórios do relatório
 
@@ -100,3 +100,7 @@ O campo opcional de nível superior `stack` tem `name` e `reason` não vazios e 
 ## Síntese para decisão
 
 Antes dos achados detalhados no Markdown, resuma a tarefa e o público conhecidos ou assumidos, o escopo realmente observado, até três prioridades com seus IDs, o que preservar, as aprovações pendentes e os limites da conclusão. Derive a síntese dos campos do JSON; não acrescente gravidade, evidência ou autorização que ele não contém. A validação estrutural não confirma a equivalência semântica dessa síntese. Não transforme uma nota geral de UX em medida objetiva sem método validado.
+
+## Entrega ao cliente
+
+O PDF apresenta, para cada achado, o que foi observado, por que importa, como melhorar e como verificar a melhoria, além da evidência, confiança, dependências e o que preservar. Problemas, oportunidades e hipóteses devem permanecer distintos; não invente causas, resultados ou testes. O PDF é gerado do JSON validado e revisto, mantendo o Markdown e o JSON como fontes de rastreabilidade. Siga [entrega em PDF](entrega-pdf.md) para geração e revisão.

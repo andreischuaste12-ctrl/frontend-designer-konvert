@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { redactText } from '../skills/design-por-referencia-konvert/scripts/_common.mjs';
-import { containsExposedCases, candidateProvenance } from './evaluation-provenance.mjs';
+import { containsExposedCases, candidateProvenance, requireHeldOutProvenance } from './evaluation-provenance.mjs';
 
 const sha256 = (content) => createHash('sha256').update(content).digest('hex');
 const norm = (value) => String(value ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
@@ -26,6 +26,7 @@ export function validateRoutingProvenance(run, { isExposedCalibrationSet = true,
   const candidateCases = cases ?? (casesRaw ? JSON.parse(casesRaw) : null);
   const exposed = isExposedCalibrationSet || Boolean(casesRaw && exposedCasesRaw && sha256(casesRaw) === sha256(exposedCasesRaw)) || isExposedRoutingCalibration(candidateCases, exposedCases);
   if (role === 'held_out' && exposed) throw new Error('Exposed repository routing cases are calibration material and cannot be scored as held_out.');
+  requireHeldOutProvenance(run);
   if (run?.fingerprints !== undefined) {
     const fp = run.fingerprints;
     if (!fp || typeof fp !== 'object' || !/^[a-f0-9]{64}$/i.test(fp.casesSha256 ?? '') || !/^[a-f0-9]{64}$/i.test(fp.scorerSha256 ?? '')) {

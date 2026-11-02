@@ -11,6 +11,7 @@ const TOOLING_FILES = [
   'scripts/_common.mjs',
   'scripts/_network.mjs',
   'scripts/_pinning.mjs',
+  'scripts/_style-fields.mjs',
   'scripts/capture.mjs',
   'scripts/extract-styles.mjs',
   'scripts/image-manifest.mjs',
@@ -78,6 +79,9 @@ export async function verifyInstall(skillsDir) {
   }
   if (!(await exists(path.join(skillsDir, 'audit-frontend-designer-konvert/scripts/prepare-browser.mjs')))) {
     errors.push('audit-frontend-designer-konvert: missing scripts/prepare-browser.mjs');
+  }
+  if (!(await exists(path.join(skillsDir, 'audit-frontend-designer-konvert/scripts/render-client-pdf.mjs')))) {
+    errors.push('audit-frontend-designer-konvert: missing scripts/render-client-pdf.mjs');
   }
   // The audit skill links into the executor, so both must be installed side by side.
   const executor = path.join(skillsDir, 'design-por-referencia-konvert');

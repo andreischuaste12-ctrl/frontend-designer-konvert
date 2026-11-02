@@ -10,6 +10,17 @@ export function containsExposedCases(candidate, calibration) {
   return items.some((item) => briefs.has(normalize(item.brief ?? item.prompt)) || (item.fixture && fixtures.has(item.fixture)));
 }
 
+// Held-out metadata is a traceability requirement, not proof of independence or execution.
+export function requireHeldOutProvenance(run) {
+  if (run?.datasetRole !== 'held_out') return;
+  const hash = (value) => typeof value === 'string' && /^[a-f0-9]{64}$/i.test(value);
+  if (typeof run.sourceDirty !== 'boolean') throw new Error('held_out requires boolean sourceDirty.');
+  if (!hash(run.candidateSkillsSha256)) throw new Error('held_out requires candidateSkillsSha256 fingerprint.');
+  if (!run.fingerprints || !['casesSha256', 'scorerSha256', 'scorerSupportSha256'].every((key) => hash(run.fingerprints[key]))) {
+    throw new Error('held_out requires cases, scorer and scorer support fingerprints.');
+  }
+}
+
 export function candidateProvenance(run, scorerSupportRaw = '') {
   const validHash = (value) => typeof value === 'string' && /^[a-f0-9]{64}$/i.test(value);
   if (run.sourceDirty !== undefined && typeof run.sourceDirty !== 'boolean') throw new Error('sourceDirty must be a boolean when supplied.');

@@ -4,6 +4,10 @@ Notable changes to the repository are recorded here. The automation package vers
 
 ## Unreleased
 
+- Add a client-facing audit PDF generated locally from validated schema v3 reports, with evidence, rationale, recommendations, acceptance criteria, limitations and privacy review; preserve Markdown/JSON handoff.
+
+- Require candidate, source state, case, scorer and scorer-support fingerprints for held-out scoring; retain legacy calibration compatibility. Share comparison style fields between producer and handoff validator and clarify root browser-test commands. Fingerprints do not authenticate a run or prove case independence.
+
 - Exclude nested editable-control text when sampling outer headings, paragraphs, labels, and interactive wrappers in `extract-styles.mjs` and `capture.mjs`, preserve full criterion denominators and enforce `maxBlockedCriteria: 0` plus per-dimension pass rates in `evaluate-creation.mjs`, detect copied or subsetted calibration cases by content before allowing `held_out` in all evaluators, and validate the full `comparison.json` structure in `check-handoff-scope.mjs`.
 
 ### Tooling and evaluation improvements

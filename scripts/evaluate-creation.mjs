@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { redactText } from '../skills/design-por-referencia-konvert/scripts/_common.mjs';
-import { containsExposedCases, candidateProvenance } from './evaluation-provenance.mjs';
+import { containsExposedCases, candidateProvenance, requireHeldOutProvenance } from './evaluation-provenance.mjs';
 
 const REQUIRED_DIMENSIONS = [
   'functionalCompletion',
@@ -68,6 +68,7 @@ export function validateCreationProvenance(run, { isExposedCalibrationSet = true
   const candidateData = data ?? (casesRaw ? JSON.parse(casesRaw) : null);
   const exposed = isExposedCalibrationSet || Boolean(casesRaw && exposedCasesRaw && sha256(casesRaw) === sha256(exposedCasesRaw)) || isExposedCreationCalibration(candidateData, exposedData);
   if (role === 'held_out' && exposed) throw new Error('Exposed repository creation cases are calibration material and cannot be scored as held_out.');
+  requireHeldOutProvenance(run);
   if (run?.fingerprints !== undefined) {
     const fp = run.fingerprints;
     if (!fp || typeof fp !== 'object' || !/^[a-f0-9]{64}$/i.test(fp.casesSha256 ?? '') || !/^[a-f0-9]{64}$/i.test(fp.scorerSha256 ?? '')) {
@@ -119,6 +120,7 @@ export function scoreCreation(data, runs) {
     deliveryValidRate: ratio(s.valid, s.runs),
     // Blocked checks remain unverified and must not inflate the delivery score.
     criterionPassRate: ratio(s.criteriaPassed, s.criteriaTotal),
+    // Compatibility alias; evaluatedCriterionPassRate is the preferred name.
     verifiedCriterionPassRate: ratio(s.criteriaPassed, s.criteriaTotal - s.criteriaBlocked),
     evaluatedCriterionPassRate: ratio(s.criteriaPassed, s.criteriaTotal - s.criteriaBlocked),
     verificationCoverage: ratio(s.criteriaTotal - s.criteriaBlocked, s.criteriaTotal),

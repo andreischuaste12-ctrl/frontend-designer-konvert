@@ -5,12 +5,8 @@ import { parseArgs } from 'node:util';
 import { pathToFileURL } from 'node:url';
 import { ensureDir, fail, launch, loadPlaywright, redactText } from './_common.mjs';
 
-const FIELDS = [
-  'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'color',
-  'background', 'padding', 'borderRadius', 'boxShadow', 'opacity', 'ancestorOpacityProduct',
-  'contrast', 'contrastRequired', 'contrastStatus', 'backgroundIndeterminate',
-  'contrastOpacityIndeterminate', 'count', 'rect.x', 'rect.y', 'rect.w', 'rect.h',
-];
+import { STYLE_FIELDS } from './_style-fields.mjs';
+
 class ComparisonError extends Error {}
 export function compareStyles(before, after, { confirmPageMapping = false } = {}) {
   for (const sample of [before, after]) {
@@ -36,7 +32,7 @@ export function compareStyles(before, after, { confirmPageMapping = false } = {}
   for (const id of new Set([...left.keys(), ...right.keys()])) {
     const a = left.get(id), b = right.get(id);
     const value = (item, field) => field.split('.').reduce((v, k) => v?.[k], item);
-    const changes = a && b ? FIELDS.filter((field) => JSON.stringify(value(a, field)) !== JSON.stringify(value(b, field))).map((field) => {
+    const changes = a && b ? STYLE_FIELDS.filter((field) => JSON.stringify(value(a, field)) !== JSON.stringify(value(b, field))).map((field) => {
       const x = value(a, field) ?? null, y = value(b, field) ?? null;
       const result = { field, before: x, after: y };
       const one = String(x).match(/^(-?\d+(?:\.\d+)?)(px)?$/), two = String(y).match(/^(-?\d+(?:\.\d+)?)(px)?$/);

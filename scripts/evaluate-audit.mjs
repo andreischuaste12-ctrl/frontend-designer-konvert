@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { redactText } from '../skills/design-por-referencia-konvert/scripts/_common.mjs';
-import { containsExposedCases, candidateProvenance } from './evaluation-provenance.mjs';
+import { containsExposedCases, candidateProvenance, requireHeldOutProvenance } from './evaluation-provenance.mjs';
 
 const PRIORITIES = ['P0', 'P1', 'P2', 'P3'];
 const CRITICAL = new Set(['P0', 'P1']);
@@ -32,6 +32,7 @@ export function validateAuditProvenance(run, { isExposedCalibrationSet = true, d
   const candidateData = data ?? (casesRaw ? JSON.parse(casesRaw) : null);
   const exposed = isExposedCalibrationSet || Boolean(casesRaw && exposedCasesRaw && sha256(casesRaw) === sha256(exposedCasesRaw)) || isExposedAuditCalibration(candidateData, exposedData);
   if (role === 'held_out' && exposed) throw new Error('Exposed repository audit cases are calibration material and cannot be scored as held_out.');
+  requireHeldOutProvenance(run);
   if (run?.fingerprints !== undefined) {
     const fp = run.fingerprints;
     if (!fp || typeof fp !== 'object' || !/^[a-f0-9]{64}$/i.test(fp.casesSha256 ?? '') || !/^[a-f0-9]{64}$/i.test(fp.scorerSha256 ?? '')) {

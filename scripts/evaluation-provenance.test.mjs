@@ -19,7 +19,16 @@ test('all scorers reject altered input fingerprints and malformed provenance wit
     assert.equal(validate(null), 'calibration');
     assert.throws(() => validate({ datasetRole: 'unknown' }), /datasetRole/);
     assert.throws(() => validate({ datasetRole: 'held_out' }), /calibration/);
-    assert.equal(validate({ datasetRole: 'held_out' }, { isExposedCalibrationSet: false }), 'held_out');
+    const heldOut = { datasetRole: 'held_out', sourceDirty: false, candidateSkillsSha256: 'a'.repeat(64), fingerprints: { casesSha256: 'b'.repeat(64), scorerSha256: 'c'.repeat(64), scorerSupportSha256: 'd'.repeat(64) } };
+    assert.equal(validate(heldOut, { isExposedCalibrationSet: false }), 'held_out');
+    for (const key of ['sourceDirty', 'candidateSkillsSha256', 'fingerprints']) {
+      const incomplete = structuredClone(heldOut); delete incomplete[key];
+      assert.throws(() => validate(incomplete, { isExposedCalibrationSet: false }), /held_out requires/);
+    }
+    for (const key of ['casesSha256', 'scorerSha256', 'scorerSupportSha256']) {
+      const incomplete = structuredClone(heldOut); delete incomplete.fingerprints[key];
+      assert.throws(() => validate(incomplete, { isExposedCalibrationSet: false }), /held_out requires/);
+    }
     for (const fingerprints of [null, 'invalid', {}, { casesSha256: 'a'.repeat(64) }, { casesSha256: 'bad', scorerSha256: 'b'.repeat(64) }]) {
       assert.throws(() => validate({ fingerprints }), /fingerprints/);
     }

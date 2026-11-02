@@ -56,8 +56,8 @@ test('creation scorer rejects invalid deliveries, single-case collapse, and copi
   assert.equal(result.passed, false);
   assert.ok(result.failures.some((f) => f.startsWith('dashboard-states:')));
   assert.throws(() => validateCreationProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: true }), /calibration material/);
-  assert.throws(() => validateCreationProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: false, data: structuredClone(data), exposedData: data }), /calibration material/);
-  assert.equal(validateCreationProvenance({ datasetRole: 'held_out' }, { isExposedCalibrationSet: false, data: { cases: [{ id: 'reserved-01', title: 'New reserved case', brief: 'Unique brief' }] }, exposedData: data }), 'held_out');
+  assert.throws(() => validateCreationProvenance({ datasetRole: 'held_out', sourceDirty: false, candidateSkillsSha256: 'a'.repeat(64), fingerprints: { casesSha256: 'b'.repeat(64), scorerSha256: 'c'.repeat(64), scorerSupportSha256: 'd'.repeat(64) } }, { isExposedCalibrationSet: false, data: structuredClone(data), exposedData: data }), /calibration material/);
+  assert.equal(validateCreationProvenance({ datasetRole: 'held_out', sourceDirty: false, candidateSkillsSha256: 'a'.repeat(64), fingerprints: { casesSha256: 'b'.repeat(64), scorerSha256: 'c'.repeat(64), scorerSupportSha256: 'd'.repeat(64) } }, { isExposedCalibrationSet: false, data: { cases: [{ id: 'reserved-01', title: 'New reserved case', brief: 'Unique brief' }] }, exposedData: data }), 'held_out');
   assert.throws(() => validateCreationProvenance({ fingerprints: { casesSha256: 'bad', scorerSha256: 'bad' } }), /64-hex/);
 });
 

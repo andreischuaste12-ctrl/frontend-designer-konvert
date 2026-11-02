@@ -25,9 +25,11 @@ test('reports a missing skill, a missing script, and a broken relative link', as
   try {
     await fs.rm(path.join(dir, 'audit-frontend-designer-konvert'), { recursive: true });
     await fs.rm(path.join(dir, 'design-por-referencia-konvert/scripts/compare.mjs'));
+    await fs.rm(path.join(dir, 'design-por-referencia-konvert/scripts/_style-fields.mjs'));
     const errors = await verifyInstall(dir);
     assert.ok(errors.includes('audit-frontend-designer-konvert: SKILL.md not found'));
     assert.ok(errors.includes('design-por-referencia-konvert: missing scripts/compare.mjs'));
+    assert.ok(errors.includes('design-por-referencia-konvert: missing scripts/_style-fields.mjs'));
   } finally { await fs.rm(dir, { recursive: true, force: true }); }
 });
 

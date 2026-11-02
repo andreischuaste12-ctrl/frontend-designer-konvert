@@ -7,6 +7,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
+import { STYLE_FIELDS } from '../skills/design-por-referencia-konvert/scripts/_style-fields.mjs';
 import { validateAuditReport, implementableFindings } from '../skills/audit-frontend-designer-konvert/scripts/validate-report.mjs';
 import { validateExecutionRecord, validateAcceptance } from '../skills/audit-frontend-designer-konvert/scripts/validate-execution-record.mjs';
 
@@ -105,12 +106,7 @@ export function checkScope(handoff, report, changed, approvedIds = handoff.autho
   return { changed, implementable: [...ready].sort(), violations, notImplemented, passed: !violations.length && !notImplemented.length };
 }
 
-const STYLE_FIELDS = new Set([
-  'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'color',
-  'background', 'padding', 'borderRadius', 'boxShadow', 'opacity', 'ancestorOpacityProduct',
-  'contrast', 'contrastRequired', 'contrastStatus', 'backgroundIndeterminate',
-  'contrastOpacityIndeterminate', 'count', 'rect.x', 'rect.y', 'rect.w', 'rect.h',
-]);
+const styleFields = new Set(STYLE_FIELDS);
 
 export function validateComparisonArtifact(comparison) {
   const errors = [];
@@ -128,7 +124,7 @@ export function validateComparisonArtifact(comparison) {
           continue;
         }
         if (e.status === 'changed') {
-          if (!e.changes.length || e.changes.some((c) => !c || !STYLE_FIELDS.has(c.field) || !('before' in c) || !('after' in c) || JSON.stringify(c.before) === JSON.stringify(c.after))) {
+          if (!e.changes.length || e.changes.some((c) => !c || !styleFields.has(c.field) || !('before' in c) || !('after' in c) || JSON.stringify(c.before) === JSON.stringify(c.after))) {
             errors.push(`comparison.styles.entries[${i}]: changed entry requires non-empty field diffs`);
           }
         } else if (e.changes.length > 0) {
