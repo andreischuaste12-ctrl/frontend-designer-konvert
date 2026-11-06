@@ -1,0 +1,21 @@
+{
+  "url": "https://shop.example/[path-redacted]",
+  "width": 375,
+  "lcp": { "time": 1200, "tag": "IMG", "url": "https://cdn.example/[path-redacted]" },
+  "cls": 0,
+  "items": [
+    {
+      "kind": "img",
+      "src": "https://cdn.example/[path-redacted]",
+      "format": "webp",
+      "natural": [1200, 800],
+      "rendered": [320, 213],
+      "alt": "Fictional notebook on a desk",
+      "bytes": 84200,
+      "status": 200,
+      "isLcp": true,
+      "dataUri": false,
+      "flags": []
+    }
+  ]
+}

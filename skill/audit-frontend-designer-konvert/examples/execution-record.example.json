@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "skill": "design-por-referencia-konvert",
+  "source_commit": "abcdef0",
+  "scope": {
+    "tasks": ["Diferenciar a ação principal no painel sintético"],
+    "areas": ["Página de produto sintética, painel de compra"]
+  },
+  "inspections": [
+    {
+      "area": "Painel de compra sintético",
+      "state": "normal",
+      "viewport": "375 px",
+      "result": "observed",
+      "evidence": "Captura sintética inspecionada antes da mudança"
+    },
+    {
+      "area": "Checkout sintético",
+      "state": "erro",
+      "viewport": "375 px",
+      "result": "not_observed",
+      "reason": "Fora do escopo desta alteração"
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Alterar apenas a apresentação da ação principal",
+      "basis": "Achado sintético aprovado e dependência resolvida"
+    }
+  ],
+  "blocked_actions": ["Não alterar regras de frete sem decisão do responsável"],
+  "verification": [
+    {
+      "criterion_id": "UX-003",
+      "status": "passed",
+      "evidence": "Exemplo ilustrativo: comparação visual e verificação de teclado em 375 px e 1440 px"
+    }
+  ],
+  "limitations": ["Exemplo de formato; nenhuma execução real foi feita"]
+}
